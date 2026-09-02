@@ -5,6 +5,11 @@ import AdminLayout from './pages/admin/AdminLayout';
 import Login from './pages/admin/Login';
 import Dashboard from './pages/admin/Dashboard';
 import Bookings from './pages/admin/Bookings';
+import BookingDetail from './pages/admin/BookingDetail';
+import Clients from './pages/admin/Clients';
+import Services from './pages/admin/Services';
+import Reports from './pages/admin/Reports';
+import Settings from './pages/admin/Settings';
 
 function App() {
   return (
@@ -26,27 +31,16 @@ function App() {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="bookings" element={<Bookings />} />
-            {/* Placeholder routes for future pages */}
-            <Route path="clients" element={<ComingSoon title="Clients" />} />
-            <Route path="services" element={<ComingSoon title="Services" />} />
-            <Route path="reports" element={<ComingSoon title="Reports" />} />
-            <Route path="settings" element={<ComingSoon title="Settings" />} />
+            <Route path="bookings/:id" element={<BookingDetail />} />
+            <Route path="clients" element={<Clients />} />
+            <Route path="services" element={<Services />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="settings/:tab" element={<Settings />} />
           </Route>
         </Routes>
       </AuthProvider>
     </BrowserRouter>
-  );
-}
-
-function ComingSoon({ title }) {
-  return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      height: '60vh', color: '#94a3b8',
-    }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, color: '#1a1f37' }}>{title}</h1>
-      <p>Coming soon — this page will be built next.</p>
-    </div>
   );
 }
 
