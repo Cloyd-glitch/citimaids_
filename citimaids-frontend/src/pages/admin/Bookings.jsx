@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 
 const STATUS_TABS = ['all', 'pending', 'confirmed', 'completed', 'cancelled'];
@@ -21,6 +22,7 @@ const serviceColors = {
 };
 
 export default function Bookings() {
+    const navigate = useNavigate();
     const [bookings, setBookings] = useState([]);
     const [meta, setMeta] = useState({});
     const [activeTab, setActiveTab] = useState('all');
@@ -309,6 +311,7 @@ export default function Bookings() {
                                 <div style={{ display: 'flex', gap: 6 }}>
                                     <button
                                         title="View"
+                                        onClick={() => navigate(`/admin/bookings/${booking.id}`)}
                                         style={{
                                             width: 30,
                                             height: 30,
