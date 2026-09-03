@@ -14,10 +14,14 @@ class Booking extends Model
         'address',
         'notes',
         'status',
+        'total_amount',
+        'payment_status',
+        'payment_method',
     ];
 
     protected $casts = [
         'preferred_date' => 'date',
+        'total_amount'   => 'decimal:2',
     ];
 
     public function client()
@@ -38,5 +42,15 @@ class Booking extends Model
     public function details()
     {
         return $this->hasMany(BookingDetail::class);
+    }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
     }
 }
