@@ -2,11 +2,12 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch Firefox",
-      "type": "firefox",
+      "name": "Launch Chrome against localhost",
+      "type": "chrome",
       "request": "launch",
       "url": "http://localhost:5173",
-      "webRoot": "${workspaceFolder}/citimaids-frontend/src"
+      "webRoot": "${workspaceFolder}/citimaids-frontend/src",
+      "sourceMaps": true
     }
   ]
 }
