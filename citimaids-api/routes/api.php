@@ -4,8 +4,10 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\SettingController;
+use App\Http\Controllers\Api\TransactionController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Public Routes ────────────────────────────────────────────────────────────
@@ -45,4 +47,15 @@ Route::middleware('auth:sanctum')->group(function () {
     // Settings
     Route::get('/settings', [SettingController::class, 'index']);
     Route::put('/settings', [SettingController::class, 'update']);
+
+    // Payments
+    Route::get('/payments', [PaymentController::class, 'index']);
+    Route::get('/payments/{id}', [PaymentController::class, 'show']);
+    Route::post('/bookings/{id}/payment', [PaymentController::class, 'createForBooking']);
+    Route::patch('/payments/{id}/status', [PaymentController::class, 'updateStatus']);
+    Route::post('/payments/{id}/refund', [PaymentController::class, 'refund']);
+
+    // Transactions
+    Route::get('/transactions', [TransactionController::class, 'index']);
+    Route::get('/payments/{id}/transactions', [TransactionController::class, 'byPayment']);
 });
