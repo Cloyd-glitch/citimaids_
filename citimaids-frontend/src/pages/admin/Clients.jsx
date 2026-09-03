@@ -196,13 +196,12 @@ export default function Clients() {
             <div style={{ ...card, overflow: 'hidden' }}>
                 {/* Header */}
                 <div style={tableHeaderStyle}>
-                    <span style={{ width: 36 }}><input type="checkbox" style={{ cursor: 'pointer', accentColor: brand.navy }} /></span>
                     <ColHead>CLIENT</ColHead>
                     <ColHead>CONTACT</ColHead>
                     <ColHead>EMAIL</ColHead>
                     <ColHead>TOTAL BOOKINGS</ColHead>
                     <ColHead>LAST BOOKING</ColHead>
-                    <ColHead>ACTIONS</ColHead>
+                    <ColHead style={{ textAlign: 'right' }}>ACTIONS</ColHead>
                 </div>
 
                 {/* Body */}
@@ -234,7 +233,6 @@ export default function Clients() {
                             <div key={client.id} style={tableRowStyle}
                                 onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                                 onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
-                                <span style={{ width: 36 }}><input type="checkbox" style={{ cursor: 'pointer', accentColor: brand.navy }} /></span>
                                 {/* Client */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                     <div style={avatarToken(color, 38)}>{initials}</div>
@@ -330,8 +328,8 @@ function FormField({ label, required, children }) {
     );
 }
 
-function ColHead({ children }) {
-    return <span style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.8 }}>{children}</span>;
+function ColHead({ children, style }) {
+    return <span style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.8, ...style }}>{children}</span>;
 }
 
 function ActionBtn({ title, onClick, icon, danger }) {
@@ -359,13 +357,13 @@ function PageBtn({ label, active, disabled, onClick }) {
 }
 
 const tableHeaderStyle = {
-    display: 'grid', gridTemplateColumns: '36px 1.5fr 1fr 1.2fr 120px 120px 100px',
+    display: 'grid', gridTemplateColumns: '1.8fr 1.3fr 1.6fr 130px 130px 110px',
     padding: '14px 24px', borderBottom: `1px solid ${brand.border}`, background: brand.softBg,
-    alignItems: 'center', gap: 12,
+    alignItems: 'center', gap: 16,
 };
 
 const tableRowStyle = {
-    display: 'grid', gridTemplateColumns: '36px 1.5fr 1fr 1.2fr 120px 120px 100px',
+    display: 'grid', gridTemplateColumns: '1.8fr 1.3fr 1.6fr 130px 130px 110px',
     padding: '16px 24px', borderBottom: '1px solid #f1f5f9',
-    alignItems: 'center', gap: 12, transition: 'background 0.15s',
+    alignItems: 'center', gap: 16, transition: 'background 0.15s',
 };
