@@ -7,11 +7,14 @@ export default function ServiceDetailPage() {
 
   if (!service) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-6">
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">Service not found</h2>
-        <p className="text-slate-500 text-sm mb-4">The service you are looking for does not exist or has been updated.</p>
-        <Link to="/services" className="text-blue-800 font-bold hover:underline text-sm">
-          ← Back to All Services
+      <div className="min-h-[70vh] flex flex-col items-center justify-center text-center px-6 pt-32">
+        <h2 className="text-3xl font-black text-slate-900 mb-3">Service Not Found</h2>
+        <p className="text-slate-500 text-base mb-6">The requested cleaning service could not be located.</p>
+        <Link
+          to="/services"
+          className="px-7 py-3 rounded-xl bg-[#0A2342] text-white font-bold text-sm shadow-md"
+        >
+          ← Return to All Services
         </Link>
       </div>
     );
@@ -22,109 +25,132 @@ export default function ServiceDetailPage() {
   return (
     <div>
       {/* Banner */}
-      <div className="relative h-72 md:h-96 bg-slate-900 overflow-hidden">
+      <div className="relative h-96 sm:h-[450px] bg-slate-950 overflow-hidden pt-20">
         <img
-          src={`https://images.unsplash.com/photo-${service.imageId}?w=1400&h=500&fit=crop&auto=format`}
+          src={service.image}
           alt={service.title}
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/40 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12 max-w-7xl mx-auto">
-          <Link to="/services" className="text-blue-200 text-xs font-semibold hover:text-white mb-2 inline-flex items-center gap-1">
+        <div className="hero-gradient-overlay absolute inset-0" />
+        <div className="absolute bottom-0 left-0 right-0 p-8 sm:p-14 max-w-7xl mx-auto z-10">
+          <Link
+            to="/services"
+            className="text-sky-300 text-xs font-bold hover:text-white mb-4 inline-flex items-center gap-1.5 transition-colors"
+          >
             ← Back to Services
           </Link>
-          <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight">{service.title}</h1>
-          <p className="text-blue-100 text-sm mt-1">Professional residential and commercial service in Abu Dhabi</p>
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight mb-2">
+            {service.title}
+          </h1>
+          <p className="text-sky-100 text-sm sm:text-base font-medium">
+            Professional residential and commercial services across Abu Dhabi
+          </p>
         </div>
       </div>
 
-      {/* Content Body */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-10">
+      {/* Main Content & Sidebar */}
+      <section className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main Details */}
-          <div className="md:col-span-2">
-            <h2 className="text-2xl font-extrabold text-slate-900 mb-4">Overview</h2>
-            <p className="text-slate-600 leading-relaxed mb-10 text-base">
-              {service.description} Our professional team brings hotel-standard techniques, hospital-grade eco-friendly cleaning detergents, and industrial equipment to ensure your space is spotless. Whether for a one-off visit or regular maintenance, CitiMaids guarantees your complete satisfaction.
+          <div className="lg:col-span-2">
+            <span className="text-blue-900 font-extrabold text-xs uppercase tracking-widest block mb-2">
+              Service Specs
+            </span>
+            <h2 className="text-3xl font-black text-slate-900 mb-6 tracking-tight">Overview & Scope</h2>
+            <p className="text-slate-600 leading-relaxed mb-12 text-base sm:text-lg">
+              {service.description} Our trained and police-vetted specialists bring 5-star hotel cleaning standards, UAE-approved eco-friendly products, and high-performance industrial equipment to ensure your living space is pristine and sanitized.
             </p>
 
-            {/* Inclusions */}
-            <h3 className="text-xl font-bold text-slate-900 mb-5">What's Included</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-12">
+            {/* Checklist */}
+            <h3 className="text-2xl font-black text-slate-900 mb-6 tracking-tight">What Is Included</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-14">
               {service.included.map((item) => (
-                <div key={item} className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3.5">
-                  <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">
+                <div
+                  key={item}
+                  className="flex items-start gap-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl p-4.5 shadow-sm"
+                >
+                  <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 text-xs font-black shadow-sm mt-0.5">
                     ✓
                   </div>
-                  <span className="text-slate-700 text-sm font-medium">{item}</span>
+                  <span className="text-slate-800 text-sm font-semibold leading-snug">{item}</span>
                 </div>
               ))}
             </div>
 
-            {/* Our Process */}
-            <h3 className="text-xl font-bold text-slate-900 mb-5">Our 4-Step Standard</h3>
+            {/* Process */}
+            <h3 className="text-2xl font-black text-slate-900 mb-6 tracking-tight">Our 4-Step Standard</h3>
             <div className="space-y-4">
               {[
-                'Prompt arrival with all equipment and vetted team members',
-                'Initial walk-through and customized area assessment',
-                'Methodical deep cleaning and surface sanitization',
-                'Final supervisor inspection and customer sign-off',
+                { title: 'Prompt Arrival', desc: 'Uniformed crew arrives on time with all vacuums, mops, and eco detergents.' },
+                { title: 'Property Inspection', desc: 'Customized assessment of key priority zones and high-touch areas.' },
+                { title: 'Methodical Deep Clean', desc: 'Systematic room-by-room degreasing, scrubbing, sanitization, and dust removal.' },
+                { title: 'Supervisor Sign-Off', desc: 'Final checklist walkthrough to guarantee your 100% satisfaction.' },
               ].map((step, i) => (
-                <div key={i} className="flex items-start gap-4 p-3.5 rounded-xl bg-slate-50/70 border border-slate-100">
+                <div
+                  key={step.title}
+                  className="flex items-start gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-200/70"
+                >
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
-                    style={{ background: 'linear-gradient(135deg,#0A2342,#1E3A8A)' }}
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0 shadow-md"
+                    style={{ background: 'linear-gradient(135deg, #0A2342 0%, #1E3A8A 100%)' }}
                   >
                     0{i + 1}
                   </div>
-                  <p className="text-slate-700 text-sm pt-1 font-medium">{step}</p>
+                  <div>
+                    <h4 className="font-extrabold text-slate-900 text-base mb-1">{step.title}</h4>
+                    <p className="text-slate-600 text-xs sm:text-sm">{step.desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Pricing & Booking Sidebar */}
-          <div className="md:col-span-1">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
             <div
-              className="rounded-2xl p-7 sticky top-24 border border-blue-100 bg-slate-50"
-              style={{ boxShadow: '0 4px 24px rgba(10,35,66,0.06)' }}
+              className="rounded-3xl p-8 sticky top-28 border border-slate-200 bg-slate-50 shadow-xl"
             >
-              <div className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Standard Rate</div>
-              <div className="text-3xl font-extrabold text-blue-950 mb-1">
+              <span className="text-xs text-slate-400 font-extrabold uppercase tracking-widest block mb-2">
+                Standard Pricing
+              </span>
+              <div className="text-3xl sm:text-4xl font-black text-blue-950 mb-2">
                 {service.startingPrice}
               </div>
-              <p className="text-slate-500 text-xs mb-6">Transparent pricing with zero hidden booking fees</p>
+              <p className="text-slate-500 text-xs mb-8 leading-relaxed">
+                Flat rates & hourly rates with zero hidden fees. Payment upon inspection.
+              </p>
 
-              <div className="space-y-3">
+              <div className="space-y-3.5">
                 <Link
                   to="/book"
                   state={{ preselectedServiceId: service.id }}
-                  className="block w-full text-center py-3.5 rounded-xl font-bold text-white transition-all hover:scale-105 shadow-md text-sm"
-                  style={{ background: 'linear-gradient(135deg,#0A2342,#1E3A8A)' }}
+                  className="block w-full text-center py-4 rounded-2xl font-black text-white transition-all hover:scale-105 shadow-xl text-sm"
+                  style={{ background: 'linear-gradient(135deg, #0A2342 0%, #1E3A8A 100%)' }}
                 >
                   Book This Service
                 </Link>
+
                 <a
                   href={`https://wa.me/97150000000?text=Hi%20CitiMaids!%20I%20am%20interested%20in%20${encodeURIComponent(service.title)}.`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl font-bold text-white bg-emerald-500 hover:bg-emerald-600 transition-colors text-sm shadow-sm"
+                  className="flex items-center justify-center gap-2.5 w-full py-4 rounded-2xl font-bold text-white bg-emerald-500 hover:bg-emerald-600 transition-all text-sm shadow-md hover:scale-105"
                 >
-                  WhatsApp Quote
+                  <span>Chat on WhatsApp</span>
                 </a>
               </div>
 
-              {/* Guarantees */}
-              <div className="mt-8 pt-6 border-t border-slate-200 space-y-2.5">
+              {/* Badges */}
+              <div className="mt-8 pt-6 border-t border-slate-200 space-y-3">
                 {[
-                  'Insured & ID-verified cleaners',
+                  'Insured & Emirates ID verified staff',
                   '100% Satisfaction guarantee',
-                  'Eco-friendly UAE-approved products',
-                  'Flexible cancellation policy',
-                ].map((badge) => (
-                  <div key={badge} className="text-xs text-slate-600 flex items-center gap-2">
+                  'Hospital-grade eco detergents',
+                  'Free cancellation up to 24 hours',
+                ].map((b) => (
+                  <div key={b} className="text-xs text-slate-600 font-semibold flex items-center gap-2">
                     <span className="text-emerald-500 font-bold">✓</span>
-                    <span>{badge}</span>
+                    <span>{b}</span>
                   </div>
                 ))}
               </div>
@@ -135,26 +161,27 @@ export default function ServiceDetailPage() {
 
       {/* Related Services */}
       {related.length > 0 && (
-        <section className="py-16 bg-slate-50 border-t border-slate-100">
-          <div className="max-w-7xl mx-auto px-6">
-            <h2 className="text-2xl font-extrabold text-slate-900 mb-8">Other Cleaning Services</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <section className="py-24 bg-slate-50 border-t border-slate-200/80">
+          <div className="max-w-7xl mx-auto px-6 sm:px-8">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mb-10">You Might Also Need</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
               {related.map((s) => (
                 <Link
                   key={s.id}
                   to={`/services/${s.id}`}
-                  className="bg-white rounded-2xl overflow-hidden group transition-all duration-200 hover:-translate-y-1 hover:shadow-lg border border-slate-100"
+                  className="bg-white rounded-3xl overflow-hidden group transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl border border-slate-200/80"
                 >
-                  <div className="h-36 bg-slate-100 overflow-hidden">
+                  <div className="h-44 bg-slate-100 overflow-hidden">
                     <img
-                      src={`https://images.unsplash.com/photo-${s.imageId}?w=400&h=200&fit=crop&auto=format`}
+                      src={s.image}
                       alt={s.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
                     />
                   </div>
-                  <div className="p-5">
-                    <h3 className="font-bold text-slate-900 text-base mb-1">{s.title}</h3>
-                    <p className="text-blue-900 font-bold text-xs">{s.startingPrice}</p>
+                  <div className="p-6">
+                    <h3 className="font-extrabold text-slate-900 text-lg mb-1">{s.title}</h3>
+                    <p className="text-blue-900 font-black text-sm">{s.startingPrice}</p>
                   </div>
                 </Link>
               ))}

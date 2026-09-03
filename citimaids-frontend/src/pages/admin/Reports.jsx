@@ -1,27 +1,70 @@
 import { useState, useEffect } from 'react';
 import api from '../../api/axios';
+import { brand, fonts, pageTitle, pageSubtitle, card, solidBtn, outlineBtn, idBadge, statusBadge } from './adminStyles';
 
 const REPORT_TYPES = [
-    { id: 'overview', label: 'Overview Report', desc: 'Summary of bookings and clients', icon: '📊' },
-    { id: 'bookings', label: 'Bookings Report', desc: 'Detailed booking report', icon: '📅' },
-    { id: 'clients', label: 'Clients Report', desc: 'Detailed clients report', icon: '👥' },
-    { id: 'services', label: 'Services Report', desc: 'Services performance report', icon: '⚙️' },
-    { id: 'revenue', label: 'Revenue Report', desc: 'Revenue and earnings report', icon: '💰' },
+    {
+        id: 'overview',
+        label: 'Overview Report',
+        desc: 'Summary of bookings and clients',
+        icon: (
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+        ),
+    },
+    {
+        id: 'bookings',
+        label: 'Bookings Report',
+        desc: 'Detailed booking velocity',
+        icon: (
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+            </svg>
+        ),
+    },
+    {
+        id: 'clients',
+        label: 'Clients Report',
+        desc: 'Customer retention & accounts',
+        icon: (
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+        ),
+    },
+    {
+        id: 'services',
+        label: 'Services Report',
+        desc: 'Performance per service category',
+        icon: (
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><circle cx="12" cy="12" r="3" />
+            </svg>
+        ),
+    },
+    {
+        id: 'revenue',
+        label: 'Revenue Report',
+        desc: 'Yield, billings, and cash flow',
+        icon: (
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        ),
+    },
 ];
 
-const statusColors = { pending: '#f59e0b', confirmed: '#3b82f6', completed: '#10b981', cancelled: '#ef4444' };
+const serviceColorList = ['#059669', '#2563eb', '#7c3aed', '#d97706', '#ec4899', '#0891b2'];
 
-const serviceColorList = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899'];
-
-// Generate mock chart data when API doesn't return it
 const generateLineData = () => {
-    const days = ['May 1', 'May 8', 'May 15', 'May 22', 'May 29'];
-    return days.map((d, i) => ({
+    const days = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Current'];
+    return days.map((d) => ({
         label: d,
         new: Math.round(10 + Math.random() * 15),
-        confirmed: Math.round(6 + Math.random() * 12),
-        completed: Math.round(3 + Math.random() * 10),
-        cancelled: Math.round(1 + Math.random() * 5),
+        confirmed: Math.round(8 + Math.random() * 12),
+        completed: Math.round(6 + Math.random() * 10),
+        cancelled: Math.round(1 + Math.random() * 3),
     }));
 };
 
@@ -31,8 +74,8 @@ export default function Reports() {
     const [recentBookings, setRecentBookings] = useState([]);
     const [services, setServices] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [dateFrom, setDateFrom] = useState('2025-05-01');
-    const [dateTo, setDateTo] = useState('2025-05-31');
+    const [dateFrom, setDateFrom] = useState('2026-05-01');
+    const [dateTo, setDateTo] = useState('2026-05-31');
     const [lineData] = useState(generateLineData);
 
     useEffect(() => { fetchData(); }, []);
@@ -61,25 +104,69 @@ export default function Reports() {
     const revenue = (completed_cnt * 350) || 54300;
 
     const summaryCards = [
-        { label: 'Total Bookings', value: total, change: '+12%', icon: '📅', color: '#3b82f6' },
-        { label: 'Completed Bookings', value: completed_cnt, change: '+8%', icon: '✅', color: '#10b981' },
-        { label: 'Total Clients', value: totalClients, change: '+10%', icon: '👥', color: '#8b5cf6' },
-        { label: 'Total Revenue', value: `₱${revenue.toLocaleString()}`, change: '+15%', icon: '💰', color: '#f59e0b' },
+        {
+            label: 'Total Bookings',
+            value: total,
+            change: '+12%',
+            color: '#2563eb',
+            iconBg: '#eff6ff',
+            icon: (
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+                </svg>
+            ),
+        },
+        {
+            label: 'Completed Bookings',
+            value: completed_cnt,
+            change: '+8%',
+            color: '#059669',
+            iconBg: '#ecfdf5',
+            icon: (
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            ),
+        },
+        {
+            label: 'Total Clients',
+            value: totalClients,
+            change: '+10%',
+            color: '#7c3aed',
+            iconBg: '#f5f3ff',
+            icon: (
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                </svg>
+            ),
+        },
+        {
+            label: 'Total Revenue',
+            value: `AED ${revenue.toLocaleString()}`,
+            change: '+15%',
+            color: '#d97706',
+            iconBg: '#fffbeb',
+            icon: (
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            ),
+        },
     ];
 
     const svcData = services.length > 0
         ? services.map((s, i) => ({ name: s.name, count: s.bookings_count || Math.round(10 + Math.random() * 30), color: serviceColorList[i % serviceColorList.length] }))
         : [
-            { name: 'Home Cleaning', count: 38, color: '#10b981' },
-            { name: 'Office Cleaning', count: 26, color: '#3b82f6' },
-            { name: 'Villa Cleaning', count: 18, color: '#8b5cf6' },
-            { name: 'Deep Cleaning', count: 15, color: '#f59e0b' },
-            { name: 'Others', count: 11, color: '#ec4899' },
+            { name: 'Home Cleaning', count: 38, color: '#059669' },
+            { name: 'Office Cleaning', count: 26, color: '#2563eb' },
+            { name: 'Villa Cleaning', count: 18, color: '#7c3aed' },
+            { name: 'Deep Cleaning', count: 15, color: '#d97706' },
+            { name: 'Move-in / Out', count: 11, color: '#dc2626' },
         ];
     const svcTotal = svcData.reduce((a, s) => a + s.count, 0);
 
-    // Donut chart calculation
-    const donutR = 60, cx = 80, cy = 80, strokeWidth = 22;
+    const donutR = 60, cx = 80, cy = 80, strokeWidth = 20;
     const circumference = 2 * Math.PI * donutR;
     let offset = 0;
     const donutSegments = svcData.map(s => {
@@ -89,122 +176,147 @@ export default function Reports() {
         return seg;
     });
 
-    // Line chart SVG
-    const W = 440, H = 140;
+    const W = 460, H = 150;
     const pts_count = lineData.length;
     const allVals = lineData.flatMap(d => [d.new, d.confirmed, d.completed, d.cancelled]);
     const maxVal = Math.max(...allVals, 1);
     const toX = i => 40 + (i / (pts_count - 1)) * (W - 60);
-    const toY = v => H - 20 - ((v / maxVal) * (H - 35));
+    const toY = v => H - 24 - ((v / maxVal) * (H - 40));
     const makePath = key => lineData.map((d, i) => `${i === 0 ? 'M' : 'L'} ${toX(i)} ${toY(d[key])}`).join(' ');
 
     const lineKeys = [
-        { key: 'new', color: '#3b82f6', label: 'New' },
-        { key: 'confirmed', color: '#10b981', label: 'Confirmed' },
-        { key: 'completed', color: '#8b5cf6', label: 'Completed' },
-        { key: 'cancelled', color: '#ef4444', label: 'Cancelled' },
+        { key: 'new', color: '#2563eb', label: 'New' },
+        { key: 'confirmed', color: '#059669', label: 'Confirmed' },
+        { key: 'completed', color: '#7c3aed', label: 'Completed' },
+        { key: 'cancelled', color: '#dc2626', label: 'Cancelled' },
     ];
 
-    // Top services bar
     const maxSvc = Math.max(...svcData.map(s => s.count), 1);
-
-    const avatarColors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
+    const avatarColors = ['#2563eb', '#7c3aed', '#ec4899', '#d97706', '#059669'];
 
     return (
-        <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", display: 'flex', flexDirection: 'column', gap: 0 }}>
+        <div style={{ fontFamily: fonts.body }}>
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
                 <div>
-                    <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a1f37', margin: 0 }}>Reports</h1>
-                    <p style={{ color: '#64748b', fontSize: 14, margin: '4px 0 0' }}>View and export business reports</p>
+                    <h1 style={pageTitle}>Operational Reports</h1>
+                    <p style={pageSubtitle}>Performance telemetry, booking analytics, and revenue yield</p>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 13, color: '#64748b' }}>📅</span>
-                        <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={dateInput} />
-                        <span style={{ fontSize: 13, color: '#64748b' }}>to</span>
-                        <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={dateInput} />
-                    </div>
-                    <button style={solidBtn} onClick={fetchData}>Generate Report</button>
-                    <button style={outlineBtn}>
-                        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        background: '#fff',
+                        border: `1.5px solid ${brand.border}`,
+                        borderRadius: 12,
+                        padding: '6px 12px',
+                    }}>
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#64748b" strokeWidth="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
                         </svg>
-                        Export
+                        <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={dateInputStyle} />
+                        <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>to</span>
+                        <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={dateInputStyle} />
+                    </div>
+                    <button style={solidBtn} onClick={fetchData}>
+                        Generate Report
+                    </button>
+                    <button style={outlineBtn}>
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                        </svg>
+                        Export CSV
                     </button>
                 </div>
             </div>
 
-            {/* Main grid: sidebar + content */}
-            <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 20 }}>
+            {/* Main grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 24, alignItems: 'start' }}>
                 {/* Report types sidebar */}
-                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 8, alignSelf: 'start' }}>
-                    {REPORT_TYPES.map(rt => (
-                        <button key={rt.id} onClick={() => setActiveReport(rt.id)} style={{
-                            width: '100%', textAlign: 'left', padding: '12px 14px', border: 'none', borderRadius: 8,
-                            background: activeReport === rt.id ? '#eff6ff' : 'transparent',
-                            cursor: 'pointer', marginBottom: 2,
-                            borderLeft: activeReport === rt.id ? '3px solid #3b82f6' : '3px solid transparent',
-                        }}>
-                            <div style={{ fontSize: 14, fontWeight: 600, color: activeReport === rt.id ? '#1d4ed8' : '#1a1f37' }}>
-                                {rt.icon} {rt.label}
-                            </div>
-                            <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{rt.desc}</div>
-                        </button>
-                    ))}
+                <div style={{ ...card, padding: 10 }}>
+                    {REPORT_TYPES.map(rt => {
+                        const isActive = activeReport === rt.id;
+                        return (
+                            <button
+                                key={rt.id}
+                                onClick={() => setActiveReport(rt.id)}
+                                style={{
+                                    width: '100%',
+                                    textAlign: 'left',
+                                    padding: '12px 14px',
+                                    border: 'none',
+                                    borderRadius: 12,
+                                    background: isActive ? 'linear-gradient(135deg, #0A2342 0%, #1E3A8A 100%)' : 'transparent',
+                                    color: isActive ? '#fff' : brand.navy,
+                                    cursor: 'pointer',
+                                    marginBottom: 4,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 12,
+                                    transition: 'all 0.15s',
+                                    boxShadow: isActive ? '0 4px 12px rgba(10,35,66,0.2)' : 'none',
+                                }}
+                            >
+                                <span style={{ color: isActive ? '#60a5fa' : brand.royal }}>{rt.icon}</span>
+                                <div>
+                                    <div style={{ fontSize: 13.5, fontWeight: 700 }}>{rt.label}</div>
+                                    <div style={{ fontSize: 11, color: isActive ? '#bfdbfe' : '#94a3b8', marginTop: 1 }}>{rt.desc}</div>
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {/* Content */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                     {/* Summary Cards */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
                         {summaryCards.map((c, i) => (
-                            <div key={i} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '18px 20px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                    <span style={{ fontSize: 12, color: '#64748b', fontWeight: 500 }}>{c.label}</span>
-                                    <div style={{ width: 34, height: 34, borderRadius: 8, background: `${c.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{c.icon}</div>
+                            <div key={i} style={{ ...card, padding: '20px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                    <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.6 }}>{c.label}</span>
+                                    <div style={{ width: 36, height: 36, borderRadius: 10, background: c.iconBg, color: c.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        {c.icon}
+                                    </div>
                                 </div>
-                                <div style={{ fontSize: 28, fontWeight: 700, color: '#1a1f37' }}>{c.value}</div>
-                                <div style={{ fontSize: 12, color: '#10b981', fontWeight: 600, marginTop: 4 }}>
-                                    {c.change} <span style={{ color: '#94a3b8', fontWeight: 400 }}>vs Apr</span>
+                                <div style={{ fontSize: 24, fontWeight: 800, color: brand.navy, fontFamily: fonts.heading }}>{c.value}</div>
+                                <div style={{ fontSize: 11.5, color: '#059669', fontWeight: 700, marginTop: 4 }}>
+                                    {c.change} <span style={{ color: '#94a3b8', fontWeight: 500 }}>vs previous</span>
                                 </div>
                             </div>
                         ))}
                     </div>
 
                     {/* Charts row */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 16 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 20 }}>
                         {/* Line Chart */}
-                        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 24 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                        <div style={{ ...card, padding: '24px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                                 <div>
-                                    <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1f37' }}>Bookings Overview</div>
-                                    <div style={{ fontSize: 12, color: '#94a3b8' }}>May 1 – May 31, 2025</div>
+                                    <div style={{ fontSize: 16, fontWeight: 800, color: brand.navy, fontFamily: fonts.heading }}>Booking Trajectory</div>
+                                    <div style={{ fontSize: 12, color: '#94a3b8' }}>Weekly trend breakdown</div>
                                 </div>
-                                <div style={{ display: 'flex', gap: 14 }}>
+                                <div style={{ display: 'flex', gap: 12 }}>
                                     {lineKeys.map(k => (
-                                        <span key={k.key} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#64748b' }}>
-                                            <span style={{ width: 20, height: 2, background: k.color, display: 'inline-block', borderRadius: 2 }} />
+                                        <span key={k.key} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: '#64748b' }}>
+                                            <span style={{ width: 14, height: 3, background: k.color, display: 'inline-block', borderRadius: 2 }} />
                                             {k.label}
                                         </span>
                                     ))}
                                 </div>
                             </div>
                             <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
-                                {/* Grid lines */}
-                                {[0, 0.25, 0.5, 0.75, 1].map((f, i) => (
+                                {[0, 0.33, 0.66, 1].map((f, i) => (
                                     <line key={i} x1={40} y1={toY(maxVal * f)} x2={W - 20} y2={toY(maxVal * f)}
-                                        stroke="#e2e8f0" strokeWidth="1" strokeDasharray="4 4" />
+                                        stroke="#f1f5f9" strokeWidth="1" strokeDasharray="3 3" />
                                 ))}
-                                {/* X labels */}
                                 {lineData.map((d, i) => (
-                                    <text key={i} x={toX(i)} y={H - 2} textAnchor="middle" fontSize="10" fill="#94a3b8">{d.label}</text>
+                                    <text key={i} x={toX(i)} y={H - 4} textAnchor="middle" fontSize="10" fontWeight="600" fill="#94a3b8">{d.label}</text>
                                 ))}
-                                {/* Lines */}
                                 {lineKeys.map(k => (
                                     <path key={k.key} d={makePath(k.key)} fill="none" stroke={k.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                                 ))}
-                                {/* Dots */}
                                 {lineKeys.map(k =>
                                     lineData.map((d, i) => (
                                         <circle key={`${k.key}-${i}`} cx={toX(i)} cy={toY(d[k.key])} r="3.5" fill={k.color} stroke="#fff" strokeWidth="1.5" />
@@ -214,11 +326,11 @@ export default function Reports() {
                         </div>
 
                         {/* Donut Chart */}
-                        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 24 }}>
-                            <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1f37', marginBottom: 4 }}>Bookings by Service</div>
-                            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>Distribution this period</div>
+                        <div style={{ ...card, padding: '24px' }}>
+                            <div style={{ fontSize: 16, fontWeight: 800, color: brand.navy, marginBottom: 2, fontFamily: fonts.heading }}>Service Mix</div>
+                            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>Volume allocation</div>
                             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-                                <svg width="160" height="160" viewBox="0 0 160 160">
+                                <svg width="150" height="150" viewBox="0 0 160 160">
                                     {donutSegments.map((s, i) => (
                                         <circle key={i}
                                             cx={cx} cy={cy} r={donutR}
@@ -230,99 +342,76 @@ export default function Reports() {
                                             style={{ transition: 'all 0.3s' }}
                                         />
                                     ))}
-                                    <text x={cx} y={cy - 6} textAnchor="middle" fontSize="20" fontWeight="700" fill="#1a1f37">{svcTotal}</text>
-                                    <text x={cx} y={cy + 12} textAnchor="middle" fontSize="10" fill="#94a3b8">Total</text>
+                                    <text x={cx} y={cy - 4} textAnchor="middle" fontSize="22" fontWeight="800" fill={brand.navy} fontFamily={fonts.heading}>{svcTotal}</text>
+                                    <text x={cx} y={cy + 14} textAnchor="middle" fontSize="11" fontWeight="600" fill="#94a3b8">Total</text>
                                 </svg>
                             </div>
-                            {svcData.map((s, i) => (
-                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
-                                        <span style={{ fontSize: 12, color: '#374151' }}>{s.name}</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                {svcData.map((s, i) => (
+                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
+                                            <span style={{ fontSize: 12, color: '#334155', fontWeight: 600 }}>{s.name}</span>
+                                        </div>
+                                        <span style={{ fontSize: 12, fontWeight: 700, color: brand.navy }}>{Math.round(s.count / svcTotal * 100)}%</span>
                                     </div>
-                                    <span style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>{Math.round(s.count / svcTotal * 100)}%</span>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
                     </div>
 
-                    {/* Bottom row: Recent bookings + Top services */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 16 }}>
-                        {/* Recent Bookings */}
-                        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 24 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                                <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1f37' }}>Recent Bookings</div>
-                                <a href="#" style={{ fontSize: 13, color: '#3b82f6', textDecoration: 'none', fontWeight: 600 }}>View all →</a>
+                    {/* Bottom Row */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 20 }}>
+                        {/* Recent Bookings in Period */}
+                        <div style={{ ...card, padding: '24px' }}>
+                            <div style={{ fontSize: 16, fontWeight: 800, color: brand.navy, marginBottom: 14, fontFamily: fonts.heading }}>
+                                Audit Sample Records
                             </div>
-                            {/* Table mini header */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '80px 1.2fr 1.2fr 1fr 90px', gap: 8, paddingBottom: 10, borderBottom: '1px solid #f1f5f9' }}>
-                                {['BOOKING', 'CLIENT', 'SERVICE', 'DATE', 'STATUS'].map(h => (
-                                    <span key={h} style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.8 }}>{h}</span>
-                                ))}
-                            </div>
-                            {recentBookings.length === 0
-                                ? ([...Array(5)].map((_, i) => {
-                                    const mockStatuses = ['pending', 'confirmed', 'pending', 'confirmed', 'completed'];
-                                    const mockNames = ['Juan Dela Cruz', 'Maria Santos', 'Ana Reyes', 'Pedro Garcia', 'John Paul'];
-                                    const mockSvcs = ['Home Cleaning', 'Office Cleaning', 'Villa Cleaning', 'Deep Cleaning', 'Home Cleaning'];
-                                    const s = mockStatuses[i];
-                                    const initials = mockNames[i].split(' ').map(n => n[0]).join('').slice(0, 2);
-                                    const avColor = avatarColors[i % avatarColors.length];
-                                    return (
-                                        <div key={i} style={{ display: 'grid', gridTemplateColumns: '80px 1.2fr 1.2fr 1fr 90px', gap: 8, padding: '12px 0', borderBottom: '1px solid #f8fafc', alignItems: 'center' }}>
-                                            <span style={{ fontSize: 13, fontWeight: 600, color: '#3b82f6' }}>#{String(1008 - i).padStart(4, '0')}</span>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <div style={{ width: 26, height: 26, borderRadius: '50%', background: avColor, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700 }}>{initials}</div>
-                                                <span style={{ fontSize: 13, color: '#1a1f37' }}>{mockNames[i]}</span>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                {recentBookings.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '30px 0', color: '#94a3b8', fontSize: 13 }}>
+                                        No recent bookings to audit for this range.
+                                    </div>
+                                ) : (
+                                    recentBookings.map(b => (
+                                        <div key={b.id} style={{
+                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                            padding: '12px 0', borderBottom: '1px solid #f1f5f9',
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                <span style={idBadge}>#{String(b.id).padStart(4, '0')}</span>
+                                                <div>
+                                                    <div style={{ fontSize: 13, fontWeight: 700, color: brand.navy }}>{b.client?.name || 'Client'}</div>
+                                                    <div style={{ fontSize: 11, color: '#64748b' }}>{b.service?.name}</div>
+                                                </div>
                                             </div>
-                                            <span style={{ fontSize: 13, color: '#64748b' }}>{mockSvcs[i]}</span>
-                                            <span style={{ fontSize: 12, color: '#94a3b8' }}>May {18 - i * 1}, 2025</span>
-                                            <span style={{ fontSize: 11, fontWeight: 700, color: statusColors[s], background: s === 'pending' ? '#fef3c7' : s === 'confirmed' ? '#dbeafe' : '#d1fae5', padding: '3px 8px', borderRadius: 6 }}>
-                                                {s.charAt(0).toUpperCase() + s.slice(1)}
+                                            <span style={statusBadge(b.status)}>
+                                                {b.status?.charAt(0).toUpperCase() + b.status?.slice(1)}
                                             </span>
                                         </div>
-                                    );
-                                }))
-                                : recentBookings.map(b => {
-                                    const initials = b.client?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '??';
-                                    const avColor = avatarColors[b.id % avatarColors.length];
-                                    const s = b.status;
-                                    const sc = statusColors[s] || '#94a3b8';
-                                    return (
-                                        <div key={b.id} style={{ display: 'grid', gridTemplateColumns: '80px 1.2fr 1.2fr 1fr 90px', gap: 8, padding: '12px 0', borderBottom: '1px solid #f8fafc', alignItems: 'center' }}>
-                                            <span style={{ fontSize: 13, fontWeight: 600, color: '#3b82f6' }}>#{String(b.id).padStart(4, '0')}</span>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <div style={{ width: 26, height: 26, borderRadius: '50%', background: avColor, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700 }}>{initials}</div>
-                                                <span style={{ fontSize: 13, color: '#1a1f37' }}>{b.client?.name}</span>
-                                            </div>
-                                            <span style={{ fontSize: 13, color: '#64748b' }}>{b.service?.name}</span>
-                                            <span style={{ fontSize: 12, color: '#94a3b8' }}>{new Date(b.preferred_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                                            <span style={{ fontSize: 11, fontWeight: 700, color: sc, background: sc + '20', padding: '3px 8px', borderRadius: 6 }}>
-                                                {s.charAt(0).toUpperCase() + s.slice(1)}
-                                            </span>
-                                        </div>
-                                    );
-                                })
-                            }
+                                    ))
+                                )}
+                            </div>
                         </div>
 
-                        {/* Top Services */}
-                        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 24 }}>
-                            <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1f37', marginBottom: 4 }}>Top Services</div>
-                            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 20 }}>By booking volume</div>
+                        {/* Top Services Bar */}
+                        <div style={{ ...card, padding: '24px' }}>
+                            <div style={{ fontSize: 16, fontWeight: 800, color: brand.navy, marginBottom: 4, fontFamily: fonts.heading }}>
+                                Performance by Category
+                            </div>
+                            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 18 }}>Ranked by request volume</div>
                             {svcData.map((s, i) => (
-                                <div key={i} style={{ marginBottom: 18 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                                        <span style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>{s.name}</span>
-                                        <span style={{ fontSize: 13, fontWeight: 700, color: '#1a1f37' }}>{s.count}</span>
+                                <div key={i} style={{ marginBottom: 14 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12 }}>
+                                        <span style={{ fontWeight: 600, color: brand.navy }}>{s.name}</span>
+                                        <span style={{ fontWeight: 800, color: brand.navy }}>{s.count} orders</span>
                                     </div>
-                                    <div style={{ height: 8, background: '#f1f5f9', borderRadius: 6, overflow: 'hidden' }}>
+                                    <div style={{ height: 6, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
                                         <div style={{
                                             height: '100%',
                                             width: `${Math.round(s.count / maxSvc * 100)}%`,
                                             background: s.color,
-                                            borderRadius: 6,
-                                            transition: 'width 0.4s ease',
+                                            borderRadius: 4,
                                         }} />
                                     </div>
                                 </div>
@@ -335,7 +424,13 @@ export default function Reports() {
     );
 }
 
-/* ── Styles ─────────────────────────────────────── */
-const dateInput = { padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, color: '#374151', outline: 'none', background: '#fff' };
-const solidBtn = { background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 };
-const outlineBtn = { background: '#fff', color: '#374151', border: '1px solid #e2e8f0', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 };
+const dateInputStyle = {
+    border: 'none',
+    outline: 'none',
+    fontSize: 12.5,
+    fontWeight: 600,
+    color: '#0A2342',
+    background: 'transparent',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+};

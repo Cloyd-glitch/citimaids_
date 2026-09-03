@@ -3,30 +3,72 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { services } from '../data/services';
 import api from '../api/axios';
 
-const STEPS = ['Select Service', 'Property Specs', 'Schedule', 'Contact & Address', 'Review & Confirm'];
+const STEPS = [
+  { key: 'service',  label: 'Service',     icon: StepServiceIcon },
+  { key: 'datetime', label: 'Date & Time', icon: StepDateIcon },
+  { key: 'address',  label: 'Address',     icon: StepAddressIcon },
+  { key: 'contact',  label: 'Contact',     icon: StepContactIcon },
+  { key: 'review',   label: 'Review',      icon: StepReviewIcon },
+];
+
+const timeSlots = [
+  '7:00 AM', '9:00 AM', '11:00 AM',
+  '1:00 PM', '3:00 PM', '5:00 PM',
+];
 
 const propertyTypes = ['Apartment', 'Villa', 'Office', 'Studio', 'Townhouse', 'Commercial Facility'];
-const timeSlots = [
-  '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM',
-  '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM'
-];
 
-const abuDhabiDistricts = [
-  'Al Reem Island',
-  'Al Maryah Island',
-  'Saadiyat Island',
-  'Yas Island',
-  'Al Khalidiyah',
-  'Corniche & Downtown',
-  'Al Bateen',
-  'Al Mushrif',
-  'Al Karamah',
-  'Al Muroor',
-  'Al Raha Beach',
-  'Khalifa City A',
-  'Mohammed Bin Zayed City',
-  'Other Abu Dhabi Area',
-];
+export const uaeDistricts = {
+  'Abu Dhabi': [
+    'Al Reem Island',
+    'Al Maryah Island',
+    'Saadiyat Island',
+    'Yas Island',
+    'Al Khalidiyah',
+    'Corniche & Downtown',
+    'Al Bateen',
+    'Al Mushrif',
+    'Al Karamah',
+    'Al Muroor',
+    'Al Raha Beach',
+    'Khalifa City A',
+    'Mohammed Bin Zayed City',
+    'Other Abu Dhabi Area',
+  ],
+  'Dubai': [
+    'Downtown Dubai',
+    'Dubai Marina',
+    'Jumeirah Beach Residence (JBR)',
+    'Palm Jumeirah',
+    'Business Bay',
+    'Jumeirah Lakes Towers (JLT)',
+    'Dubai Hills Estate',
+    'Arabian Ranches',
+    'Damac Hills',
+    'Al Barsha',
+    'Jumeirah Village Circle (JVC)',
+    'Jumeirah Village Triangle (JVT)',
+    'Dubai Creek Harbour',
+    'Mirdif',
+    'Deira / Bur Dubai',
+    'Other Dubai Area',
+  ],
+  'Sharjah': [
+    'Al Majaz',
+    'Al Nahda',
+    'Al Qasimia',
+    'Al Taawun',
+    'Al Khan',
+    'Al Mamzar',
+    'Muwaileh Commercial',
+    'University City',
+    'Al Zahia (Uptown)',
+    'Al Heerah Suburb',
+    'Al Suyoh',
+    'Al Rahmaniya',
+    'Other Sharjah Area',
+  ],
+};
 
 export default function BookingPage() {
   const navigate = useNavigate();
@@ -41,21 +83,29 @@ export default function BookingPage() {
     rooms: '2',
     bathrooms: '2',
     date: new Date().toISOString().split('T')[0],
-    time: '09:00 AM',
+    time: '9:00 AM',
     name: '',
     phone: '',
     email: '',
+    city: 'Abu Dhabi',
     district: 'Al Reem Island',
-    address: '',
+    streetAddress: '',
+    zipCode: '',
     notes: '',
   });
 
-  const set = (field, value) =>
-    setData((prev) => ({ ...prev, [field]: value }));
+  const set = (field, value) => setData((prev) => ({ ...prev, [field]: value }));
+
+  const handleCityChange = (newCity) => {
+    setData((prev) => ({
+      ...prev,
+      city: newCity,
+      district: uaeDistricts[newCity]?.[0] || '',
+    }));
+  };
 
   const selectedService = services.find((s) => s.id === data.serviceId) || services[0];
 
-  // Dynamic estimate calculation
   const estimate = useMemo(() => {
     if (selectedService.rateUnit === 'flat') {
       return { hours: 'Full Day', total: selectedService.basePrice, note: 'Guaranteed Flat Handover Rate' };
@@ -63,7 +113,6 @@ export default function BookingPage() {
     if (selectedService.rateUnit === 'item' || selectedService.rateUnit === 'session') {
       return { hours: 'Per Service', total: selectedService.basePrice, note: 'Starting Base Rate' };
     }
-
     let estimatedHours = 2.5;
     if (data.propertyType === 'Villa') {
       estimatedHours = data.rooms === '4' ? 6 : data.rooms === '5+' ? 8 : 5;
@@ -73,364 +122,501 @@ export default function BookingPage() {
       else if (data.rooms === '3') estimatedHours = 4.5;
       else estimatedHours = 6;
     }
-
     const total = Math.round(estimatedHours * selectedService.basePrice);
-    return {
-      hours: `~${estimatedHours} hrs`,
-      total,
-      note: `Estimated based on ${data.propertyType} (${data.rooms} Bed)`,
-    };
+    return { hours: `~${estimatedHours} hrs`, total, note: `Estimated based on ${data.propertyType} (${data.rooms} Bed)` };
   }, [selectedService, data.propertyType, data.rooms]);
 
   const canProceed = () => {
     if (step === 0) return !!data.serviceId;
-    if (step === 1) return !!data.propertyType && !!data.rooms && !!data.bathrooms;
-    if (step === 2) return !!data.date && !!data.time;
-    if (step === 3) return !!data.name && !!data.phone && !!data.address;
+    if (step === 1) return !!data.date && !!data.time;
+    if (step === 2) return !!data.streetAddress && !!data.district && !!data.city;
+    if (step === 3) return !!data.name && !!data.phone;
     return true;
   };
 
   const handleConfirm = async () => {
     setLoading(true);
     let bookingId = 'CM' + Date.now().toString().slice(-6);
-
     try {
-      // Send to citimaids-api backend
       const res = await api.post('/bookings', {
         name: data.name,
         contact_number: data.phone,
         email: data.email || null,
-        service_id: 1, // mapped to active service
+        service_id: 1,
         preferred_date: data.date,
-        address: `${data.district ? data.district + ', ' : ''}${data.address}`,
+        address: `${data.district ? data.district + ', ' : ''}${data.streetAddress}${data.city ? ', ' + data.city : ''}${data.zipCode ? ' ' + data.zipCode : ''}`,
         notes: `Property: ${data.propertyType}, ${data.rooms} Bed, ${data.bathrooms} Bath | Time: ${data.time} | Est: AED ${estimate.total} | Notes: ${data.notes || 'None'}`,
       });
-
       if (res.data?.booking?.id) {
         bookingId = `CM${res.data.booking.id.toString().padStart(5, '0')}`;
       }
     } catch (err) {
-      console.warn('Backend API notification skipped or offline, proceeding with direct confirmation:', err);
+      console.warn('Backend API notification skipped or offline:', err);
     } finally {
       setLoading(false);
       navigate('/booking-confirmation', {
-        state: {
-          data,
-          bookingId,
-          service: selectedService,
-          estimate,
-        },
+        state: { data, bookingId, service: selectedService, estimate },
       });
     }
   };
 
   const todayStr = new Date().toISOString().split('T')[0];
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '—';
+    return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const freshnessIndex = useMemo(() => {
+    const base = selectedService.basePrice;
+    if (base >= 300) return 'S+';
+    if (base >= 60)  return 'S4';
+    if (base >= 45)  return 'S3';
+    return 'S4';
+  }, [selectedService]);
+
   return (
-    <div className="min-h-[85vh] bg-slate-50 py-12">
-      <div className="max-w-3xl mx-auto px-6">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-2">Book a Cleaning</h1>
-          <p className="text-slate-500 text-sm">Fill in your details below for instant scheduling</p>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+      {/* ═══ Hero Banner ═══ */}
+      <div style={{
+        background: 'linear-gradient(135deg, #061429 0%, #0A2342 50%, #1E3A8A 100%)',
+        padding: '120px 24px 48px',
+        textAlign: 'center',
+      }}>
+        <div style={{ maxWidth: 560, margin: '0 auto' }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: 14,
+            background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(12px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 16px', border: '1px solid rgba(255,255,255,0.15)',
+          }}>
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#60a5fa" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+          </div>
+          <h1 style={{ color: '#fff', fontSize: 32, fontWeight: 800, margin: '0 0 6px', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.5px' }}>
+            Book a Cleaning
+          </h1>
+          <p style={{ color: '#93c5fd', fontSize: 14, fontWeight: 500, margin: 0 }}>
+            Fill in your details below for instant scheduling
+          </p>
         </div>
+      </div>
 
-        {/* Step Progress Bar */}
-        <div className="flex items-center justify-between mb-8 overflow-x-auto py-2">
-          {STEPS.map((label, i) => (
-            <div key={label} className="flex items-center flex-1 min-w-[50px]">
-              <div className="flex flex-col items-center">
-                <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                    i < step
-                      ? 'bg-emerald-500 text-white shadow-sm'
-                      : i === step
-                      ? 'text-white shadow-md'
-                      : 'bg-slate-200 text-slate-500'
-                  }`}
-                  style={i === step ? { background: 'linear-gradient(135deg,#0A2342,#1E3A8A)' } : {}}
-                >
-                  {i < step ? '✓' : i + 1}
+      {/* ═══ Step Progress Bar ═══ */}
+      <div style={{ maxWidth: 720, margin: '-24px auto 0', padding: '0 24px', position: 'relative', zIndex: 10 }}>
+        <div style={{
+          background: '#fff', borderRadius: 20, padding: '20px 28px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 8px 32px rgba(10,35,66,0.08)',
+          border: '1px solid #e2e8f0',
+          gap: 0,
+        }}>
+          {STEPS.map((s, i) => {
+            const isDone = i < step;
+            const isCurrent = i === step;
+            return (
+              <div key={s.key} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 'none' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 56 }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: isDone ? '#0A2342' : isCurrent ? '#0A2342' : '#e2e8f0',
+                    color: isDone || isCurrent ? '#fff' : '#94a3b8',
+                    transition: 'all 0.3s',
+                    boxShadow: isCurrent ? '0 4px 12px rgba(10,35,66,0.25)' : 'none',
+                  }}>
+                    {isDone ? (
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <s.icon />
+                    )}
+                  </div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, marginTop: 6, textAlign: 'center',
+                    color: isDone ? '#0A2342' : isCurrent ? '#0A2342' : '#94a3b8',
+                    letterSpacing: 0.2,
+                  }}>{s.label}</span>
                 </div>
-                <span
-                  className={`text-[11px] mt-1.5 hidden sm:block font-bold tracking-tight ${
-                    i === step ? 'text-blue-950' : i < step ? 'text-emerald-600' : 'text-slate-400'
-                  }`}
-                >
-                  {label}
-                </span>
+                {i < STEPS.length - 1 && (
+                  <div style={{
+                    flex: 1, height: 2, margin: '0 6px',
+                    background: isDone ? '#0A2342' : '#e2e8f0',
+                    borderRadius: 1, transition: 'background 0.3s',
+                    marginBottom: 20,
+                  }} />
+                )}
               </div>
-              {i < STEPS.length - 1 && (
-                <div className={`flex-1 h-0.5 mx-2 ${i < step ? 'bg-emerald-400' : 'bg-slate-200'}`} />
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
+      </div>
 
-        {/* Form Card */}
-        <div
-          className="bg-white rounded-2xl p-7 sm:p-9 border border-slate-100"
-          style={{ boxShadow: '0 4px 30px rgba(10,35,66,0.06)' }}
-        >
-          {/* Step 0: Choose Service */}
+      {/* ═══ Main Content (Form + Order Reflection Sidebar) ═══ */}
+      <div className="booking-grid" style={{
+        maxWidth: 1080, margin: '32px auto 64px', padding: '0 24px',
+        display: 'grid', gap: 28,
+        alignItems: 'start',
+      }}>
+        {/* ── Left: Form Card ── */}
+        <div style={{
+          background: '#fff', borderRadius: 20, padding: '36px 32px',
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 4px 24px rgba(10,35,66,0.04)',
+        }}>
+          {/* Step Label */}
+          <div style={{ marginBottom: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: 1.2 }}>
+              Step {step + 1}
+            </span>
+          </div>
+
+          {/* ── STEP 0: Choose Service ── */}
           {step === 0 && (
             <div>
-              <h2 className="text-xl font-bold text-slate-900 mb-4">Choose Service</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {services.map((s) => (
-                  <label
-                    key={s.id}
-                    className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                      data.serviceId === s.id
-                        ? 'border-blue-700 bg-blue-50/70 shadow-sm'
-                        : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="service"
-                      value={s.id}
-                      checked={data.serviceId === s.id}
-                      onChange={() => set('serviceId', s.id)}
-                      className="mt-1 accent-blue-900"
-                    />
-                    <div>
-                      <div className="font-bold text-slate-900 text-sm">{s.title}</div>
-                      <div className="text-xs text-blue-900 font-extrabold mt-0.5">{s.startingPrice}</div>
-                      <div className="text-[11px] text-slate-500 line-clamp-1 mt-1">{s.description}</div>
-                    </div>
-                  </label>
-                ))}
+              <h2 style={{ fontSize: 26, fontWeight: 800, color: '#0A2342', margin: '0 0 4px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                What do you need cleaned?
+              </h2>
+              <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 24px' }}>
+                Select the service that best fits your property.
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                {services.map((s) => {
+                  const isSelected = data.serviceId === s.id;
+                  return (
+                    <label key={s.id} style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 12,
+                      padding: '16px 16px', borderRadius: 14,
+                      border: isSelected ? '2px solid #0A2342' : '1.5px solid #e2e8f0',
+                      background: isSelected ? '#eff6ff' : '#fff',
+                      cursor: 'pointer', transition: 'all 0.2s',
+                    }}>
+                      <input
+                        type="radio" name="service" value={s.id}
+                        checked={isSelected}
+                        onChange={() => set('serviceId', s.id)}
+                        style={{ marginTop: 3, accentColor: '#0A2342' }}
+                      />
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: '#0A2342' }}>{s.title}</div>
+                        <div style={{ fontSize: 12, fontWeight: 800, color: '#2563eb', marginTop: 2 }}>{s.startingPrice}</div>
+                        <div style={{ fontSize: 11, color: '#64748b', marginTop: 3, lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {s.description}
+                        </div>
+                      </div>
+                    </label>
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {/* Step 1: Property Details */}
+          {/* ── STEP 1: Date & Time ── */}
           {step === 1 && (
             <div>
-              <h2 className="text-xl font-bold text-slate-900 mb-5">Property Specs</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5">Property Type</label>
-                  <select
-                    value={data.propertyType}
-                    onChange={(e) => set('propertyType', e.target.value)}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500"
-                  >
-                    {propertyTypes.map((t) => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
+              <h2 style={{ fontSize: 26, fontWeight: 800, color: '#0A2342', margin: '0 0 4px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                When works for you?
+              </h2>
+              <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 28px' }}>
+                Pick a date and a time that fits your rhythm.
+              </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5">Bedrooms</label>
-                    <select
-                      value={data.rooms}
-                      onChange={(e) => set('rooms', e.target.value)}
-                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500"
-                    >
-                      {['Studio', '1', '2', '3', '4', '5+'].map((r) => (
-                        <option key={r} value={r}>
-                          {r === 'Studio' ? 'Studio' : `${r} Bedroom${r === '1' ? '' : 's'}`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5">Bathrooms</label>
-                    <select
-                      value={data.bathrooms}
-                      onChange={(e) => set('bathrooms', e.target.value)}
-                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500"
-                    >
-                      {['1', '2', '3', '4', '5+'].map((b) => (
-                        <option key={b} value={b}>
-                          {`${b} Bathroom${b === '1' ? '' : 's'}`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+              <span style={labelStyle}>Choose a Date</span>
+              <input
+                type="date" min={todayStr} value={data.date}
+                onChange={(e) => set('date', e.target.value)}
+                style={inputStyle}
+              />
 
-                {/* Live Estimator Preview Card */}
-                <div className="p-4 rounded-xl bg-blue-50/80 border border-blue-100 flex items-center justify-between mt-4">
-                  <div>
-                    <div className="text-xs text-blue-900 font-bold uppercase">Estimated Duration & Cost</div>
-                    <div className="text-xs text-slate-500">{estimate.note}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-lg font-extrabold text-blue-950">
-                      AED {estimate.total}
-                    </div>
-                    <div className="text-xs text-slate-600 font-semibold">{estimate.hours}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Schedule */}
-          {step === 2 && (
-            <div>
-              <h2 className="text-xl font-bold text-slate-900 mb-5">Preferred Schedule</h2>
-              <div className="space-y-5">
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5">Select Date</label>
-                  <input
-                    type="date"
-                    min={todayStr}
-                    value={data.date}
-                    onChange={(e) => set('date', e.target.value)}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-700 mb-2">Available Time Slot</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                    {timeSlots.map((t) => (
+              <div style={{ marginTop: 24 }}>
+                <span style={labelStyle}>Choose a Time</span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                  {timeSlots.map((t) => {
+                    const isActive = data.time === t;
+                    return (
                       <button
-                        key={t}
-                        type="button"
+                        key={t} type="button"
                         onClick={() => set('time', t)}
-                        className={`py-2 px-2 rounded-xl text-xs font-bold border transition-all ${
-                          data.time === t
-                            ? 'bg-blue-950 text-white border-blue-950 shadow-sm'
-                            : 'border-slate-200 text-slate-700 hover:border-blue-400 bg-white'
-                        }`}
+                        style={{
+                          padding: '12px 8px', borderRadius: 12, fontSize: 13, fontWeight: 700,
+                          border: isActive ? '2px solid #0A2342' : '1.5px solid #e2e8f0',
+                          background: isActive ? '#0A2342' : '#fff',
+                          color: isActive ? '#fff' : '#334155',
+                          cursor: 'pointer', transition: 'all 0.15s',
+                        }}
                       >
                         {t}
                       </button>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
           )}
 
-          {/* Step 3: Contact & Address */}
-          {step === 3 && (
+          {/* ── STEP 2: Address ── */}
+          {step === 2 && (
             <div>
-              <h2 className="text-xl font-bold text-slate-900 mb-5">Contact Details</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5">Full Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={data.name}
-                    onChange={(e) => set('name', e.target.value)}
-                    placeholder="e.g. Mohammed Al Mansoori"
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500"
-                  />
-                </div>
+              <h2 style={{ fontSize: 26, fontWeight: 800, color: '#0A2342', margin: '0 0 4px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                Where shall we clean?
+              </h2>
+              <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 28px' }}>
+                Your address stays private — shared only with your assigned specialist.
+              </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5">Phone Number *</label>
-                    <input
-                      type="tel"
-                      required
-                      value={data.phone}
-                      onChange={(e) => set('phone', e.target.value)}
-                      placeholder="+971 50 000 0000"
-                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5">Email Address</label>
-                    <input
-                      type="email"
-                      value={data.email}
-                      onChange={(e) => set('email', e.target.value)}
-                      placeholder="client@email.com"
-                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
+              {/* City and District Selection */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5">Abu Dhabi District *</label>
+                  <span style={labelStyle}>City</span>
                   <select
-                    value={data.district}
-                    onChange={(e) => set('district', e.target.value)}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500"
+                    value={data.city}
+                    onChange={(e) => handleCityChange(e.target.value)}
+                    style={selectStyle}
                   >
-                    {abuDhabiDistricts.map((d) => (
-                      <option key={d} value={d}>{d}</option>
+                    {Object.keys(uaeDistricts).map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5">
-                    Building, Apartment, or Villa / Street Address *
-                  </label>
+                  <span style={labelStyle}>{data.city || 'UAE'} District</span>
+                  <select
+                    value={data.district}
+                    onChange={(e) => set('district', e.target.value)}
+                    style={selectStyle}
+                  >
+                    {(uaeDistricts[data.city] || []).map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Street Address */}
+              <div style={{ marginTop: 16 }}>
+                <span style={labelStyle}>Street Address</span>
+                <input
+                  type="text"
+                  value={data.streetAddress}
+                  onChange={(e) => set('streetAddress', e.target.value)}
+                  placeholder="e.g. Tower 2, Apt 1402 or Villa 12, Street 8"
+                  style={inputStyle}
+                />
+              </div>
+
+              {/* Zip Code / Makani */}
+              <div style={{ marginTop: 16 }}>
+                <span style={labelStyle}>
+                  Zip Code / Makani <span style={{ color: '#94a3b8', fontWeight: 400, textTransform: 'none', fontSize: 11 }}>(optional)</span>
+                </span>
+                <input
+                  type="text"
+                  value={data.zipCode}
+                  onChange={(e) => set('zipCode', e.target.value)}
+                  placeholder="e.g. 6967"
+                  style={inputStyle}
+                />
+              </div>
+
+              {/* Access Notes */}
+              <div style={{ marginTop: 16 }}>
+                <span style={labelStyle}>
+                  Access Notes <span style={{ color: '#94a3b8', fontWeight: 400, textTransform: 'none', fontSize: 11 }}>(optional)</span>
+                </span>
+                <textarea
+                  value={data.notes}
+                  onChange={(e) => set('notes', e.target.value)}
+                  placeholder="e.g. Key is with building security, extra focus on balcony..."
+                  rows={3}
+                  style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 3: Contact ── */}
+          {step === 3 && (
+            <div>
+              <h2 style={{ fontSize: 26, fontWeight: 800, color: '#0A2342', margin: '0 0 4px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                How do we reach you?
+              </h2>
+              <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 28px' }}>
+                We'll send your confirmation and a reminder before the clean.
+              </p>
+
+              <span style={labelStyle}>Full Name</span>
+              <input
+                type="text" value={data.name}
+                onChange={(e) => set('name', e.target.value)}
+                placeholder="e.g. Mohammed Al Mansoori"
+                style={inputStyle}
+              />
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16 }}>
+                <div>
+                  <span style={labelStyle}>Email</span>
                   <input
-                    type="text"
-                    required
-                    value={data.address}
-                    onChange={(e) => set('address', e.target.value)}
-                    placeholder="e.g. Tower 2, Apt 1402 or Villa 12, Street 8"
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500"
+                    type="email" value={data.email}
+                    onChange={(e) => set('email', e.target.value)}
+                    placeholder="client@email.com"
+                    style={inputStyle}
                   />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5">
-                    Special Instructions <span className="text-slate-400 font-normal lowercase">(optional)</span>
-                  </label>
-                  <textarea
-                    value={data.notes}
-                    onChange={(e) => set('notes', e.target.value)}
-                    placeholder="e.g. Key is with building security, extra focus on balcony, etc."
-                    rows={2}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500 resize-none"
+                  <span style={labelStyle}>Phone</span>
+                  <input
+                    type="tel" value={data.phone}
+                    onChange={(e) => set('phone', e.target.value)}
+                    placeholder="+971 50 000 0000"
+                    style={inputStyle}
                   />
                 </div>
               </div>
             </div>
           )}
 
-          {/* Step 4: Review & Confirm */}
+          {/* ── STEP 4: Review & Confirm ── */}
           {step === 4 && (
             <div>
-              <h2 className="text-xl font-bold text-slate-900 mb-4">Review Your Booking</h2>
-              <div className="bg-slate-50 rounded-xl p-5 border border-slate-100 space-y-3 mb-6 text-sm">
+              <h2 style={{ fontSize: 26, fontWeight: 800, color: '#0A2342', margin: '0 0 4px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                Review & confirm
+              </h2>
+              <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 28px' }}>
+                One last look before your sanctuary is restored.
+              </p>
+
+              <div style={{ borderRadius: 16, border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: 24 }}>
                 {[
-                  ['Selected Service', selectedService.title],
-                  ['Property', `${data.propertyType} (${data.rooms} Bed, ${data.bathrooms} Bath)`],
-                  ['Date & Time', `${data.date} at ${data.time}`],
-                  ['Location', `${data.district}, ${data.address}`],
-                  ['Client', `${data.name} (${data.phone})`],
-                  ['Estimated Rate', `AED ${estimate.total} (${estimate.hours})`],
-                  ...(data.notes ? [['Special Instructions', data.notes]] : []),
-                ].map(([label, value]) => (
-                  <div key={label} className="flex justify-between border-b border-slate-200/40 pb-2">
-                    <span className="text-slate-500 font-medium">{label}</span>
-                    <span className="font-bold text-slate-900 text-right max-w-xs">{value}</span>
+                  {
+                    icon: (
+                      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#2563eb" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                      </svg>
+                    ),
+                    label: 'SERVICE',
+                    value: selectedService.title,
+                  },
+                  {
+                    icon: (
+                      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#2563eb" strokeWidth="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+                      </svg>
+                    ),
+                    label: 'DATE',
+                    value: formatDate(data.date),
+                  },
+                  {
+                    icon: (
+                      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#2563eb" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
+                      </svg>
+                    ),
+                    label: 'TIME',
+                    value: data.time,
+                  },
+                  {
+                    icon: (
+                      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#2563eb" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><circle cx="12" cy="11" r="3" />
+                      </svg>
+                    ),
+                    label: 'ADDRESS',
+                    value: `${data.district}${data.streetAddress ? ', ' + data.streetAddress : ''}${data.city ? ', ' + data.city : ''}${data.zipCode ? ' ' + data.zipCode : ''}`,
+                  },
+                  {
+                    icon: (
+                      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#2563eb" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    ),
+                    label: 'CONTACT',
+                    value: `${data.name}${data.phone ? ' · ' + data.phone : ''}`,
+                  },
+                ].map((row, i) => (
+                  <div key={row.label} style={{
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    padding: '14px 20px',
+                    background: i % 2 === 0 ? '#f8fafc' : '#fff',
+                    borderBottom: i < 4 ? '1px solid #f1f5f9' : 'none',
+                  }}>
+                    <span style={{ fontSize: 14 }}>{row.icon}</span>
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.8 }}>{row.label}</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#0A2342', marginTop: 1 }}>{row.value}</div>
+                    </div>
                   </div>
                 ))}
               </div>
 
-              <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-                <span>🛡️</span>
-                <span>No advance payment required. Pay conveniently upon inspection.</span>
+              {/* Payment Info */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                padding: '16px 20px', borderRadius: 14,
+                background: '#ecfdf5', border: '1px solid #bbf7d0',
+              }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  background: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#059669" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#064e3b' }}>Pay after your clean</div>
+                  <div style={{ fontSize: 12, color: '#065f46' }}>No charge today. Secure payment collected on completion.</div>
+                </div>
+              </div>
+
+              {/* Grand Total */}
+              <div style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                marginTop: 20, paddingTop: 20, borderTop: '2px solid #e2e8f0',
+              }}>
+                <span style={{ fontSize: 14, color: '#64748b', fontWeight: 600 }}>Total due on completion</span>
+                <span style={{ fontSize: 28, fontWeight: 900, color: '#0A2342', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                  AED {estimate.total}
+                </span>
               </div>
             </div>
           )}
 
-          {/* Navigation Buttons */}
-          <div className={`mt-8 pt-6 border-t border-slate-100 flex ${step > 0 ? 'justify-between' : 'justify-end'}`}>
+          {/* ── Navigation Buttons ── */}
+          <div style={{
+            display: 'flex',
+            justifyContent: step > 0 ? 'space-between' : 'flex-end',
+            alignItems: 'center',
+            marginTop: 32, paddingTop: 24, borderTop: '1px solid #f1f5f9',
+          }}>
             {step > 0 && (
               <button
                 type="button"
                 onClick={() => setStep((s) => s - 1)}
-                className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-50"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '12px 20px', borderRadius: 12,
+                  border: '1.5px solid #e2e8f0', background: '#fff',
+                  color: '#334155', fontSize: 13, fontWeight: 700,
+                  cursor: 'pointer', transition: 'all 0.15s',
+                }}
               >
-                ← Back
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                Back
               </button>
             )}
 
@@ -439,25 +625,258 @@ export default function BookingPage() {
                 type="button"
                 disabled={!canProceed()}
                 onClick={() => setStep((s) => s + 1)}
-                className="px-8 py-3 rounded-xl font-bold text-sm text-white transition-all hover:scale-105 disabled:opacity-40 disabled:hover:scale-100 shadow-md"
-                style={{ background: 'linear-gradient(135deg,#0A2342,#1E3A8A)' }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '12px 28px', borderRadius: 12,
+                  background: canProceed() ? 'linear-gradient(135deg, #0A2342 0%, #1E3A8A 100%)' : '#e2e8f0',
+                  color: canProceed() ? '#fff' : '#94a3b8',
+                  border: 'none', fontSize: 13, fontWeight: 700,
+                  cursor: canProceed() ? 'pointer' : 'not-allowed',
+                  boxShadow: canProceed() ? '0 4px 14px rgba(10,35,66,0.25)' : 'none',
+                  transition: 'all 0.15s',
+                }}
               >
-                Continue →
+                Continue
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             ) : (
               <button
                 type="button"
                 disabled={loading}
                 onClick={handleConfirm}
-                className="px-9 py-3 rounded-xl font-bold text-sm text-white transition-all hover:scale-105 shadow-xl flex items-center gap-2 disabled:opacity-60"
-                style={{ background: 'linear-gradient(135deg,#0A2342,#1E3A8A)' }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '14px 32px', borderRadius: 12,
+                  background: 'linear-gradient(135deg, #0A2342 0%, #1E3A8A 100%)',
+                  color: '#fff', border: 'none', fontSize: 14, fontWeight: 800,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.7 : 1,
+                  boxShadow: '0 6px 20px rgba(10,35,66,0.3)',
+                  transition: 'all 0.15s',
+                }}
               >
-                {loading ? 'Submitting...' : 'Confirm Appointment ✓'}
+                {loading ? 'Submitting...' : 'Confirm Appointment'}
+                {!loading && (
+                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
               </button>
             )}
           </div>
         </div>
+
+        {/* ── Right: Order Reflection Sidebar ── */}
+        <div style={{ position: 'sticky', top: 100 }}>
+          <div style={{
+            background: '#fff', borderRadius: 20, overflow: 'hidden',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 4px 24px rgba(10,35,66,0.04)',
+          }}>
+            {/* Sidebar header */}
+            <div style={{
+              padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 10,
+              borderBottom: '1px solid #f1f5f9', background: '#f8fafc',
+            }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: '50%', background: '#0A2342',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#60a5fa" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+              <span style={{ fontSize: 14, fontWeight: 800, color: '#0A2342' }}>Order Reflection</span>
+            </div>
+
+            {/* Service Image */}
+            <div style={{ height: 160, overflow: 'hidden', position: 'relative' }}>
+              <img
+                src={selectedService.image}
+                alt={selectedService.title}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+              <div style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0,
+                background: 'linear-gradient(transparent, rgba(0,0,0,0.6))',
+                padding: '24px 16px 12px',
+              }}>
+                <div style={{ color: '#fff', fontSize: 15, fontWeight: 800 }}>{selectedService.title}</div>
+                <div style={{ color: '#93c5fd', fontSize: 11, fontWeight: 600 }}>Freshness Index {freshnessIndex}</div>
+              </div>
+            </div>
+
+            {/* Summary details */}
+            <div style={{ padding: '16px 20px' }}>
+              {[
+                { icon: CalendarSmallIcon, label: 'Date', value: data.date ? new Date(data.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—' },
+                { icon: ClockSmallIcon, label: 'Time', value: data.time || '—' },
+                { icon: PinSmallIcon, label: 'Address', value: data.streetAddress ? `${data.district}, ${data.city}` : '—' },
+              ].map((row) => (
+                <div key={row.label} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '8px 0', borderBottom: '1px solid #f8fafc',
+                }}>
+                  <row.icon />
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.6 }}>{row.label}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#0A2342' }}>{row.value}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Price */}
+            <div style={{
+              padding: '16px 20px', borderTop: '1px solid #f1f5f9',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            }}>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.8 }}>Service base</div>
+                <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>{estimate.hours}</div>
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: '#0A2342', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                AED {estimate.total}
+              </div>
+            </div>
+          </div>
+
+          {/* Trust badge below sidebar */}
+          <div style={{
+            marginTop: 12, padding: '12px 16px', borderRadius: 12,
+            background: '#eff6ff', border: '1px solid #dbeafe',
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#2563eb" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#1e40af' }}>
+              Built with CitiMaids 🇦🇪
+            </span>
+          </div>
+        </div>
       </div>
+
+      <style>{`
+        .booking-grid {
+          grid-template-columns: 1fr 340px;
+        }
+        @media (max-width: 768px) {
+          .booking-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   Shared Styles
+   ═══════════════════════════════════════════════════════ */
+
+const labelStyle = {
+  display: 'block',
+  fontSize: 11,
+  fontWeight: 700,
+  color: '#64748b',
+  textTransform: 'uppercase',
+  letterSpacing: 0.6,
+  marginBottom: 8,
+};
+
+const inputStyle = {
+  width: '100%',
+  padding: '12px 14px',
+  borderRadius: 12,
+  border: '1.5px solid #e2e8f0',
+  fontSize: 14,
+  color: '#0A2342',
+  outline: 'none',
+  boxSizing: 'border-box',
+  background: '#f8fafc',
+  transition: 'border 0.2s',
+  fontFamily: 'inherit',
+};
+
+const selectStyle = {
+  ...inputStyle,
+  cursor: 'pointer',
+  appearance: 'auto',
+};
+
+/* ═══════════════════════════════════════════════════════
+   Step Icons (inside progress circles)
+   ═══════════════════════════════════════════════════════ */
+
+function StepServiceIcon() {
+  return (
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+    </svg>
+  );
+}
+
+function StepDateIcon() {
+  return (
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+    </svg>
+  );
+}
+
+function StepAddressIcon() {
+  return (
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  );
+}
+
+function StepContactIcon() {
+  return (
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  );
+}
+
+function StepReviewIcon() {
+  return (
+    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+    </svg>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   Small Sidebar Icons
+   ═══════════════════════════════════════════════════════ */
+
+function CalendarSmallIcon() {
+  return (
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#2563eb" strokeWidth="2">
+      <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+    </svg>
+  );
+}
+
+function ClockSmallIcon() {
+  return (
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#2563eb" strokeWidth="2">
+      <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
+    </svg>
+  );
+}
+
+function PinSmallIcon() {
+  return (
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#2563eb" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
   );
 }

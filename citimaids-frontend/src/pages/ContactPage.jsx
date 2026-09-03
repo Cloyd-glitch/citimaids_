@@ -38,10 +38,46 @@ export default function ContactPage() {
 
             <div className="space-y-4 mb-8">
               {[
-                { icon: '📞', label: 'Direct Phone', value: '+971 2 650 5050', href: 'tel:+97126505050' },
-                { icon: '✉️', label: 'Inquiries Email', value: 'info@citimaids.ae', href: 'mailto:info@citimaids.ae' },
-                { icon: '📍', label: 'Central Office', value: 'Musrif Area, Abu Dhabi, UAE', href: null },
-                { icon: '🕐', label: 'Service Schedule', value: 'Mon–Sat: 7AM–9PM | Sun: 8AM–6PM', href: null },
+                {
+                  icon: (
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#1E3A8A" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  ),
+                  label: 'Direct Phone',
+                  value: '+971 2 650 5050',
+                  href: 'tel:+97126505050',
+                },
+                {
+                  icon: (
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#1E3A8A" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  ),
+                  label: 'Inquiries Email',
+                  value: 'info@citimaids.ae',
+                  href: 'mailto:info@citimaids.ae',
+                },
+                {
+                  icon: (
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#1E3A8A" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><circle cx="12" cy="11" r="3" />
+                    </svg>
+                  ),
+                  label: 'Central Office',
+                  value: 'Musrif Area, Abu Dhabi, UAE',
+                  href: null,
+                },
+                {
+                  icon: (
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#1E3A8A" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
+                    </svg>
+                  ),
+                  label: 'Service Schedule',
+                  value: 'Mon–Sat: 7AM–9PM | Sun: 8AM–6PM',
+                  href: null,
+                },
               ].map(({ icon, label, value, href }) => (
                 <div
                   key={label}

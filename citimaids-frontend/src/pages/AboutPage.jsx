@@ -31,10 +31,10 @@ const values = [
 ];
 
 const stats = [
-  { value: '500+', label: 'Happy Customers' },
-  { value: '9+', label: 'Years Experience' },
-  { value: '50+', label: 'Certified Staff' },
-  { value: '4.9★', label: 'Average Review' },
+  { value: '500+', label: 'Happy Clients' },
+  { value: '100%', label: 'Vetted Crew' },
+  { value: '4.9 / 5', label: 'Average Review' },
+  { value: '7 Days', label: 'Weekly Service' },
 ];
 
 export default function AboutPage() {
@@ -51,7 +51,7 @@ export default function AboutPage() {
           </span>
           <h1 className="text-4xl sm:text-5xl font-extrabold mb-3 tracking-tight">About CitiMaids</h1>
           <p className="text-blue-100 text-sm sm:text-base leading-relaxed">
-            Abu Dhabi's trusted professional cleaning partner, delivering spotless homes and commercial spaces since 2018.
+            Abu Dhabi and two other cities' trusted professional cleaning partner, delivering spotless homes and commercial spaces since 2018.
           </p>
         </div>
       </div>
@@ -62,7 +62,7 @@ export default function AboutPage() {
           <div>
             <span className="text-blue-800 font-bold text-xs uppercase tracking-widest">Who We Are</span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">
-              Serving Abu Dhabi Homes & Offices with Pride
+              Serving Abu Dhabi and Two Other Cities' Homes & Offices with Pride
             </h2>
             <p className="text-slate-600 leading-relaxed mb-4 text-sm sm:text-base">
               CitiMaids was founded in Musrif, Abu Dhabi with a straightforward mission: to provide UAE residents with reliable, honest, and high-standard cleaning services they can trust with their personal homes.
@@ -93,7 +93,12 @@ export default function AboutPage() {
             <div
               className="absolute -bottom-6 -right-6 bg-white rounded-2xl px-6 py-4 shadow-xl border border-slate-100 hidden sm:block"
             >
-              <div className="text-xl font-extrabold text-slate-900">📍 Musrif HQ</div>
+              <div className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#1E3A8A" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><circle cx="12" cy="11" r="3" />
+                </svg>
+                Musrif HQ
+              </div>
               <div className="text-xs text-slate-500">Abu Dhabi, United Arab Emirates</div>
             </div>
           </div>
@@ -148,14 +153,22 @@ export default function AboutPage() {
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">Our Abu Dhabi Hub</h2>
             <div className="space-y-4 mb-8">
               <div className="flex items-start gap-4 p-4.5 bg-slate-50 rounded-2xl border border-slate-100">
-                <span className="text-2xl mt-0.5">📍</span>
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-900 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><circle cx="12" cy="11" r="3" />
+                  </svg>
+                </div>
                 <div>
                   <div className="font-bold text-slate-900 text-sm">Head Office</div>
                   <div className="text-slate-600 text-xs sm:text-sm">Musrif Area, Abu Dhabi, United Arab Emirates</div>
                 </div>
               </div>
               <div className="flex items-start gap-4 p-4.5 bg-slate-50 rounded-2xl border border-slate-100">
-                <span className="text-2xl mt-0.5">🕐</span>
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-900 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
+                  </svg>
+                </div>
                 <div>
                   <div className="font-bold text-slate-900 text-sm">Operation Hours</div>
                   <div className="text-slate-600 text-xs sm:text-sm">Monday – Saturday: 7:00 AM – 9:00 PM</div>
@@ -163,7 +176,11 @@ export default function AboutPage() {
                 </div>
               </div>
               <div className="flex items-start gap-4 p-4.5 bg-slate-50 rounded-2xl border border-slate-100">
-                <span className="text-2xl mt-0.5">🌍</span>
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-900 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" /><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+                  </svg>
+                </div>
                 <div>
                   <div className="font-bold text-slate-900 text-sm">Service Coverage</div>
                   <div className="text-slate-600 text-xs sm:text-sm">
