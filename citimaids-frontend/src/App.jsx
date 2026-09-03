@@ -19,6 +19,7 @@ import Login from './pages/admin/Login';
 import Dashboard from './pages/admin/Dashboard';
 import Bookings from './pages/admin/Bookings';
 import BookingDetail from './pages/admin/BookingDetail';
+import Payments from './pages/admin/Payments';
 import Clients from './pages/admin/Clients';
 import Services from './pages/admin/Services';
 import Reports from './pages/admin/Reports';
@@ -57,6 +58,9 @@ function App() {
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="bookings" element={<Bookings />} />
             <Route path="bookings/:id" element={<BookingDetail />} />
+            <Route path="payments" element={<Payments />} />
+            <Route path="billing" element={<Payments defaultTab="payments" />} />
+            <Route path="transactions" element={<Payments defaultTab="transactions" />} />
             <Route path="clients" element={<Clients />} />
             <Route path="services" element={<Services />} />
             <Route path="reports" element={<Reports />} />

@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 const navItems = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: DashboardIcon },
     { label: 'Bookings', path: '/admin/bookings', icon: BookingsIcon },
+    { label: 'Billing & Transactions', path: '/admin/payments', icon: BillingIcon },
     { label: 'Clients', path: '/admin/clients', icon: ClientsIcon },
     { label: 'Services', path: '/admin/services', icon: ServicesIcon },
     { label: 'Reports', path: '/admin/reports', icon: ReportsIcon },
@@ -200,6 +201,14 @@ function BookingsIcon() {
     return (
         <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <rect x="3" y="4" width="18" height="18" rx="2" /><path strokeLinecap="round" strokeLinejoin="round" d="M16 2v4M8 2v4M3 10h18" />
+        </svg>
+    );
+}
+
+function BillingIcon() {
+    return (
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
         </svg>
     );
 }
