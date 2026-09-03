@@ -1,17 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
-
-const statusColors = {
-    pending: { color: '#f59e0b', bg: '#fef3c7' },
-    confirmed: { color: '#3b82f6', bg: '#dbeafe' },
-    completed: { color: '#10b981', bg: '#d1fae5' },
-    cancelled: { color: '#ef4444', bg: '#fee2e2' },
-};
+import { brand, fonts, pageTitle, pageSubtitle, card, solidBtn, outlineBtn, statusBadge, idBadge, avatar } from './adminStyles';
 
 const statusFlow = ['pending', 'confirmed', 'completed', 'cancelled'];
-
-const avatarColors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4'];
+const avatarColors = ['#2563eb', '#7c3aed', '#ec4899', '#d97706', '#059669', '#0891b2'];
 
 export default function BookingDetail() {
     const { id } = useParams();
@@ -61,24 +54,27 @@ export default function BookingDetail() {
     if (loading) {
         return (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
-                <div style={{ color: '#64748b', fontSize: 16 }}>Loading booking details...</div>
+                <div style={{ color: brand.navy, fontSize: 15, fontWeight: 700, fontFamily: fonts.heading }}>
+                    Loading Booking Details...
+                </div>
             </div>
         );
     }
 
     if (!booking) {
         return (
-            <div style={{ textAlign: 'center', color: '#94a3b8', padding: 80 }}>
-                <h2 style={{ color: '#1a1f37' }}>Booking not found</h2>
-                <button onClick={() => navigate('/admin/bookings')} style={btnStyle('secondary')}>← Back to Bookings</button>
+            <div style={{ textAlign: 'center', padding: 80 }}>
+                <h2 style={{ color: brand.navy, fontFamily: fonts.heading }}>Booking not found</h2>
+                <button onClick={() => navigate('/admin/bookings')} style={outlineBtn}>
+                    ← Back to Bookings
+                </button>
             </div>
         );
     }
 
-    const sc = statusColors[booking.status] || statusColors.pending;
     const initials = booking.client?.name
         ? booking.client.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-        : '??';
+        : 'CM';
     const avatarColor = avatarColors[booking.id % avatarColors.length];
     const bookingIdStr = `#${String(booking.id).padStart(4, '0')}`;
     const preferredDate = booking.preferred_date
@@ -89,268 +85,288 @@ export default function BookingDetail() {
         : '—';
 
     return (
-        <div style={{ fontFamily: "'Inter', -apple-system, sans-serif" }}>
+        <div style={{ fontFamily: fonts.body }}>
             {/* Toast */}
             {toast && (
                 <div style={{
                     position: 'fixed', top: 24, right: 24, zIndex: 9999,
-                    padding: '12px 20px', borderRadius: 10, fontSize: 14, fontWeight: 500,
-                    background: toast.type === 'success' ? '#10b981' : '#ef4444', color: '#fff',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                    animation: 'slideIn 0.2s ease',
+                    padding: '14px 22px', borderRadius: 14, fontSize: 14, fontWeight: 600,
+                    background: toast.type === 'success' ? '#059669' : '#dc2626', color: '#fff',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+                    display: 'flex', alignItems: 'center', gap: 8,
                 }}>
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                        {toast.type === 'success'
+                            ? <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            : <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        }
+                    </svg>
                     {toast.msg}
                 </div>
             )}
 
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
-                <button
-                    onClick={() => navigate('/admin/bookings')}
-                    style={{
-                        background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8,
-                        padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center',
-                        gap: 6, color: '#64748b', fontSize: 14, fontWeight: 500,
-                    }}
-                >
-                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path d="M19 12H5M12 19l-7-7 7-7" />
-                    </svg>
-                    Back
-                </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
                 <div>
-                    <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a1f37', margin: 0 }}>
-                        Booking {bookingIdStr}
-                    </h1>
-                    <p style={{ color: '#64748b', fontSize: 14, margin: '2px 0 0' }}>
-                        Submitted on {createdAt}
-                    </p>
+                    <button
+                        onClick={() => navigate('/admin/bookings')}
+                        style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            color: '#64748b', background: 'none', border: 'none',
+                            fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0, marginBottom: 8,
+                        }}
+                    >
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        Back to Bookings
+                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <h1 style={pageTitle}>Booking {bookingIdStr}</h1>
+                        <span style={statusBadge(booking.status)}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} />
+                            {booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
+                        </span>
+                    </div>
+                    <p style={pageSubtitle}>Submitted on {createdAt}</p>
                 </div>
-                <div style={{ marginLeft: 'auto' }}>
-                    <span style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        padding: '6px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600,
-                        color: sc.color, background: sc.bg,
-                    }}>
-                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: sc.color }} />
-                        {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                    </span>
+
+                <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={() => window.print()} style={outlineBtn}>
+                        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        Print Manifest
+                    </button>
                 </div>
             </div>
 
             {/* Content Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20 }}>
-
+            <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr', gap: 24, alignItems: 'start' }}>
                 {/* Left Column */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-                    {/* Client Info Card */}
-                    <Card title="Client Information">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
-                            <div style={{
-                                width: 56, height: 56, borderRadius: '50%', background: avatarColor,
-                                color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: 18, fontWeight: 700, flexShrink: 0,
-                            }}>{initials}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                    {/* Client Information */}
+                    <div style={{ ...card, padding: '26px 28px' }}>
+                        <h3 style={{ fontSize: 16, fontWeight: 800, color: brand.navy, margin: '0 0 20px', fontFamily: fonts.heading }}>
+                            Client Information
+                        </h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, paddingBottom: 18, borderBottom: `1px solid ${brand.border}` }}>
+                            <div style={avatar(avatarColor, 52)}>{initials}</div>
                             <div>
-                                <div style={{ fontSize: 18, fontWeight: 700, color: '#1a1f37' }}>{booking.client?.name || '—'}</div>
-                                <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>Client Account</div>
+                                <div style={{ fontSize: 18, fontWeight: 800, color: brand.navy, fontFamily: fonts.heading }}>
+                                    {booking.client?.name || 'Client Name'}
+                                </div>
+                                <div style={{ fontSize: 12, color: '#64748b', marginTop: 2, fontWeight: 500 }}>
+                                    Registered Client Account · Abu Dhabi
+                                </div>
                             </div>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                            <InfoField icon="📞" label="Contact Number" value={booking.client?.contact_number || '—'} />
-                            <InfoField icon="✉️" label="Email" value={booking.client?.email || '—'} />
-                            <InfoField icon="📍" label="Address" value={booking.client?.address || '—'} />
-                        </div>
-                    </Card>
 
-                    {/* Booking Details Card */}
-                    <Card title="Booking Details">
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                            <InfoField icon="🧹" label="Service" value={booking.service?.name || '—'} />
-                            <InfoField icon="📅" label="Preferred Date" value={preferredDate} />
-                            <InfoField icon="🆔" label="Booking ID" value={bookingIdStr} />
-                            <InfoField icon="⚙️" label="Processed By"
-                                value={booking.processed_by?.name || 'Not yet assigned'} />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                            <FieldItem
+                                icon={
+                                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                    </svg>
+                                }
+                                label="Contact Number"
+                                value={booking.client?.contact_number || '—'}
+                            />
+                            <FieldItem
+                                icon={
+                                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                }
+                                label="Email Address"
+                                value={booking.client?.email || '—'}
+                            />
+                            <div style={{ gridColumn: 'span 2' }}>
+                                <FieldItem
+                                    icon={
+                                        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><circle cx="12" cy="11" r="3" />
+                                        </svg>
+                                    }
+                                    label="Service Address"
+                                    value={booking.client?.address || '—'}
+                                />
+                            </div>
                         </div>
+                    </div>
+
+                    {/* Booking Details */}
+                    <div style={{ ...card, padding: '26px 28px' }}>
+                        <h3 style={{ fontSize: 16, fontWeight: 800, color: brand.navy, margin: '0 0 20px', fontFamily: fonts.heading }}>
+                            Service & Schedule
+                        </h3>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                            <FieldItem
+                                icon={
+                                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                    </svg>
+                                }
+                                label="Selected Service"
+                                value={booking.service?.name || 'Home Cleaning'}
+                            />
+                            <FieldItem
+                                icon={
+                                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+                                    </svg>
+                                }
+                                label="Preferred Schedule"
+                                value={preferredDate}
+                            />
+                            <FieldItem
+                                icon={
+                                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                    </svg>
+                                }
+                                label="Booking Reference"
+                                value={bookingIdStr}
+                            />
+                            <FieldItem
+                                icon={
+                                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                }
+                                label="Assigned Specialist"
+                                value={booking.processed_by?.name || 'Operations Dispatch Queue'}
+                            />
+                        </div>
+
                         {booking.notes && (
-                            <div style={{ marginTop: 16 }}>
-                                <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                                    NOTES
+                            <div style={{ marginTop: 22, paddingTop: 18, borderTop: `1px solid ${brand.border}` }}>
+                                <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 }}>
+                                    Access & Instructions
                                 </div>
                                 <div style={{
-                                    background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8,
-                                    padding: '12px 14px', fontSize: 14, color: '#374151', lineHeight: 1.6,
+                                    background: brand.softBg,
+                                    border: `1px solid ${brand.border}`,
+                                    borderRadius: 12,
+                                    padding: '14px 16px',
+                                    fontSize: 13.5,
+                                    color: brand.navy,
+                                    lineHeight: 1.6,
                                 }}>
                                     {booking.notes}
                                 </div>
                             </div>
                         )}
-                    </Card>
-
-                    {/* Booking Items (if any details) */}
-                    {booking.details && booking.details.length > 0 && (
-                        <Card title="Booking Items">
-                            <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
-                                <div style={{
-                                    display: 'grid', gridTemplateColumns: '1fr 80px 100px 100px',
-                                    padding: '12px 16px', background: '#f8fafc',
-                                    borderBottom: '1px solid #e2e8f0', fontSize: 11, fontWeight: 700,
-                                    color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.8,
-                                }}>
-                                    <span>SERVICE</span><span>QTY</span><span>UNIT PRICE</span><span>TOTAL</span>
-                                </div>
-                                {booking.details.map((d, i) => (
-                                    <div key={i} style={{
-                                        display: 'grid', gridTemplateColumns: '1fr 80px 100px 100px',
-                                        padding: '12px 16px', borderBottom: '1px solid #f1f5f9',
-                                        fontSize: 14, color: '#1a1f37',
-                                    }}>
-                                        <span>{d.service?.name || '—'}</span>
-                                        <span>{d.quantity}</span>
-                                        <span>₱{Number(d.unit_price).toLocaleString()}</span>
-                                        <span style={{ fontWeight: 600 }}>₱{Number(d.total_price).toLocaleString()}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </Card>
-                    )}
+                    </div>
                 </div>
 
                 {/* Right Column */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-                    {/* Status Update Card */}
-                    <Card title="Update Status">
-                        <p style={{ fontSize: 13, color: '#64748b', marginTop: 0, marginBottom: 16 }}>
-                            Change the booking status to reflect the current state.
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                    {/* Status Management Card */}
+                    <div style={{ ...card, padding: '26px' }}>
+                        <h3 style={{ fontSize: 16, fontWeight: 800, color: brand.navy, margin: '0 0 12px', fontFamily: fonts.heading }}>
+                            Workflow & Status
+                        </h3>
+                        <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 18px', lineHeight: 1.5 }}>
+                            Update the dispatch stage to notify customer and field team.
                         </p>
 
-                        {/* Status flow visual */}
+                        {/* Status flow tracker */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
                             {statusFlow.map((s, i) => {
-                                const sc2 = statusColors[s];
                                 const isCurrent = booking.status === s;
                                 const isPast = statusFlow.indexOf(booking.status) > i && s !== 'cancelled';
                                 return (
-                                    <div key={s} style={{
-                                        display: 'flex', alignItems: 'center', gap: 12,
-                                        padding: '10px 14px', borderRadius: 8,
-                                        border: `1px solid ${isCurrent ? sc2.color : '#e2e8f0'}`,
-                                        background: isCurrent ? sc2.bg : '#fafbfc',
-                                        opacity: isPast ? 0.5 : 1,
-                                    }}>
+                                    <div
+                                        key={s}
+                                        onClick={() => setSelectedStatus(s)}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: 12,
+                                            padding: '10px 14px', borderRadius: 12,
+                                            border: `1.5px solid ${isCurrent ? brand.navy : brand.border}`,
+                                            background: isCurrent ? '#eff6ff' : '#fff',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.15s',
+                                        }}
+                                    >
                                         <div style={{
-                                            width: 10, height: 10, borderRadius: '50%',
-                                            background: isCurrent || isPast ? sc2.color : '#e2e8f0',
-                                            border: `2px solid ${isCurrent ? sc2.color : '#e2e8f0'}`,
+                                            width: 12, height: 12, borderRadius: '50%',
+                                            background: isCurrent ? brand.navy : isPast ? '#34d399' : '#e2e8f0',
                                         }} />
                                         <span style={{
-                                            fontSize: 13, fontWeight: isCurrent ? 700 : 500,
-                                            color: isCurrent ? sc2.color : '#64748b',
+                                            fontSize: 13, fontWeight: isCurrent ? 800 : 600,
+                                            color: isCurrent ? brand.navy : '#64748b',
                                             flex: 1, textTransform: 'capitalize',
                                         }}>{s}</span>
-                                        {isCurrent && <span style={{ fontSize: 11, color: sc2.color, fontWeight: 600 }}>CURRENT</span>}
+                                        {isCurrent && (
+                                            <span style={{ fontSize: 10, color: brand.royal, fontWeight: 800, background: '#dbeafe', padding: '2px 8px', borderRadius: 6 }}>
+                                                CURRENT
+                                            </span>
+                                        )}
                                     </div>
                                 );
                             })}
                         </div>
 
-                        {/* Status Dropdown */}
-                        <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 8 }}>
-                            Set New Status
-                        </label>
-                        <select
-                            value={selectedStatus}
-                            onChange={e => setSelectedStatus(e.target.value)}
-                            style={{
-                                width: '100%', padding: '10px 14px', borderRadius: 8,
-                                border: '1px solid #e2e8f0', fontSize: 14, color: '#1a1f37',
-                                background: '#fff', marginBottom: 14, cursor: 'pointer',
-                                outline: 'none',
-                            }}
-                        >
-                            {statusFlow.map(s => (
-                                <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-                            ))}
-                        </select>
-
                         <button
                             onClick={handleStatusUpdate}
                             disabled={saving || selectedStatus === booking.status}
                             style={{
-                                width: '100%', padding: '11px', borderRadius: 8, border: 'none',
-                                background: selectedStatus === booking.status ? '#e2e8f0' : '#3b82f6',
-                                color: selectedStatus === booking.status ? '#94a3b8' : '#fff',
-                                fontSize: 14, fontWeight: 600, cursor: selectedStatus === booking.status ? 'default' : 'pointer',
-                                transition: 'all 0.15s',
+                                ...solidBtn,
+                                width: '100%',
+                                justifyContent: 'center',
+                                padding: '12px',
+                                opacity: selectedStatus === booking.status ? 0.5 : 1,
+                                cursor: selectedStatus === booking.status ? 'default' : 'pointer',
                             }}
                         >
-                            {saving ? 'Saving...' : 'Update Status'}
+                            {saving ? 'Updating...' : 'Save New Status'}
                         </button>
-                    </Card>
+                    </div>
 
-                    {/* Quick Info Card */}
-                    <Card title="Booking Summary">
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                            <SummaryRow label="Booking ID" value={bookingIdStr} highlight />
-                            <SummaryRow label="Service" value={booking.service?.name || '—'} />
-                            <SummaryRow label="Preferred Date" value={booking.preferred_date ? new Date(booking.preferred_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'} />
-                            <SummaryRow label="Client" value={booking.client?.name || '—'} />
-                            <SummaryRow label="Contact" value={booking.client?.contact_number || '—'} />
-                            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 14 }}>
-                                <SummaryRow label="Date Submitted" value={createdAt} />
+                    {/* Financial Summary */}
+                    <div style={{ ...card, padding: '24px' }}>
+                        <h3 style={{ fontSize: 15, fontWeight: 800, color: brand.navy, margin: '0 0 16px', fontFamily: fonts.heading }}>
+                            Estimated Charges
+                        </h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b' }}>
+                                <span>Service Rate</span>
+                                <span style={{ fontWeight: 700, color: brand.navy }}>
+                                    AED {booking.service?.base_price ? Number(booking.service.base_price).toLocaleString() : '35'}
+                                </span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b' }}>
+                                <span>Inspection Guarantee</span>
+                                <span style={{ fontWeight: 700, color: '#059669' }}>Free</span>
+                            </div>
+                            <div style={{
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                borderTop: `1px solid ${brand.border}`, paddingTop: 12, marginTop: 4,
+                            }}>
+                                <span style={{ fontWeight: 700, color: brand.navy }}>Total Due Upon Completion</span>
+                                <span style={{ fontSize: 18, fontWeight: 800, color: brand.navy, fontFamily: fonts.heading }}>
+                                    AED {booking.service?.base_price ? Number(booking.service.base_price).toLocaleString() : '35'}
+                                </span>
                             </div>
                         </div>
-                    </Card>
+                    </div>
                 </div>
             </div>
         </div>
     );
 }
 
-/* ── Sub-components ──────────────────────────────────── */
-
-function Card({ title, children }) {
-    return (
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 24 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1a1f37', margin: '0 0 20px' }}>{title}</h3>
-            {children}
-        </div>
-    );
-}
-
-function InfoField({ icon, label, value }) {
+function FieldItem({ icon, label, value }) {
     return (
         <div>
-            <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 }}>
-                {icon} {label}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 }}>
+                <span style={{ color: brand.royal }}>{icon}</span>
+                {label}
             </div>
-            <div style={{ fontSize: 14, color: '#1a1f37', fontWeight: 500 }}>{value}</div>
+            <div style={{ fontSize: 14, color: brand.navy, fontWeight: 600 }}>
+                {value}
+            </div>
         </div>
     );
-}
-
-function SummaryRow({ label, value, highlight }) {
-    return (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 13, color: '#64748b' }}>{label}</span>
-            <span style={{
-                fontSize: 13, fontWeight: 600,
-                color: highlight ? '#3b82f6' : '#1a1f37',
-                background: highlight ? '#eff6ff' : 'transparent',
-                padding: highlight ? '2px 10px' : 0,
-                borderRadius: highlight ? 6 : 0,
-            }}>{value}</span>
-        </div>
-    );
-}
-
-function btnStyle(variant) {
-    return {
-        padding: '10px 20px', borderRadius: 8, fontSize: 14, fontWeight: 600,
-        cursor: 'pointer', border: variant === 'secondary' ? '1px solid #e2e8f0' : 'none',
-        background: variant === 'secondary' ? '#fff' : '#3b82f6',
-        color: variant === 'secondary' ? '#374151' : '#fff',
-    };
 }

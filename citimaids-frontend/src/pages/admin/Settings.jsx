@@ -3,14 +3,78 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 
 const TABS = [
-    { id: 'general', label: 'General Settings', icon: '⚙️' },
-    { id: 'profile', label: 'Profile Settings', icon: '👤' },
-    { id: 'admins', label: 'Admin Accounts', icon: '👥' },
-    { id: 'booking-status', label: 'Booking Statuses', icon: '🏷️' },
-    { id: 'booking-form', label: 'Booking Form', icon: '📋' },
-    { id: 'notifications', label: 'Notifications', icon: '🔔' },
-    { id: 'security', label: 'Security', icon: '🔒' },
-    { id: 'preferences', label: 'System Preferences', icon: '🖥️' },
+    {
+        id: 'general',
+        label: 'General Settings',
+        icon: (
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><circle cx="12" cy="12" r="3" />
+            </svg>
+        ),
+    },
+    {
+        id: 'profile',
+        label: 'Profile Settings',
+        icon: (
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+        ),
+    },
+    {
+        id: 'admins',
+        label: 'Admin Accounts',
+        icon: (
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+        ),
+    },
+    {
+        id: 'booking-status',
+        label: 'Booking Statuses',
+        icon: (
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+        ),
+    },
+    {
+        id: 'booking-form',
+        label: 'Booking Form',
+        icon: (
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+        ),
+    },
+    {
+        id: 'notifications',
+        label: 'Notifications',
+        icon: (
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+        ),
+    },
+    {
+        id: 'security',
+        label: 'Security',
+        icon: (
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+        ),
+    },
+    {
+        id: 'preferences',
+        label: 'System Preferences',
+        icon: (
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" />
+            </svg>
+        ),
+    },
 ];
 
 export default function Settings() {
@@ -90,12 +154,12 @@ export default function Settings() {
 /* ─────────────────────────────────────────────── */
 function GeneralSettings({ showToast }) {
     const [form, setForm] = useState({
-        business_name: 'CitiMaids Cleaning Services',
-        contact_number: '(02) 8123 4567',
-        business_email: 'info@citimaids.com',
-        business_address: '123 Clean St., BGC, Taguig City',
-        description: 'We provide professional cleaning services for homes, offices, villas, and more.',
-        timezone: 'Asia/Manila',
+        business_name: 'CitiMaids Cleaning Services LLC',
+        contact_number: '+971 50 000 0000',
+        business_email: 'operations@citimaids.ae',
+        business_address: 'Al Reem Island, Abu Dhabi, United Arab Emirates',
+        description: 'Luxury residential and commercial cleaning services tailored across Abu Dhabi.',
+        timezone: 'Asia/Dubai',
         date_format: 'MMM DD, YYYY',
         time_format: '12h',
         items_per_page: '10',
@@ -311,8 +375,20 @@ function AdminAccounts({ showToast }) {
                             <span style={{ fontSize: 13, color: '#64748b' }}>{admin.last_login}</span>
                             <span style={{ fontSize: 12, fontWeight: 600, color: '#10b981', background: '#d1fae5', padding: '3px 10px', borderRadius: 6, width: 'fit-content' }}>Active</span>
                             <div style={{ display: 'flex', gap: 6 }}>
-                                <SmallBtn title="Edit" icon="✏️" />
-                                {i !== 0 && <SmallBtn title="Delete" icon="🗑️" onClick={() => showToast('Admin removed.', 'error')} />}
+                                <SmallBtn title="Edit" icon={
+                                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                    </svg>
+                                } />
+                                {i !== 0 && (
+                                    <SmallBtn title="Delete" icon={
+                                        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" />
+                                            <path d="M10 11v6M14 11v6M9 6V4h6v2" />
+                                        </svg>
+                                    } onClick={() => showToast('Admin removed.', 'error')} />
+                                )}
                             </div>
                         </div>
                     ))}
@@ -346,7 +422,7 @@ function BookingStatuses({ showToast }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
                 {statuses.map(s => (
                     <div key={s.id} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 1fr 160px', gap: 16, alignItems: 'center', padding: '16px 20px', border: '1px solid #e2e8f0', borderRadius: 10, borderLeft: `4px solid ${s.color}` }}>
-                        <span style={{ fontSize: 20 }}>{{ 1: '🟡', 2: '🔵', 3: '🟢', 4: '🔴' }[s.id]}</span>
+                        <span style={{ width: 14, height: 14, borderRadius: '50%', background: s.color, display: 'inline-block', boxShadow: `0 0 8px ${s.color}60` }} />
                         <input
                             value={s.label}
                             onChange={e => handleLabelChange(s.id, e.target.value)}
@@ -442,7 +518,11 @@ function NotificationSettings({ showToast }) {
     const groups = [
         {
             title: 'Admin Email Notifications',
-            icon: '📧',
+            icon: (
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+            ),
             items: [
                 { key: 'email_new_booking', label: 'New Booking Submitted', desc: 'Get emailed when a customer submits a new booking.' },
                 { key: 'email_status_change', label: 'Booking Status Changed', desc: 'Notify when a booking status is updated.' },
@@ -451,7 +531,11 @@ function NotificationSettings({ showToast }) {
         },
         {
             title: 'SMS Notifications',
-            icon: '📱',
+            icon: (
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <rect x="5" y="2" width="14" height="20" rx="2" /><path d="M12 18h.01" />
+                </svg>
+            ),
             items: [
                 { key: 'sms_new_booking', label: 'SMS on New Booking', desc: 'Receive an SMS for every new booking.' },
                 { key: 'sms_status_change', label: 'SMS on Status Change', desc: 'Get an SMS when booking status changes.' },
@@ -459,7 +543,11 @@ function NotificationSettings({ showToast }) {
         },
         {
             title: 'Reports & Digests',
-            icon: '📊',
+            icon: (
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+            ),
             items: [
                 { key: 'daily_digest', label: 'Daily Summary Digest', desc: 'Daily email summary of bookings and revenue.' },
                 { key: 'weekly_report', label: 'Weekly Report', desc: 'Weekly performance report every Monday.' },
@@ -467,7 +555,11 @@ function NotificationSettings({ showToast }) {
         },
         {
             title: 'Client Notifications',
-            icon: '📤',
+            icon: (
+                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+            ),
             items: [
                 { key: 'notify_client_on_confirm', label: 'Notify Client on Confirmation', desc: 'Send client an email when their booking is confirmed.' },
                 { key: 'notify_client_on_complete', label: 'Notify Client on Completion', desc: 'Send client an email when service is completed.' },
@@ -588,8 +680,8 @@ function SecuritySettings({ showToast }) {
 function SystemPreferences({ showToast }) {
     const [prefs, setPrefs] = useState({
         language: 'en',
-        currency: 'PHP',
-        currency_symbol: '₱',
+        currency: 'AED',
+        currency_symbol: 'AED',
         date_format: 'MMM DD, YYYY',
         time_format: '12h',
         items_per_page: '10',
@@ -609,15 +701,15 @@ function SystemPreferences({ showToast }) {
                 <Field label="Language">
                     <select value={prefs.language} onChange={e => set('language', e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
                         <option value="en">English</option>
+                        <option value="ar">Arabic (العربية)</option>
                         <option value="fil">Filipino</option>
-                        <option value="ar">Arabic</option>
                     </select>
                 </Field>
                 <Field label="Currency">
                     <select value={prefs.currency} onChange={e => set('currency', e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-                        <option value="PHP">PHP — Philippine Peso (₱)</option>
-                        <option value="AED">AED — UAE Dirham (د.إ)</option>
+                        <option value="AED">AED — UAE Dirham (AED)</option>
                         <option value="USD">USD — US Dollar ($)</option>
+                        <option value="PHP">PHP — Philippine Peso (₱)</option>
                     </select>
                 </Field>
                 <Field label="Date Format">
@@ -763,6 +855,16 @@ function SmallBtn({ title, onClick, icon }) {
 /* Shared styles                                    */
 /* ─────────────────────────────────────────────── */
 const inputStyle = { width: '100%', padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 14, color: '#1a1f37', outline: 'none', boxSizing: 'border-box' };
-const saveBtn = { background: '#3b82f6', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', fontSize: 14, fontWeight: 600, cursor: 'pointer' };
+const saveBtn = {
+    background: 'linear-gradient(135deg, #0A2342 0%, #1E3A8A 100%)',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 10,
+    padding: '10px 24px',
+    fontSize: 13.5,
+    fontWeight: 700,
+    cursor: 'pointer',
+    boxShadow: '0 4px 14px rgba(10,35,66,0.2)',
+};
 const outlineBtn = { background: '#fff', color: '#374151', border: '1px solid #e2e8f0', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer' };
 const thStyle = { fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.8 };

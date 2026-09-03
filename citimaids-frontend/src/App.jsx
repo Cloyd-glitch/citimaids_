@@ -1,6 +1,19 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+
+// Customer Layout & Pages
+import RootLayout from './layouts/RootLayout';
+import HomePage from './pages/HomePage';
+import ServicesPage from './pages/ServicesPage';
+import ServiceDetailPage from './pages/ServiceDetailPage';
+import MaintenancePage from './pages/MaintenancePage';
+import AboutPage from './pages/AboutPage';
+import ContactPage from './pages/ContactPage';
+import BookingPage from './pages/BookingPage';
+import BookingConfirmationPage from './pages/BookingConfirmationPage';
+
+// Admin Pages
 import AdminLayout from './pages/admin/AdminLayout';
 import Login from './pages/admin/Login';
 import Dashboard from './pages/admin/Dashboard';
@@ -16,18 +29,30 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* Redirect root to admin */}
-          <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+          {/* Public Customer Portal */}
+          <Route path="/" element={<RootLayout />}>
+            <Route index element={<HomePage />} />
+            <Route path="services" element={<ServicesPage />} />
+            <Route path="services/:serviceId" element={<ServiceDetailPage />} />
+            <Route path="maintenance" element={<MaintenancePage />} />
+            <Route path="about" element={<AboutPage />} />
+            <Route path="contact" element={<ContactPage />} />
+            <Route path="book" element={<BookingPage />} />
+            <Route path="booking-confirmation" element={<BookingConfirmationPage />} />
+          </Route>
 
           {/* Admin Login */}
           <Route path="/admin/login" element={<Login />} />
 
           {/* Protected Admin Routes */}
-          <Route path="/admin" element={
-            <ProtectedRoute>
-              <AdminLayout />
-            </ProtectedRoute>
-          }>
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="bookings" element={<Bookings />} />
@@ -38,6 +63,9 @@ function App() {
             <Route path="settings" element={<Settings />} />
             <Route path="settings/:tab" element={<Settings />} />
           </Route>
+
+          {/* Catch-all fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
