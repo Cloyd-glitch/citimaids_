@@ -41,11 +41,14 @@ const stats = [
 export default function AboutPage() {
   const { settings } = useSettings();
   
-  // Safely extract city from the address or default to 'Abu Dhabi'
   const addressParts = settings?.business_address ? settings.business_address.split(',') : [];
   const city = addressParts.length > 1 ? addressParts[1].trim() : 'Abu Dhabi';
   const businessName = settings?.business_name || 'CitiMaids';
   const description = settings?.description || "From luxury villas and private apartments to corporate offices across Abu Dhabi, CitiMaids delivers hospital-grade sanitization and spotless finishing tailored to your schedule.";
+  const phone = settings?.contact_number || '';
+  const additionalPhone = settings?.additional_number || '';
+  const email = settings?.business_email || '';
+  const additionalEmail = settings?.additional_email || '';
 
   return (
     <div>
@@ -176,6 +179,48 @@ export default function AboutPage() {
                   <div className="text-slate-600 text-xs sm:text-sm">Musrif Area, Abu Dhabi, United Arab Emirates</div>
                 </div>
               </div>
+              <div className="flex items-start gap-4 p-4.5 bg-slate-50 rounded-2xl border border-slate-100">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-900 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="font-bold text-slate-900 text-sm">Email</div>
+                  {email && (
+                    <div className="text-slate-600 text-xs sm:text-sm">
+                      <a href={`https://mail.google.com/mail/?view=cm&fs=1&to=${email}`} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 hover:underline">{email}</a>
+                    </div>
+                  )}
+                  {additionalEmail && (
+                    <div className="text-slate-600 text-xs sm:text-sm mt-1">
+                      <a href={`https://mail.google.com/mail/?view=cm&fs=1&to=${additionalEmail}`} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 hover:underline">{additionalEmail}</a>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4.5 bg-slate-50 rounded-2xl border border-slate-100">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-900 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                </div>
+                <div>
+                  <div className="font-bold text-slate-900 text-sm">Phone</div>
+                  {phone && (
+                    <div className="text-slate-600 text-xs sm:text-sm">
+                      <a href={`tel:${phone.replace(/\s+/g, '')}`} className="hover:text-blue-600 hover:underline">{phone}</a>
+                    </div>
+                  )}
+                  {additionalPhone && (
+                    <div className="text-slate-600 text-xs sm:text-sm mt-1">
+                      <a href={`tel:${additionalPhone.replace(/\s+/g, '')}`} className="hover:text-blue-600 hover:underline">{additionalPhone}</a>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="flex items-start gap-4 p-4.5 bg-slate-50 rounded-2xl border border-slate-100">
                 <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-900 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
