@@ -1,8 +1,16 @@
 import { useState } from 'react';
-
+import { useSettings } from '../hooks/useSettings';
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
+  const { settings } = useSettings();
+
+  const addressParts = settings?.business_address ? settings.business_address.split(',') : [];
+  const city = addressParts.length > 1 ? addressParts[1].trim() : 'Abu Dhabi';
+  const businessName = settings?.business_name || 'CitiMaids';
+  const phone = settings?.contact_number || '+971 2 650 5050';
+  const email = settings?.business_email || 'info@citimaids.ae';
+  const address = settings?.business_address || 'Musrif Area, Abu Dhabi, UAE';
 
   const set = (field, value) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -23,9 +31,9 @@ export default function ContactPage() {
           <span className="inline-block px-4 py-1.5 rounded-full bg-white/15 text-xs font-semibold uppercase tracking-widest mb-4 backdrop-blur-sm">
             Get In Touch
           </span>
-          <h1 className="text-4xl sm:text-5xl font-extrabold mb-3 tracking-tight">Contact CitiMaids</h1>
+          <h1 className="text-4xl sm:text-5xl font-extrabold mb-3 tracking-tight">Contact {businessName}</h1>
           <p className="text-blue-100 text-sm sm:text-base leading-relaxed">
-            Have a question or require a tailored corporate cleaning quote? Our Abu Dhabi team is at your service.
+            Have a question or require a tailored corporate cleaning quote? Our {city} team is at your service.
           </p>
         </div>
       </div>
@@ -45,8 +53,8 @@ export default function ContactPage() {
                     </svg>
                   ),
                   label: 'Direct Phone',
-                  value: '+971 2 650 5050',
-                  href: 'tel:+97126505050',
+                  value: phone,
+                  href: `tel:${phone.replace(/\s+/g, '')}`,
                 },
                 {
                   icon: (
@@ -55,8 +63,8 @@ export default function ContactPage() {
                     </svg>
                   ),
                   label: 'Inquiries Email',
-                  value: 'info@citimaids.ae',
-                  href: 'mailto:info@citimaids.ae',
+                  value: email,
+                  href: `mailto:${email}`,
                 },
                 {
                   icon: (
@@ -65,7 +73,7 @@ export default function ContactPage() {
                     </svg>
                   ),
                   label: 'Central Office',
-                  value: 'Musrif Area, Abu Dhabi, UAE',
+                  value: address,
                   href: null,
                 },
                 {
