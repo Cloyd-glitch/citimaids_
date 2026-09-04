@@ -10,7 +10,7 @@ class ServiceController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Service::query();
+        $query = Service::withCount('bookings');
 
         // Public customers only see active services
         if ($request->has('public')) {

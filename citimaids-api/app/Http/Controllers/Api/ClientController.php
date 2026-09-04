@@ -11,7 +11,8 @@ class ClientController extends Controller
     public function index(Request $request)
     {
         $query = Client::withCount('bookings')
-            ->selectRaw('clients.*, MAX(bookings.preferred_date) as last_booking_date')
+            ->select('clients.*')
+            ->selectRaw('MAX(bookings.preferred_date) as last_booking_date')
             ->leftJoin('bookings', 'bookings.client_id', '=', 'clients.id')
             ->groupBy('clients.id')
             ->latest('clients.created_at');
