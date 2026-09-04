@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useSettings } from '../hooks/useSettings';
+import { formatUAEPhone } from '../utils/formatters';
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
@@ -206,7 +207,7 @@ export default function ContactPage() {
                       type="tel"
                       required
                       value={form.phone}
-                      onChange={(e) => set('phone', e.target.value)}
+                      onChange={(e) => set('phone', formatUAEPhone(e.target.value))}
                       placeholder="+971 50 000 0000"
                       className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors"
                     />
