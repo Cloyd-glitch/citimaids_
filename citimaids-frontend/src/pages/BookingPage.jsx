@@ -117,24 +117,11 @@ export default function BookingPage() {
   }, [services]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
+
   const set = (field, value) => setData((prev) => ({ ...prev, [field]: value }));
 
-  // Guard: while services are loading or serviceId not yet resolved, show a spinner
-  if (servicesLoading || (services.length > 0 && data.serviceId === null)) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
-        <div style={{ textAlign: 'center', color: '#0A2342' }}>
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0A2342" strokeWidth="2" style={{ animation: 'spin 1s linear infinite', marginBottom: 12 }}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
-          </svg>
-          <div style={{ fontWeight: 700, fontSize: 15 }}>Loading services...</div>
-          <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
-        </div>
-      </div>
-    );
-  }
-
-  const selectedService = services.find((s) => s.id === data.serviceId) || services[0];
+  // Resolve selected service — safe even while loading
+  const selectedService = services.find((s) => s.id === data.serviceId) || services[0] || null;
 
   const handleCityChange = (newCity) => {
     setData((prev) => ({
@@ -145,6 +132,7 @@ export default function BookingPage() {
   };
 
   const estimate = useMemo(() => {
+    if (!selectedService) return { hours: '—', total: 0, note: '' };
     if (selectedService.rateUnit === 'flat') {
       return { hours: 'Full Day', total: selectedService.basePrice, note: 'Guaranteed Flat Handover Rate' };
     }
@@ -232,6 +220,7 @@ export default function BookingPage() {
   };
 
   const freshnessIndex = useMemo(() => {
+    if (!selectedService) return 'S4';
     const base = selectedService.basePrice;
     if (base >= 300) return 'S+';
     if (base >= 60) return 'S4';
@@ -244,7 +233,7 @@ export default function BookingPage() {
       {/* ═══ Hero Banner ═══ */}
       <div style={{
         background: 'linear-gradient(135deg, #061429 0%, #0A2342 50%, #1E3A8A 100%)',
-        padding: '120px 24px 48px',
+        padding: '96px 24px 56px',
         textAlign: 'center',
       }}>
         <div style={{ maxWidth: 560, margin: '0 auto' }}>
@@ -347,34 +336,47 @@ export default function BookingPage() {
                 Select the service that best fits your property.
               </p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                {services.map((s) => {
-                  const isSelected = data.serviceId === s.id;
-                  return (
-                    <label key={s.id} style={{
-                      display: 'flex', alignItems: 'flex-start', gap: 12,
-                      padding: '16px 16px', borderRadius: 14,
-                      border: isSelected ? '2px solid #0A2342' : '1.5px solid #e2e8f0',
-                      background: isSelected ? '#eff6ff' : '#fff',
-                      cursor: 'pointer', transition: 'all 0.2s',
-                    }}>
-                      <input
-                        type="radio" name="service" value={s.id}
-                        checked={isSelected}
-                        onChange={() => set('serviceId', s.id)}
-                        style={{ marginTop: 3, accentColor: '#0A2342' }}
-                      />
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: '#0A2342' }}>{s.title}</div>
-                        <div style={{ fontSize: 12, fontWeight: 800, color: '#2563eb', marginTop: 2 }}>{s.startingPrice}</div>
-                        <div style={{ fontSize: 11, color: '#64748b', marginTop: 3, lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                          {s.description}
+              {servicesLoading ? (
+                /* Skeleton loader while services fetch */
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  {[1, 2, 3, 4].map((n) => (
+                    <div key={n} style={{
+                      height: 76, borderRadius: 14, background: '#f1f5f9',
+                      animation: 'pulse 1.5s ease-in-out infinite',
+                    }} />
+                  ))}
+                  <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.45} }`}</style>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  {services.map((s) => {
+                    const isSelected = data.serviceId === s.id;
+                    return (
+                      <label key={s.id} style={{
+                        display: 'flex', alignItems: 'flex-start', gap: 12,
+                        padding: '16px 16px', borderRadius: 14,
+                        border: isSelected ? '2px solid #0A2342' : '1.5px solid #e2e8f0',
+                        background: isSelected ? '#eff6ff' : '#fff',
+                        cursor: 'pointer', transition: 'all 0.2s',
+                      }}>
+                        <input
+                          type="radio" name="service" value={s.id}
+                          checked={isSelected}
+                          onChange={() => set('serviceId', s.id)}
+                          style={{ marginTop: 3, accentColor: '#0A2342' }}
+                        />
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: 14, color: '#0A2342' }}>{s.title}</div>
+                          <div style={{ fontSize: 12, fontWeight: 800, color: '#2563eb', marginTop: 2 }}>{s.startingPrice}</div>
+                          <div style={{ fontSize: 11, color: '#64748b', marginTop: 3, lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            {s.description}
+                          </div>
                         </div>
-                      </div>
-                    </label>
-                  );
-                })}
-              </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
@@ -755,18 +757,24 @@ export default function BookingPage() {
             </div>
 
             {/* Service Image */}
-            <div style={{ height: 160, overflow: 'hidden', position: 'relative' }}>
-              <img
-                src={selectedService.image}
-                alt={selectedService.title}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
+            <div style={{ height: 160, overflow: 'hidden', position: 'relative',
+              background: selectedService ? 'transparent' : '#e2e8f0'
+            }}>
+              {selectedService && (
+                <img
+                  src={selectedService.image}
+                  alt={selectedService.title}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              )}
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0,
                 background: 'linear-gradient(transparent, rgba(0,0,0,0.6))',
                 padding: '24px 16px 12px',
               }}>
-                <div style={{ color: '#fff', fontSize: 15, fontWeight: 800 }}>{selectedService.title}</div>
+                <div style={{ color: '#fff', fontSize: 15, fontWeight: 800 }}>
+                  {selectedService?.title || 'Select a service'}
+                </div>
                 <div style={{ color: '#93c5fd', fontSize: 11, fontWeight: 600 }}>Freshness Index {freshnessIndex}</div>
               </div>
             </div>
@@ -826,11 +834,12 @@ export default function BookingPage() {
         .booking-grid {
           grid-template-columns: 1fr 340px;
         }
-        @media (max-width: 768px) {
+        @media (max-width: 860px) {
           .booking-grid {
             grid-template-columns: 1fr !important;
           }
         }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.45} }
       `}</style>
     </div>
   );
