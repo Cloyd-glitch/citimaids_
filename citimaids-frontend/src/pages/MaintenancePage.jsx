@@ -84,6 +84,10 @@ export default function MaintenancePage() {
                     src={`https://images.unsplash.com/photo-${s.imageId}?w=800&h=600&fit=crop&auto=format`}
                     alt={s.title}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&h=600&fit=crop&auto=format';
+                    }}
                   />
                 </div>
                 <div className="p-8 md:p-12 flex flex-col justify-center">
