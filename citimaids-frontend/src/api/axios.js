@@ -22,9 +22,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('citimaids_token');
-      localStorage.removeItem('citimaids_user');
-      window.location.href = '/admin/login';
+      if (window.location.pathname.startsWith('/admin') && window.location.pathname !== '/admin/login') {
+        localStorage.removeItem('citimaids_token');
+        localStorage.removeItem('citimaids_user');
+        window.location.href = '/admin/login';
+      }
     }
     return Promise.reject(error);
   }

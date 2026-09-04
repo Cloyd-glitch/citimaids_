@@ -179,7 +179,7 @@ export default function BookingPage() {
 
   const handleConfirm = async () => {
     setLoading(true);
-    let bookingId = 'CM' + Date.now().toString().slice(-6);
+    let bookingId = 'CM-' + Date.now().toString().slice(-5);
     try {
       const res = await api.post('/bookings', {
         name: data.name,
@@ -190,8 +190,12 @@ export default function BookingPage() {
         address: `${data.district ? data.district + ', ' : ''}${data.streetAddress}${data.city ? ', ' + data.city : ''}${data.zipCode ? ' ' + data.zipCode : ''}`,
         notes: `Property: ${data.propertyType}, ${data.rooms} Bed, ${data.bathrooms} Bath | Time: ${data.time} | Est: AED ${estimate.total} | Notes: ${data.notes || 'None'}`,
       });
-      if (res.data?.booking?.id) {
-        bookingId = `CM${res.data.booking.id.toString().padStart(5, '0')}`;
+      if (res.data?.reference) {
+        bookingId = res.data.reference;
+      } else if (res.data?.booking_id) {
+        bookingId = `CM-${String(res.data.booking_id).padStart(5, '0')}`;
+      } else if (res.data?.booking?.id) {
+        bookingId = `CM-${String(res.data.booking.id).padStart(5, '0')}`;
       }
     } catch (err) {
       console.warn('Backend API notification skipped or offline:', err);
