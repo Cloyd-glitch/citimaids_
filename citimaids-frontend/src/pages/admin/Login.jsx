@@ -6,12 +6,25 @@ export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState({});
     const { login, loading } = useAuth();
     const navigate = useNavigate();
+
+    const validate = () => {
+        const errs = {};
+        if (!email.trim()) errs.email = 'Email is required.';
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = 'Enter a valid email address.';
+        if (!password) errs.password = 'Password is required.';
+        else if (password.length < 6) errs.password = 'Password must be at least 6 characters.';
+        return errs;
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        const errs = validate();
+        if (Object.keys(errs).length > 0) { setFieldErrors(errs); return; }
+        setFieldErrors({});
         const result = await login(email, password);
         if (result.success) {
             navigate('/admin/dashboard');
@@ -140,19 +153,19 @@ export default function Login() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="admin@citimaids.com"
-                            required
                             style={{
                                 width: '100%',
                                 padding: '13px 16px',
                                 borderRadius: 12,
-                                border: '1.5px solid #e2e8f0',
+                                border: `1.5px solid ${fieldErrors.email ? '#fca5a5' : '#e2e8f0'}`,
                                 fontSize: 14,
                                 outline: 'none',
                                 transition: 'all 0.2s',
                                 boxSizing: 'border-box',
-                                background: '#f8fafc',
+                                background: fieldErrors.email ? '#fff5f5' : '#f8fafc',
                             }}
                         />
+                        {fieldErrors.email && <p style={{ margin: '6px 0 0', fontSize: 12, color: '#dc2626', fontWeight: 500 }}>{fieldErrors.email}</p>}
                     </div>
 
                     <div style={{ marginBottom: 28 }}>
@@ -164,19 +177,19 @@ export default function Login() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="••••••••"
-                            required
                             style={{
                                 width: '100%',
                                 padding: '13px 16px',
                                 borderRadius: 12,
-                                border: '1.5px solid #e2e8f0',
+                                border: `1.5px solid ${fieldErrors.password ? '#fca5a5' : '#e2e8f0'}`,
                                 fontSize: 14,
                                 outline: 'none',
                                 transition: 'all 0.2s',
                                 boxSizing: 'border-box',
-                                background: '#f8fafc',
+                                background: fieldErrors.password ? '#fff5f5' : '#f8fafc',
                             }}
                         />
+                        {fieldErrors.password && <p style={{ margin: '6px 0 0', fontSize: 12, color: '#dc2626', fontWeight: 500 }}>{fieldErrors.password}</p>}
                     </div>
 
                     <button

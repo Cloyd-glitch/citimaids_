@@ -1,14 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { services } from '../data/services';
+import { services as localServices } from '../data/services';
 import api from '../api/axios';
 
 const STEPS = [
-  { key: 'service',  label: 'Service',     icon: StepServiceIcon },
+  { key: 'service', label: 'Service', icon: StepServiceIcon },
   { key: 'datetime', label: 'Date & Time', icon: StepDateIcon },
-  { key: 'address',  label: 'Address',     icon: StepAddressIcon },
-  { key: 'contact',  label: 'Contact',     icon: StepContactIcon },
-  { key: 'review',   label: 'Review',      icon: StepReviewIcon },
+  { key: 'address', label: 'Address', icon: StepAddressIcon },
+  { key: 'contact', label: 'Contact', icon: StepContactIcon },
+  { key: 'review', label: 'Review', icon: StepReviewIcon },
 ];
 
 const timeSlots = [
@@ -77,6 +77,10 @@ export default function BookingPage() {
 
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  // Map from local service id (string) → DB service id (integer)
+  const [serviceDbIdMap, setServiceDbIdMap] = useState({});
+  const [services, setServices] = useState(localServices);
+  const [contactErrors, setContactErrors] = useState({});
   const [data, setData] = useState({
     serviceId: preselected,
     propertyType: 'Apartment',
@@ -96,6 +100,26 @@ export default function BookingPage() {
 
   const set = (field, value) => setData((prev) => ({ ...prev, [field]: value }));
 
+  // Fetch real services from API and map by name to local service entries
+  useEffect(() => {
+    api.get('/services').then((res) => {
+      const apiServices = res.data?.data || res.data || [];
+      if (Array.isArray(apiServices) && apiServices.length > 0) {
+        // Build a map: localService.id → apiService.id (by name similarity)
+        const map = {};
+        localServices.forEach((local) => {
+          const match = apiServices.find(
+            (api) => api.name?.toLowerCase().includes(local.title?.toLowerCase().split(' ')[0])
+          );
+          if (match) map[local.id] = match.id;
+        });
+        setServiceDbIdMap(map);
+      }
+    }).catch(() => { /* API offline — use local services */ });
+  }, []);
+
+  const selectedService = services.find((s) => s.id === data.serviceId) || services[0];
+
   const handleCityChange = (newCity) => {
     setData((prev) => ({
       ...prev,
@@ -103,8 +127,6 @@ export default function BookingPage() {
       district: uaeDistricts[newCity]?.[0] || '',
     }));
   };
-
-  const selectedService = services.find((s) => s.id === data.serviceId) || services[0];
 
   const estimate = useMemo(() => {
     if (selectedService.rateUnit === 'flat') {
@@ -126,13 +148,34 @@ export default function BookingPage() {
     return { hours: `~${estimatedHours} hrs`, total, note: `Estimated based on ${data.propertyType} (${data.rooms} Bed)` };
   }, [selectedService, data.propertyType, data.rooms]);
 
-  const canProceed = () => {
+  // Pure check — no side effects, safe to call in render / disabled prop
+  const isStepValid = () => {
     if (step === 0) return !!data.serviceId;
     if (step === 1) return !!data.date && !!data.time;
     if (step === 2) return !!data.streetAddress && !!data.district && !!data.city;
-    if (step === 3) return !!data.name && !!data.phone;
+    if (step === 3) {
+      if (!data.name.trim()) return false;
+      if (!data.phone.trim() || !/^[\d\s\+\-\(\)]{7,}$/.test(data.phone)) return false;
+      if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) return false;
+      return true;
+    }
     return true;
   };
+
+  // Validate and show inline errors — only called on explicit Continue click
+  const validateAndProceed = () => {
+    if (step === 3) {
+      const errs = {};
+      if (!data.name.trim()) errs.name = 'Full name is required.';
+      if (!data.phone.trim()) errs.phone = 'Phone number is required.';
+      else if (!/^[\d\s\+\-\(\)]{7,}$/.test(data.phone)) errs.phone = 'Enter a valid phone number.';
+      if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) errs.email = 'Enter a valid email address.';
+      setContactErrors(errs);
+      if (Object.keys(errs).length > 0) return;
+    }
+    setStep((s) => s + 1);
+  };
+
 
   const handleConfirm = async () => {
     setLoading(true);
@@ -142,7 +185,7 @@ export default function BookingPage() {
         name: data.name,
         contact_number: data.phone,
         email: data.email || null,
-        service_id: 1,
+        service_id: serviceDbIdMap[data.serviceId] || null,
         preferred_date: data.date,
         address: `${data.district ? data.district + ', ' : ''}${data.streetAddress}${data.city ? ', ' + data.city : ''}${data.zipCode ? ' ' + data.zipCode : ''}`,
         notes: `Property: ${data.propertyType}, ${data.rooms} Bed, ${data.bathrooms} Bath | Time: ${data.time} | Est: AED ${estimate.total} | Notes: ${data.notes || 'None'}`,
@@ -175,8 +218,8 @@ export default function BookingPage() {
   const freshnessIndex = useMemo(() => {
     const base = selectedService.basePrice;
     if (base >= 300) return 'S+';
-    if (base >= 60)  return 'S4';
-    if (base >= 45)  return 'S3';
+    if (base >= 60) return 'S4';
+    if (base >= 45) return 'S3';
     return 'S4';
   }, [selectedService]);
 
@@ -460,31 +503,35 @@ export default function BookingPage() {
               <span style={labelStyle}>Full Name</span>
               <input
                 type="text" value={data.name}
-                onChange={(e) => set('name', e.target.value)}
+                onChange={(e) => { set('name', e.target.value); if (contactErrors.name) setContactErrors((p) => ({ ...p, name: '' })); }}
                 placeholder="e.g. Mohammed Al Mansoori"
-                style={inputStyle}
+                style={{ ...inputStyle, ...(contactErrors.name ? { borderColor: '#fca5a5', background: '#fff5f5' } : {}) }}
               />
+              {contactErrors.name && <p style={{ margin: '6px 0 0', fontSize: 12, color: '#dc2626', fontWeight: 500 }}>{contactErrors.name}</p>}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16 }}>
                 <div>
                   <span style={labelStyle}>Email</span>
                   <input
                     type="email" value={data.email}
-                    onChange={(e) => set('email', e.target.value)}
+                    onChange={(e) => { set('email', e.target.value); if (contactErrors.email) setContactErrors((p) => ({ ...p, email: '' })); }}
                     placeholder="client@email.com"
-                    style={inputStyle}
+                    style={{ ...inputStyle, ...(contactErrors.email ? { borderColor: '#fca5a5', background: '#fff5f5' } : {}) }}
                   />
+                  {contactErrors.email && <p style={{ margin: '6px 0 0', fontSize: 12, color: '#dc2626', fontWeight: 500 }}>{contactErrors.email}</p>}
                 </div>
                 <div>
                   <span style={labelStyle}>Phone</span>
                   <input
                     type="tel" value={data.phone}
-                    onChange={(e) => set('phone', e.target.value)}
+                    onChange={(e) => { set('phone', e.target.value); if (contactErrors.phone) setContactErrors((p) => ({ ...p, phone: '' })); }}
                     placeholder="+971 50 000 0000"
-                    style={inputStyle}
+                    style={{ ...inputStyle, ...(contactErrors.phone ? { borderColor: '#fca5a5', background: '#fff5f5' } : {}) }}
                   />
+                  {contactErrors.phone && <p style={{ margin: '6px 0 0', fontSize: 12, color: '#dc2626', fontWeight: 500 }}>{contactErrors.phone}</p>}
                 </div>
               </div>
+
             </div>
           )}
 
@@ -623,16 +670,16 @@ export default function BookingPage() {
             {step < STEPS.length - 1 ? (
               <button
                 type="button"
-                disabled={!canProceed()}
-                onClick={() => setStep((s) => s + 1)}
+                disabled={!isStepValid()}
+                onClick={validateAndProceed}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 6,
                   padding: '12px 28px', borderRadius: 12,
-                  background: canProceed() ? 'linear-gradient(135deg, #0A2342 0%, #1E3A8A 100%)' : '#e2e8f0',
-                  color: canProceed() ? '#fff' : '#94a3b8',
+                  background: isStepValid() ? 'linear-gradient(135deg, #0A2342 0%, #1E3A8A 100%)' : '#e2e8f0',
+                  color: isStepValid() ? '#fff' : '#94a3b8',
                   border: 'none', fontSize: 13, fontWeight: 700,
-                  cursor: canProceed() ? 'pointer' : 'not-allowed',
-                  boxShadow: canProceed() ? '0 4px 14px rgba(10,35,66,0.25)' : 'none',
+                  cursor: isStepValid() ? 'pointer' : 'not-allowed',
+                  boxShadow: isStepValid() ? '0 4px 14px rgba(10,35,66,0.25)' : 'none',
                   transition: 'all 0.15s',
                 }}
               >

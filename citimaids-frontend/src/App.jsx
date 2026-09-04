@@ -21,6 +21,7 @@ import Bookings from './pages/admin/Bookings';
 import BookingDetail from './pages/admin/BookingDetail';
 import Payments from './pages/admin/Payments';
 import Clients from './pages/admin/Clients';
+import ClientDetail from './pages/admin/ClientDetail';
 import Services from './pages/admin/Services';
 import Reports from './pages/admin/Reports';
 import Settings from './pages/admin/Settings';
@@ -62,6 +63,7 @@ function App() {
             <Route path="billing" element={<Payments defaultTab="payments" />} />
             <Route path="transactions" element={<Payments defaultTab="transactions" />} />
             <Route path="clients" element={<Clients />} />
+            <Route path="clients/:id" element={<ClientDetail />} />
             <Route path="services" element={<Services />} />
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<Settings />} />
