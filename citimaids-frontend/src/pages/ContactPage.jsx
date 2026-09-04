@@ -8,8 +8,8 @@ export default function ContactPage() {
   const addressParts = settings?.business_address ? settings.business_address.split(',') : [];
   const city = addressParts.length > 1 ? addressParts[1].trim() : 'Abu Dhabi';
   const businessName = settings?.business_name || 'CitiMaids';
-  const phone = settings?.contact_number || '+971 2 650 5050';
-  const email = settings?.business_email || 'info@citimaids.ae';
+  const phone = settings?.contact_number || '';
+  const email = settings?.business_email || '';
   const address = settings?.business_address || 'Musrif Area, Abu Dhabi, UAE';
 
   const set = (field, value) =>
