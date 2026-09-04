@@ -30,6 +30,10 @@ export default function ServiceDetailPage() {
           src={service.image}
           alt={service.title}
           className="w-full h-full object-cover"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&auto=format&fit=crop&q=80';
+          }}
         />
         <div className="hero-gradient-overlay absolute inset-0" />
         <div className="absolute bottom-0 left-0 right-0 p-8 sm:p-14 max-w-7xl mx-auto z-10">
@@ -177,6 +181,10 @@ export default function ServiceDetailPage() {
                       alt={s.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&auto=format&fit=crop&q=80';
+                      }}
                     />
                   </div>
                   <div className="p-6">

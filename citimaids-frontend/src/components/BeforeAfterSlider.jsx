@@ -55,6 +55,10 @@ export default function BeforeAfterSlider({
           alt={`${label} - After`}
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
           loading="lazy"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=900&auto=format&fit=crop&q=80';
+          }}
         />
 
         {/* BEFORE Image (Clipped via clip-path) */}
@@ -67,6 +71,10 @@ export default function BeforeAfterSlider({
             WebkitClipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
           }}
           loading="lazy"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=900&auto=format&fit=crop&q=80';
+          }}
         />
 
         {/* Labels */}
