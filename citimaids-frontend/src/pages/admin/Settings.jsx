@@ -588,8 +588,8 @@ function SecuritySettings({ showToast }) {
 function SystemPreferences({ showToast }) {
     const [prefs, setPrefs] = useState({
         language: 'en',
-        currency: 'PHP',
-        currency_symbol: '₱',
+        currency: 'AED',
+        currency_symbol: 'د.إ',
         date_format: 'MMM DD, YYYY',
         time_format: '12h',
         items_per_page: '10',

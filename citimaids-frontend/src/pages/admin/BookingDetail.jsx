@@ -208,8 +208,8 @@ export default function BookingDetail() {
                                     }}>
                                         <span>{d.service?.name || '—'}</span>
                                         <span>{d.quantity}</span>
-                                        <span>₱{Number(d.unit_price).toLocaleString()}</span>
-                                        <span style={{ fontWeight: 600 }}>₱{Number(d.total_price).toLocaleString()}</span>
+                                        <span>AED {Number(d.unit_price).toLocaleString()}</span>
+                                        <span style={{ fontWeight: 600 }}>AED {Number(d.total_price).toLocaleString()}</span>
                                     </div>
                                 ))}
                             </div>

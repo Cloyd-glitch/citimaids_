@@ -64,7 +64,7 @@ export default function Reports() {
         { label: 'Total Bookings', value: total, change: '+12%', icon: '📅', color: '#3b82f6' },
         { label: 'Completed Bookings', value: completed_cnt, change: '+8%', icon: '✅', color: '#10b981' },
         { label: 'Total Clients', value: totalClients, change: '+10%', icon: '👥', color: '#8b5cf6' },
-        { label: 'Total Revenue', value: `₱${revenue.toLocaleString()}`, change: '+15%', icon: '💰', color: '#f59e0b' },
+        { label: 'Total Revenue', value: `AED ${revenue.toLocaleString()}`, change: '+15%', icon: '💰', color: '#f59e0b' },
     ];
 
     const svcData = services.length > 0

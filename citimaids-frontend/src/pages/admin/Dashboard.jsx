@@ -38,7 +38,7 @@ export default function Dashboard() {
         { label: 'TOTAL BOOKINGS', value: stats?.total || 0, change: '+12%', changeColor: '#10b981', icon: '📅', bg: '#fff' },
         { label: 'TOTAL CLIENTS', value: stats?.total || 0, change: '+10%', changeColor: '#10b981', icon: '👥', bg: '#fff' },
         { label: 'ACTIVE SERVICES', value: '7', change: 'stable', changeColor: '#94a3b8', icon: '⚙️', bg: '#fff' },
-        { label: 'TOTAL REVENUE', value: `₱${(stats?.completed || 0) * 350}`, change: '+15%', changeColor: '#10b981', icon: '💰', bg: '#fff' },
+        { label: 'TOTAL REVENUE', value: `AED ${(stats?.completed || 0) * 350}`, change: '+15%', changeColor: '#10b981', icon: '💰', bg: '#fff' },
     ];
 
     const secondaryCards = [
@@ -204,7 +204,7 @@ export default function Dashboard() {
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                                         <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1f37' }}>
-                                            ₱{booking.service?.base_price ? Number(booking.service.base_price).toLocaleString() : '—'}
+                                            {booking.service?.base_price ? `AED ${Number(booking.service.base_price).toLocaleString()}` : '—'}
                                         </span>
                                         <span style={{
                                             display: 'flex',

@@ -148,7 +148,7 @@ export default function Services() {
                                 placeholder="Brief description of this service..." rows={3}
                                 style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }} />
                         </FieldGroup>
-                        <FieldGroup label="Base Price (₱)">
+                        <FieldGroup label="Base Price (AED)">
                             <input type="number" value={form.base_price} onChange={e => setForm({ ...form, base_price: e.target.value })}
                                 placeholder="0.00" style={inputStyle} />
                         </FieldGroup>
@@ -235,7 +235,7 @@ export default function Services() {
                                 </div>
                                 {/* Revenue */}
                                 <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1f37' }}>
-                                    ₱{Number(revenue).toLocaleString()}
+                                    AED {Number(revenue).toLocaleString()}
                                 </div>
                                 {/* Status */}
                                 <button
