@@ -45,6 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/clients', [ClientController::class, 'index']);
     Route::get('/clients/{id}', [ClientController::class, 'show']);
     Route::post('/clients', [ClientController::class, 'store']);
+    Route::put('/clients/{id}', [ClientController::class, 'update']);
     Route::delete('/clients/{id}', [ClientController::class, 'destroy']);
 
     // Services (admin CRUD — uses ?public for public listing override)

@@ -54,4 +54,19 @@ class ClientController extends Controller
         $client->delete();
         return response()->json(['message' => 'Client deleted.']);
     }
+
+    public function update(Request $request, $id)
+    {
+        $client = Client::findOrFail($id);
+
+        $validated = $request->validate([
+            'name'           => 'required|string|max:255',
+            'contact_number' => 'nullable|string|max:50',
+            'email'          => 'nullable|email|max:255',
+            'address'        => 'nullable|string|max:500',
+        ]);
+
+        $client->update($validated);
+        return response()->json(['message' => 'Client updated.', 'client' => $client]);
+    }
 }
