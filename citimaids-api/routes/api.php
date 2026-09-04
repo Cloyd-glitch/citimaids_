@@ -16,8 +16,10 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 // Public booking submission (customers)
 Route::post('/bookings', [BookingController::class, 'store']);
 
-// Public services list (customer-facing, active only)
+// Public services list (customer-facing; active only unless auth token present)
 Route::get('/services', [ServiceController::class, 'index']);
+
+
 
 // ─── Protected Routes (Sanctum Auth Required) ─────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import api from '../api/axios';
 
 /**
  * Fetch public (active-only) services from the backend API.
@@ -115,10 +114,24 @@ export function useServices() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get('/services');
-      const raw = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      // Use the native fetch so we bypass the axios 401 interceptor
+      // that would redirect the customer to /admin/login on token issues.
+      // We still send the token if present so the admin sees all services.
+      const token = localStorage.getItem('citimaids_token');
+      const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch('http://localhost:8000/api/services', { headers });
+
+      if (!res.ok) {
+        throw new Error(`API returned ${res.status}`);
+      }
+
+      const json = await res.json();
+      const raw = Array.isArray(json) ? json : (json?.data || []);
       setServices(raw.map(enrichService));
     } catch (err) {
+      console.warn('useServices fetch error:', err);
       setError(err);
       setServices([]);
     } finally {
