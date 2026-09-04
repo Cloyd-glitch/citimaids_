@@ -15,6 +15,8 @@ export default function Clients() {
     const [toast, setToast] = useState(null);
     const [deleteModal, setDeleteModal] = useState(null);
     const [addModal, setAddModal] = useState(false);
+    const [editModal, setEditModal] = useState(false);
+    const [editId, setEditId] = useState(null);
     const [form, setForm] = useState({ name: '', contact_number: '', email: '', address: '' });
     const [formLoading, setFormLoading] = useState(false);
     const searchTimer = useRef(null);
@@ -63,6 +65,21 @@ export default function Clients() {
             fetchClients();
         } catch {
             showToast('Failed to add client.', 'error');
+        } finally {
+            setFormLoading(false);
+        }
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        setFormLoading(true);
+        try {
+            await api.put(`/clients/${editId}`, form);
+            setEditModal(false);
+            showToast('Client updated successfully.', 'success');
+            fetchClients();
+        } catch {
+            showToast('Failed to update client.', 'error');
         } finally {
             setFormLoading(false);
         }
@@ -152,6 +169,36 @@ export default function Clients() {
                 </Modal>
             )}
 
+            {/* Edit Client Modal */}
+            {editModal && (
+                <Modal onClose={() => setEditModal(false)} title="Edit Client">
+                    <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <FormField label="Full Name" required>
+                            <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+                                placeholder="Mohammed Al Mansoori" style={inputStyleToken} />
+                        </FormField>
+                        <FormField label="Contact Number">
+                            <input value={form.contact_number} onChange={e => setForm({ ...form, contact_number: e.target.value })}
+                                placeholder="+971 50 000 0000" style={inputStyleToken} />
+                        </FormField>
+                        <FormField label="Email">
+                            <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
+                                placeholder="client@email.com" style={inputStyleToken} />
+                        </FormField>
+                        <FormField label="Address">
+                            <input value={form.address} onChange={e => setForm({ ...form, address: e.target.value })}
+                                placeholder="Al Reem Island, Abu Dhabi" style={inputStyleToken} />
+                        </FormField>
+                        <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                            <button type="button" onClick={() => setEditModal(false)} style={{ ...outlineBtnToken, flex: 1, justifyContent: 'center' }}>Cancel</button>
+                            <button type="submit" disabled={formLoading} style={{ ...solidBtnToken, flex: 1, justifyContent: 'center', opacity: formLoading ? 0.6 : 1 }}>
+                                {formLoading ? 'Saving...' : 'Save Changes'}
+                            </button>
+                        </div>
+                    </form>
+                </Modal>
+            )}
+
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                 <div>
@@ -160,7 +207,10 @@ export default function Clients() {
                         Manage all clients — <strong>{meta.total || 0}</strong> total
                     </p>
                 </div>
-                <button onClick={() => setAddModal(true)} style={solidBtnToken}>
+                <button onClick={() => {
+                    setForm({ name: '', contact_number: '', email: '', address: '' });
+                    setAddModal(true);
+                }} style={solidBtnToken}>
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
@@ -268,7 +318,16 @@ export default function Clients() {
                                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
                                         </svg>
                                     } />
-                                    <ActionBtn title="Edit" icon={
+                                    <ActionBtn title="Edit" onClick={() => {
+                                        setForm({
+                                            name: client.name || '',
+                                            contact_number: client.contact_number || '',
+                                            email: client.email || '',
+                                            address: client.address || ''
+                                        });
+                                        setEditId(client.id);
+                                        setEditModal(true);
+                                    }} icon={
                                         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
                                             <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
