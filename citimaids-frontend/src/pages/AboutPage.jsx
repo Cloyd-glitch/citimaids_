@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useSettings } from '../hooks/useSettings';
 import Reveal from '../components/Reveal';
 import {
   AwardIcon,
@@ -38,6 +39,14 @@ const stats = [
 ];
 
 export default function AboutPage() {
+  const { settings } = useSettings();
+  
+  // Safely extract city from the address or default to 'Abu Dhabi'
+  const addressParts = settings?.business_address ? settings.business_address.split(',') : [];
+  const city = addressParts.length > 1 ? addressParts[1].trim() : 'Abu Dhabi';
+  const businessName = settings?.business_name || 'CitiMaids';
+  const description = settings?.description || "From luxury villas and private apartments to corporate offices across Abu Dhabi, CitiMaids delivers hospital-grade sanitization and spotless finishing tailored to your schedule.";
+
   return (
     <div>
       {/* Header */}
@@ -49,9 +58,9 @@ export default function AboutPage() {
           <span className="inline-block px-4 py-1.5 rounded-full bg-white/15 text-xs font-semibold uppercase tracking-widest mb-4 backdrop-blur-sm">
             Our Story
           </span>
-          <h1 className="text-4xl sm:text-5xl font-extrabold mb-3 tracking-tight">About CitiMaids</h1>
+          <h1 className="text-4xl sm:text-5xl font-extrabold mb-3 tracking-tight">About {businessName}</h1>
           <p className="text-blue-100 text-sm sm:text-base leading-relaxed">
-            Abu Dhabi and two other cities' trusted professional cleaning partner, delivering spotless homes and commercial spaces since 2018.
+            {city} and two other cities' trusted professional cleaning partner, delivering spotless homes and commercial spaces since 2018.
           </p>
         </div>
       </div>
@@ -62,16 +71,16 @@ export default function AboutPage() {
           <div>
             <span className="text-blue-800 font-bold text-xs uppercase tracking-widest">Who We Are</span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-2 mb-6">
-              Serving Abu Dhabi and Two Other Cities' Homes & Offices with Pride
+              Serving {city} and Two Other Cities' Homes & Offices with Pride
             </h2>
             <p className="text-slate-600 leading-relaxed mb-4 text-sm sm:text-base">
-              CitiMaids was founded in Musrif, Abu Dhabi with a straightforward mission: to provide UAE residents with reliable, honest, and high-standard cleaning services they can trust with their personal homes.
+              {businessName} was founded in {city} with a straightforward mission: to provide UAE residents with reliable, honest, and high-standard cleaning services they can trust with their personal homes.
             </p>
             <p className="text-slate-600 leading-relaxed mb-4 text-sm sm:text-base">
               Over the years, we have expanded from a modest crew to a dedicated fleet of fully licensed, background-checked, and highly trained cleaning specialists serving hundreds of residences and businesses every week.
             </p>
             <p className="text-slate-600 leading-relaxed mb-8 text-sm sm:text-base">
-              From everyday apartment upkeep to deep villa restoration, carpet steam extraction, and full building facility contracts, CitiMaids is committed to immaculate living spaces.
+              {description}
             </p>
             <Link
               to="/book"
