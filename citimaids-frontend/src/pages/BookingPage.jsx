@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { services as localServices } from '../data/services';
+import { useServices } from '../hooks/useServices';
 import api from '../api/axios';
 
 const STEPS = [
@@ -73,16 +73,17 @@ export const uaeDistricts = {
 export default function BookingPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const preselected = location.state?.preselectedServiceId || 'home-cleaning';
+
+  // preselectedServiceId may be a DB integer id passed from ServiceDetailPage
+  const preselectedServiceId = location.state?.preselectedServiceId;
+
+  const { services, loading: servicesLoading } = useServices();
 
   const [step, setStep] = useState(0);
-  const [loading, setLoading] = useState(false);
-  // Map from local service id (string) → DB service id (integer)
-  const [serviceDbIdMap, setServiceDbIdMap] = useState({});
-  const [services, setServices] = useState(localServices);
+  const [submitLoading, setSubmitLoading] = useState(false);
   const [contactErrors, setContactErrors] = useState({});
   const [data, setData] = useState({
-    serviceId: preselected,
+    serviceId: null,          // will be set once services load (DB integer id)
     propertyType: 'Apartment',
     rooms: '2',
     bathrooms: '2',
@@ -98,25 +99,40 @@ export default function BookingPage() {
     notes: '',
   });
 
+  // Once services load, pick the preselected one (or first active)
+  useEffect(() => {
+    if (services.length === 0) return;
+    if (data.serviceId !== null) return; // already set
+
+    let picked = services[0];
+
+    if (preselectedServiceId !== undefined) {
+      // Try matching by numeric DB id first, then by slug fallback
+      const byId   = services.find((s) => s.id === preselectedServiceId || String(s.id) === String(preselectedServiceId));
+      const bySlug = services.find((s) => s.slug === preselectedServiceId);
+      picked = byId || bySlug || services[0];
+    }
+
+    setData((prev) => ({ ...prev, serviceId: picked.id }));
+  }, [services]); // eslint-disable-line react-hooks/exhaustive-deps
+
+
   const set = (field, value) => setData((prev) => ({ ...prev, [field]: value }));
 
-  // Fetch real services from API and map by name to local service entries
-  useEffect(() => {
-    api.get('/services').then((res) => {
-      const apiServices = res.data?.data || res.data || [];
-      if (Array.isArray(apiServices) && apiServices.length > 0) {
-        // Build a map: localService.id → apiService.id (by name similarity)
-        const map = {};
-        localServices.forEach((local) => {
-          const match = apiServices.find(
-            (api) => api.name?.toLowerCase().includes(local.title?.toLowerCase().split(' ')[0])
-          );
-          if (match) map[local.id] = match.id;
-        });
-        setServiceDbIdMap(map);
-      }
-    }).catch(() => { /* API offline — use local services */ });
-  }, []);
+  // Guard: while services are loading or serviceId not yet resolved, show a spinner
+  if (servicesLoading || (services.length > 0 && data.serviceId === null)) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
+        <div style={{ textAlign: 'center', color: '#0A2342' }}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0A2342" strokeWidth="2" style={{ animation: 'spin 1s linear infinite', marginBottom: 12 }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
+          </svg>
+          <div style={{ fontWeight: 700, fontSize: 15 }}>Loading services...</div>
+          <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
+        </div>
+      </div>
+    );
+  }
 
   const selectedService = services.find((s) => s.id === data.serviceId) || services[0];
 
@@ -178,14 +194,14 @@ export default function BookingPage() {
 
 
   const handleConfirm = async () => {
-    setLoading(true);
+    setSubmitLoading(true);
     let bookingId = 'CM' + Date.now().toString().slice(-6);
     try {
       const res = await api.post('/bookings', {
         name: data.name,
         contact_number: data.phone,
         email: data.email || null,
-        service_id: serviceDbIdMap[data.serviceId] || null,
+        service_id: data.serviceId,   // already the DB integer id
         preferred_date: data.date,
         address: `${data.district ? data.district + ', ' : ''}${data.streetAddress}${data.city ? ', ' + data.city : ''}${data.zipCode ? ' ' + data.zipCode : ''}`,
         notes: `Property: ${data.propertyType}, ${data.rooms} Bed, ${data.bathrooms} Bath | Time: ${data.time} | Est: AED ${estimate.total} | Notes: ${data.notes || 'None'}`,
@@ -196,7 +212,7 @@ export default function BookingPage() {
     } catch (err) {
       console.warn('Backend API notification skipped or offline:', err);
     } finally {
-      setLoading(false);
+      setSubmitLoading(false);
       navigate('/booking-confirmation', {
         state: { data, bookingId, service: selectedService, estimate },
       });
@@ -691,21 +707,21 @@ export default function BookingPage() {
             ) : (
               <button
                 type="button"
-                disabled={loading}
+                disabled={submitLoading}
                 onClick={handleConfirm}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '14px 32px', borderRadius: 12,
                   background: 'linear-gradient(135deg, #0A2342 0%, #1E3A8A 100%)',
                   color: '#fff', border: 'none', fontSize: 14, fontWeight: 800,
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  opacity: loading ? 0.7 : 1,
+                  cursor: submitLoading ? 'not-allowed' : 'pointer',
+                  opacity: submitLoading ? 0.7 : 1,
                   boxShadow: '0 6px 20px rgba(10,35,66,0.3)',
                   transition: 'all 0.15s',
                 }}
               >
-                {loading ? 'Submitting...' : 'Confirm Appointment'}
-                {!loading && (
+                {submitLoading ? 'Submitting...' : 'Confirm Appointment'}
+                {!submitLoading && (
                   <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>

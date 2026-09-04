@@ -12,8 +12,8 @@ class ServiceController extends Controller
     {
         $query = Service::withCount('bookings');
 
-        // Admin (authenticated) sees all; public customers only see active
-        if (! $request->user()) {
+        // Public customers only see active services
+        if ($request->has('public')) {
             $query->where('status', 'active');
         }
 
@@ -56,5 +56,44 @@ class ServiceController extends Controller
     {
         Service::findOrFail($id)->delete();
         return response()->json(['message' => 'Service deleted.']);
+    }
+}
+llable|numeric|min:0',
+            'icon'          => 'nullable|string|max:100',
+            'status'        => 'in:active,inactive',
+            'display_order' => 'nullable|integer|min:1',
+        ]);
+
+        $service->update($validated);
+
+        return response()->json($service);
+    }
+
+    public function destroy($id)
+    {
+        Service::findOrFail($id)->delete();
+        return response()->json(['message' => 'Service deleted.']);
+    }
+
+    /**
+     * Batch-update display_order for all services.
+     * Expects body: { "order": [{ "id": 3 }, { "id": 1 }, { "id": 5 }, ...] }
+     * The array position (0-based) determines the new display_order value.
+     */
+    public function reorder(Request $request)
+    {
+        $request->validate([
+            'order'         => 'required|array|min:1',
+            'order.*.id'    => 'required|integer|exists:services,id',
+        ]);
+
+        DB::transaction(function () use ($request) {
+            foreach ($request->order as $index => $item) {
+                Service::where('id', $item['id'])
+                    ->update(['display_order' => $index + 1]);
+            }
+        });
+
+        return response()->json(['message' => 'Service order updated.']);
     }
 }

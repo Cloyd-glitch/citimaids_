@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../../api/axios';
 import { brand, fonts, pageTitle, pageSubtitle, card, solidBtn as solidBtnToken, outlineBtn as outlineBtnToken, statusBadge, inputStyle as inputStyleToken, selectStyle as selectStyleToken } from './adminStyles';
 
@@ -38,6 +38,10 @@ export default function Services() {
     const [formModal, setFormModal] = useState(null);
     const [form, setForm] = useState({ name: '', description: '', base_price: '', status: 'active' });
     const [formLoading, setFormLoading] = useState(false);
+    const [reorderMode, setReorderMode] = useState(false);
+    const [reordering, setReordering] = useState(false);
+    const dragItem = useRef(null);
+    const dragOverItem = useRef(null);
 
     useEffect(() => { fetchServices(); }, []);
 
@@ -102,6 +106,41 @@ export default function Services() {
             fetchServices();
         } catch {
             showToast('Failed to delete service.', 'error');
+        }
+    };
+
+    // ── Drag-and-drop reorder handlers ──────────────────────────────────────
+    const handleDragStart = (index) => { dragItem.current = index; };
+    const handleDragEnter = (index) => { dragOverItem.current = index; };
+
+    const handleDragEnd = async () => {
+        const from = dragItem.current;
+        const to   = dragOverItem.current;
+        if (from === null || to === null || from === to) {
+            dragItem.current = null;
+            dragOverItem.current = null;
+            return;
+        }
+        // Optimistic local reorder
+        const reordered = [...services];
+        const [moved] = reordered.splice(from, 1);
+        reordered.splice(to, 0, moved);
+        setServices(reordered);
+        dragItem.current = null;
+        dragOverItem.current = null;
+
+        // Persist to backend
+        setReordering(true);
+        try {
+            await api.post('/services/reorder', {
+                order: reordered.map((s) => ({ id: s.id })),
+            });
+            showToast('Service order saved.', 'success');
+        } catch {
+            showToast('Failed to save order — please refresh.', 'error');
+            fetchServices(); // revert
+        } finally {
+            setReordering(false);
         }
     };
 
@@ -200,12 +239,30 @@ export default function Services() {
                     <h1 style={pageTitle}>Services</h1>
                     <p style={pageSubtitle}>Manage cleaning services and pricing</p>
                 </div>
-                <button onClick={openAdd} style={solidBtnToken}>
-                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Add Service
-                </button>
+                <div style={{ display: 'flex', gap: 10 }}>
+                    <button
+                        onClick={() => setReorderMode((v) => !v)}
+                        style={{
+                            ...outlineBtnToken,
+                            background: reorderMode ? '#eff6ff' : '#fff',
+                            borderColor: reorderMode ? '#2563eb' : brand.border,
+                            color: reorderMode ? '#2563eb' : '#334155',
+                        }}
+                        title="Drag rows to reorder how services appear on the booking page"
+                    >
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        {reorderMode ? 'Exit Reorder' : 'Reorder Services'}
+                        {reordering && <span style={{ marginLeft: 6, fontSize: 11, color: '#94a3b8' }}>Saving...</span>}
+                    </button>
+                    <button onClick={openAdd} style={solidBtnToken}>
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add Service
+                    </button>
+                </div>
             </div>
 
             {/* Summary Cards */}
@@ -229,7 +286,22 @@ export default function Services() {
 
             {/* Table */}
             <div style={{ ...card, overflow: 'hidden' }}>
-                <div style={thRow}>
+                {/* Reorder hint banner */}
+                {reorderMode && (
+                    <div style={{
+                        padding: '10px 24px', background: '#eff6ff',
+                        borderBottom: `1px solid ${brand.border}`,
+                        fontSize: 12, color: '#2563eb', fontWeight: 600,
+                        display: 'flex', alignItems: 'center', gap: 8,
+                    }}>
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Drag the ⠿ handle on any row to reorder services. Changes save automatically and reflect on the booking page.
+                    </div>
+                )}
+                <div style={{ ...thRow, gridTemplateColumns: reorderMode ? '32px 1.8fr 2fr 140px 120px 110px 100px' : '1.8fr 2fr 140px 120px 110px 100px' }}>
+                    {reorderMode && <span />}
                     <Th>SERVICE</Th>
                     <Th>DESCRIPTION</Th>
                     <Th>BOOKINGS</Th>
@@ -255,7 +327,7 @@ export default function Services() {
                         <div style={{ color: '#64748b', fontSize: 13 }}>Add your first cleaning service to get started.</div>
                     </div>
                 ) : (
-                    services.map(svc => {
+                    services.map((svc, index) => {
                         const color = serviceColors[svc.name] || '#6366f1';
                         const bookings = svc.bookings_count || 0;
                         const revenue = svc.total_revenue || (bookings * (svc.base_price || 0));
@@ -263,9 +335,31 @@ export default function Services() {
                         const isActive = svc.status === 'active';
 
                         return (
-                            <div key={svc.id} style={tdRow}
+                            <div
+                                key={svc.id}
+                                draggable={reorderMode}
+                                onDragStart={() => handleDragStart(index)}
+                                onDragEnter={() => handleDragEnter(index)}
+                                onDragEnd={handleDragEnd}
+                                onDragOver={(e) => e.preventDefault()}
+                                style={{
+                                    ...tdRow,
+                                    gridTemplateColumns: reorderMode ? '32px 1.8fr 2fr 140px 120px 110px 100px' : '1.8fr 2fr 140px 120px 110px 100px',
+                                    cursor: reorderMode ? 'grab' : 'default',
+                                    userSelect: reorderMode ? 'none' : 'auto',
+                                }}
                                 onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                                 onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
+
+                                {/* Drag handle */}
+                                {reorderMode && (
+                                    <div style={{
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        color: '#94a3b8', fontSize: 18, letterSpacing: 1, cursor: 'grab',
+                                        userSelect: 'none',
+                                    }} title="Drag to reorder">⠿</div>
+                                )}
+
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                     <div style={{
                                         width: 42, height: 42, borderRadius: 12,
@@ -274,7 +368,7 @@ export default function Services() {
                                     }}><ServiceIcon name={svc.name} /></div>
                                     <div>
                                         <div style={{ fontSize: 14, fontWeight: 600, color: brand.navy }}>{svc.name}</div>
-                                        <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>SVC-{String(svc.id).padStart(3, '0')}</div>
+                                        <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>SVC-{String(svc.id).padStart(3, '0')} · Order #{svc.display_order || index + 1}</div>
                                     </div>
                                 </div>
                                 <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.5, paddingRight: 12 }}>

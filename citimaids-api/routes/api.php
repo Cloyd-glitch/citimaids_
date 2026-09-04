@@ -41,10 +41,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/clients', [ClientController::class, 'store']);
     Route::delete('/clients/{id}', [ClientController::class, 'destroy']);
 
-    // Services (admin CRUD — uses ?public for public listing override)
+    // Services (admin CRUD)
     Route::post('/services', [ServiceController::class, 'store']);
     Route::put('/services/{id}', [ServiceController::class, 'update']);
     Route::delete('/services/{id}', [ServiceController::class, 'destroy']);
+    Route::post('/services/reorder', [ServiceController::class, 'reorder']);
+
 
     // Settings
     Route::get('/settings', [SettingController::class, 'index']);
