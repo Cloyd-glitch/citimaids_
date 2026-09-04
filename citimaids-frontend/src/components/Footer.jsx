@@ -3,12 +3,12 @@ import { useSettings } from '../hooks/useSettings';
 export default function Footer() {
   const { settings } = useSettings();
   const addressParts = settings?.business_address ? settings.business_address.split(',') : [];
-  const city = addressParts.length > 1 ? addressParts[1].trim() : 'Abu Dhabi';
-  const businessName = settings?.business_name || 'CITIMAIDS Cleaning Services LLC';
-  const shortName = businessName.split(' ')[0]; // usually just "CitiMaids"
-  const phone = settings?.contact_number || '+971 2 650 5050';
-  const email = settings?.business_email || 'info@citimaids.ae';
-  const address = settings?.business_address || 'Musrif Area, Abu Dhabi, United Arab Emirates';
+  const city = addressParts.length > 1 ? addressParts[1].trim() : '';
+  const businessName = settings?.business_name || '';
+  const shortName = businessName ? businessName.split(' ')[0] : '';
+  const phone = settings?.contact_number || '';
+  const email = settings?.business_email || '';
+  const address = settings?.business_address || '';
 
   return (
     <footer
@@ -43,7 +43,7 @@ export default function Footer() {
             </Link>
 
             <p className="text-sm leading-relaxed text-slate-400 mb-6">
-              {city}'s trusted residential and commercial cleaning company. Delivering hotel-standard hygiene, transparent pricing, and dependable teams.
+              {city ? `${city}'s` : 'Your'} trusted residential and commercial cleaning company. Delivering hotel-standard hygiene, transparent pricing, and dependable teams.
             </p>
 
             <div className="inline-flex items-center gap-2 text-xs text-emerald-400 font-bold bg-emerald-950/40 border border-emerald-800/40 px-3.5 py-2 rounded-xl">
@@ -62,7 +62,7 @@ export default function Footer() {
                 ['/', 'Home'],
                 ['/services', 'Our Services'],
                 ['/maintenance', 'Outdoor Maintenance'],
-                ['/about', `About ${shortName}`],
+                ['/about', shortName ? `About ${shortName}` : 'About Us'],
                 ['/contact', 'Contact Us'],
                 ['/track-booking', 'Track My Booking'],
                 ['/book', 'Book Appointment'],
@@ -99,57 +99,65 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Abu Dhabi Headquarters */}
+          {/* Headquarters */}
           <div>
             <h4 className="text-white font-black mb-5 text-xs uppercase tracking-widest text-sky-300">
-              {city} HQ
+              {city ? `${city} HQ` : 'HQ'}
             </h4>
             <ul className="space-y-4 text-sm text-slate-400 mb-6">
-              <li className="flex items-start gap-3">
-                <span className="text-sky-400 mt-1">
-                  <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><circle cx="12" cy="11" r="3" />
-                  </svg>
-                </span>
-                <span>{address}</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <span className="text-sky-400">
-                  <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                </span>
-                <a href={`tel:${phone.replace(/\s+/g, '')}`} className="hover:text-white transition-colors font-medium">
-                  {phone}
-                </a>
-              </li>
-              <li className="flex items-center gap-3">
-                <span className="text-sky-400">
-                  <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </span>
-                <a href={`mailto:${email}`} className="hover:text-white transition-colors font-medium">
-                  {email}
-                </a>
-              </li>
+              {address && (
+                <li className="flex items-start gap-3">
+                  <span className="text-sky-400 mt-1">
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><circle cx="12" cy="11" r="3" />
+                    </svg>
+                  </span>
+                  <span>{address}</span>
+                </li>
+              )}
+              {phone && (
+                <li className="flex items-center gap-3">
+                  <span className="text-sky-400">
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  </span>
+                  <a href={`tel:${phone.replace(/\s+/g, '')}`} className="hover:text-white transition-colors font-medium">
+                    {phone}
+                  </a>
+                </li>
+              )}
+              {email && (
+                <li className="flex items-center gap-3">
+                  <span className="text-sky-400">
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </span>
+                  <a href={`mailto:${email}`} className="hover:text-white transition-colors font-medium">
+                    {email}
+                  </a>
+                </li>
+              )}
             </ul>
 
-            <a
-              href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2.5 px-4.5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition-all shadow-md hover:scale-105"
-            >
-              <span>Quick WhatsApp Inquiries</span>
-            </a>
+            {phone && (
+              <a
+                href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2.5 px-4.5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition-all shadow-md hover:scale-105"
+              >
+                <span>Quick WhatsApp Inquiries</span>
+              </a>
+            )}
           </div>
         </div>
 
         {/* Bottom Bar */}
         <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
           <div>
-            © {new Date().getFullYear()} {businessName}. All rights reserved. {city}, UAE.
+            © {new Date().getFullYear()} {businessName}. All rights reserved. {city ? `${city}, UAE.` : 'UAE.'}
           </div>
           <div className="flex items-center gap-5">
             <Link to="/admin/login" className="text-sky-300 hover:text-white transition-colors font-bold">
