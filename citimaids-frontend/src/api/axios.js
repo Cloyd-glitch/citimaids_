@@ -25,7 +25,9 @@ api.interceptors.response.use(
       const url = error.config?.url || '';
       // Only force-logout on protected routes, NOT on public endpoints like /services
       const isPublicRoute = url === '/services' || url.startsWith('/services?') || url === '/bookings';
-      if (!isPublicRoute) {
+      const isAdminRoute = window.location.pathname.startsWith('/admin') && window.location.pathname !== '/admin/login';
+      
+      if (!isPublicRoute && isAdminRoute) {
         localStorage.removeItem('citimaids_token');
         localStorage.removeItem('citimaids_user');
         window.location.href = '/admin/login';

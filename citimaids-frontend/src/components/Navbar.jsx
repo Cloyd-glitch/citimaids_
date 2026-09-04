@@ -23,6 +23,7 @@ export default function Navbar() {
     { to: '/', label: 'Home' },
     { to: '/services', label: 'Services' },
     { to: '/maintenance', label: 'Maintenance' },
+    { to: '/track-booking', label: 'Track Booking' },
     { to: '/about', label: 'About Us' },
     { to: '/contact', label: 'Contact' },
   ];

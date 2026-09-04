@@ -16,6 +16,9 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 // Public booking submission (customers)
 Route::post('/bookings', [BookingController::class, 'store']);
 
+// Public booking tracking
+Route::get('/bookings/track', [BookingController::class, 'track']);
+
 // Public services list (customer-facing; active only unless auth token present)
 Route::get('/services', [ServiceController::class, 'index']);
 

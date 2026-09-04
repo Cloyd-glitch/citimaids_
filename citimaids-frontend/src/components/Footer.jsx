@@ -55,6 +55,7 @@ export default function Footer() {
                 ['/maintenance', 'Outdoor Maintenance'],
                 ['/about', 'About CitiMaids'],
                 ['/contact', 'Contact Us'],
+                ['/track-booking', 'Track My Booking'],
                 ['/book', 'Book Appointment'],
               ].map(([to, label]) => (
                 <li key={to}>

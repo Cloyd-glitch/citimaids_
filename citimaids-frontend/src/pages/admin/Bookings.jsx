@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { brand, fonts, pageTitle, pageSubtitle, card, solidBtn as solidBtnBase, outlineBtn as outlineBtnBase, searchBar, searchInput, tabBtn, idBadge, statusBadge, avatar } from './adminStyles';
+import { getAdminDispatchWALink } from '../../utils/whatsapp';
 
 const STATUS_TABS = ['all', 'pending', 'confirmed', 'completed', 'cancelled'];
 
@@ -217,6 +218,24 @@ export default function Bookings() {
 
                                 {/* Actions */}
                                 <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
+                                    {/* Direct WhatsApp Client Dispatch Action with Live Tracking Link */}
+                                    <a
+                                        href={getAdminDispatchWALink(booking, booking.status === 'completed' ? 'completed' : 'confirmed')}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title="WhatsApp Client (Status & Tracking Link)"
+                                        style={{
+                                            ...actionBtn,
+                                            color: '#16a34a',
+                                            borderColor: '#bbf7d0',
+                                            background: '#f0fdf4',
+                                            textDecoration: 'none',
+                                        }}
+                                    >
+                                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2z" />
+                                        </svg>
+                                    </a>
                                     <button
                                         title="View Details"
                                         onClick={() => navigate(`/admin/bookings/${booking.id}`)}
@@ -224,12 +243,6 @@ export default function Bookings() {
                                     >
                                         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
-                                        </svg>
-                                    </button>
-                                    <button title="Edit" style={actionBtn}>
-                                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
                                         </svg>
                                     </button>
                                 </div>
