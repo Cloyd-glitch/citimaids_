@@ -12,6 +12,7 @@ import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import BookingPage from './pages/BookingPage';
 import BookingConfirmationPage from './pages/BookingConfirmationPage';
+import TrackBookingPage from './pages/TrackBookingPage';
 
 // Admin Pages
 import AdminLayout from './pages/admin/AdminLayout';
@@ -41,6 +42,7 @@ function App() {
             <Route path="contact" element={<ContactPage />} />
             <Route path="book" element={<BookingPage />} />
             <Route path="booking-confirmation" element={<BookingConfirmationPage />} />
+            <Route path="track-booking" element={<TrackBookingPage />} />
           </Route>
 
           {/* Admin Login */}

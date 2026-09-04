@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { brand, fonts, pageTitle, pageSubtitle, card, solidBtn, outlineBtn, statusBadge, idBadge, avatar } from './adminStyles';
+import { getAdminDispatchWALink } from '../../utils/whatsapp';
 
 const statusFlow = ['pending', 'confirmed', 'completed', 'cancelled'];
 const avatarColors = ['#2563eb', '#7c3aed', '#ec4899', '#d97706', '#059669', '#0891b2'];
@@ -132,6 +133,24 @@ export default function BookingDetail() {
                 </div>
 
                 <div style={{ display: 'flex', gap: 10 }}>
+                    {/* Quick WhatsApp Dispatch Action */}
+                    <a
+                        href={getAdminDispatchWALink(booking, booking.status === 'completed' ? 'completed' : 'confirmed')}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                            ...solidBtn,
+                            background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+                            color: '#fff',
+                            textDecoration: 'none',
+                            boxShadow: '0 4px 14px rgba(22, 163, 74, 0.25)',
+                        }}
+                    >
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2z" />
+                        </svg>
+                        WhatsApp Customer
+                    </a>
                     <button onClick={() => window.print()} style={outlineBtn}>
                         <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -349,6 +368,119 @@ export default function BookingDetail() {
                                     AED {booking.service?.base_price ? Number(booking.service.base_price).toLocaleString() : '35'}
                                 </span>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Customer Tracking & WhatsApp Dispatch Card */}
+                    <div style={{ ...card, padding: '24px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                            <div style={{
+                                width: 28, height: 28, borderRadius: 8,
+                                background: '#f0fdf4', color: '#16a34a',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                                <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2z" />
+                                </svg>
+                            </div>
+                            <h3 style={{ fontSize: 15, fontWeight: 800, color: brand.navy, margin: 0, fontFamily: fonts.heading }}>
+                                Client Tracking & Dispatch
+                            </h3>
+                        </div>
+
+                        <div style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>
+                            Clients can track their status live on our portal with their reference code:
+                        </div>
+
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: 8,
+                            padding: '10px 12px', background: '#f8fafc',
+                            border: `1px solid ${brand.border}`, borderRadius: 10,
+                            marginBottom: 16,
+                        }}>
+                            <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: brand.navy, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {`${window.location.origin}/track-booking?ref=CM-${String(booking.id).padStart(5, '0')}`}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    navigator.clipboard.writeText(`${window.location.origin}/track-booking?ref=CM-${String(booking.id).padStart(5, '0')}`);
+                                    showToast('Tracking link copied to clipboard!', 'success');
+                                }}
+                                title="Copy tracking link"
+                                style={{
+                                    border: 'none', background: '#e2e8f0', color: brand.navy,
+                                    padding: '5px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                Copy
+                            </button>
+                            <a
+                                href={`/track-booking?ref=CM-${String(booking.id).padStart(5, '0')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="Open tracking portal"
+                                style={{
+                                    border: 'none', background: '#dbeafe', color: '#1d4ed8',
+                                    padding: '5px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
+                                    cursor: 'pointer', textDecoration: 'none',
+                                }}
+                            >
+                                Open
+                            </a>
+                        </div>
+
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
+                            Quick WhatsApp Message Templates
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            <a
+                                href={getAdminDispatchWALink(booking, 'confirmed')}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                    padding: '10px 14px', borderRadius: 10,
+                                    background: '#f0fdf4', border: '1px solid #bbf7d0',
+                                    color: '#15803d', fontSize: 12, fontWeight: 700,
+                                    textDecoration: 'none', transition: 'all 0.15s',
+                                }}
+                            >
+                                <span>Send "Confirmed & Scheduled"</span>
+                                <span>➔</span>
+                            </a>
+                            <a
+                                href={getAdminDispatchWALink(booking, 'en_route')}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                    padding: '10px 14px', borderRadius: 10,
+                                    background: '#fffbeb', border: '1px solid #fef3c7',
+                                    color: '#b45309', fontSize: 12, fontWeight: 700,
+                                    textDecoration: 'none', transition: 'all 0.15s',
+                                }}
+                            >
+                                <span>Send "Crew En Route" Alert</span>
+                                <span>➔</span>
+                            </a>
+                            <a
+                                href={getAdminDispatchWALink(booking, 'completed')}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                    padding: '10px 14px', borderRadius: 10,
+                                    background: '#f5f3ff', border: '1px solid #ede9fe',
+                                    color: '#6d28d9', fontSize: 12, fontWeight: 700,
+                                    textDecoration: 'none', transition: 'all 0.15s',
+                                }}
+                            >
+                                <span>Send "Service Completed & Review"</span>
+                                <span>➔</span>
+                            </a>
                         </div>
                     </div>
                 </div>
