@@ -12,8 +12,8 @@ class ServiceController extends Controller
     {
         $query = Service::withCount('bookings');
 
-        // Public customers only see active services
-        if ($request->has('public')) {
+        // Admin (authenticated) sees all; public customers only see active
+        if (! $request->user()) {
             $query->where('status', 'active');
         }
 

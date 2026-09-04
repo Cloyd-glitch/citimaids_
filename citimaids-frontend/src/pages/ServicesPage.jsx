@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { services } from '../data/services';
+import { useServices } from '../hooks/useServices';
 import Reveal from '../components/Reveal';
 import {
   HomeIcon,
@@ -31,11 +31,15 @@ function getIcon(iconName) {
 }
 
 export default function ServicesPage() {
+  const { services, loading, error } = useServices();
   const [filter, setFilter] = useState('all');
+
+  if (loading) return <div className="pt-36 text-center pb-24 text-slate-500">Loading services...</div>;
+  if (error) return <div className="pt-36 text-center pb-24 text-red-500">Failed to load services. Please try again.</div>;
 
   const filtered = filter === 'all'
     ? services
-    : services.filter((s) => s.category === filter);
+    : services?.filter((s) => s.category === filter);
 
   return (
     <div>
