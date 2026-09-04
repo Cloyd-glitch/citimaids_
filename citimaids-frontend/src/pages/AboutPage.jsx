@@ -88,6 +88,10 @@ export default function AboutPage() {
                 src="https://images.unsplash.com/photo-1556909172-54557c7e4fb7?w=700&h=500&fit=crop&auto=format"
                 alt="CitiMaids professional cleaning team"
                 className="w-full h-80 sm:h-96 object-cover"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&auto=format&fit=crop&q=80';
+                }}
               />
             </div>
             <div
@@ -202,6 +206,10 @@ export default function AboutPage() {
               src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&h=500&fit=crop&auto=format"
               alt="Abu Dhabi skyline"
               className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&auto=format&fit=crop&q=80';
+              }}
             />
           </div>
         </div>
