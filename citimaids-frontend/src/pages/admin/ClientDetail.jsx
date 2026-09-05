@@ -299,22 +299,6 @@ export default function ClientDetail() {
                             </div>
                         ) : (
                             <div>
-                                {/* Table Column Header */}
-                                <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: '110px 1.5fr 130px 110px 80px',
-                                    padding: '12px 24px', background: '#f8fafc',
-                                    borderBottom: `1px solid ${brand.border}`,
-                                    fontSize: 11, fontWeight: 700, color: '#64748b',
-                                    letterSpacing: 0.6, textTransform: 'uppercase', alignItems: 'center', gap: 16
-                                }}>
-                                    <div>BOOKING ID</div>
-                                    <div>SERVICE</div>
-                                    <div>DATE</div>
-                                    <div>STATUS</div>
-                                    <div style={{ textAlign: 'right' }}>ACTION</div>
-                                </div>
-
                                 {/* Table Rows Scroll Container */}
                                 <div style={{ maxHeight: 380, overflowY: 'auto' }}>
                                     {client.bookings.map((booking, i) => {
@@ -328,7 +312,7 @@ export default function ClientDetail() {
                                         return (
                                             <div key={booking.id} style={{
                                                 display: 'grid',
-                                                gridTemplateColumns: '110px 1.5fr 130px 110px 80px',
+                                                gridTemplateColumns: '100px minmax(180px, 1fr) 130px 100px 75px',
                                                 padding: '14px 24px',
                                                 borderBottom: i < client.bookings.length - 1 ? `1px solid ${brand.border}` : 'none',
                                                 alignItems: 'center', gap: 16, transition: 'background 0.15s'
@@ -339,9 +323,22 @@ export default function ClientDetail() {
                                                     #{String(booking.id).padStart(4, '0')}
                                                 </span>
 
-                                                {/* Service Name */}
-                                                <div style={{ fontSize: 13.5, fontWeight: 700, color: brand.navy }}>
-                                                    {booking.service?.name || 'Cleaning Service'}
+                                                {/* Service & Address */}
+                                                <div>
+                                                    <div style={{ fontSize: 13.5, fontWeight: 700, color: brand.navy }}>
+                                                        {booking.service?.name || 'Cleaning Service'}
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: 12,
+                                                        color: '#64748b',
+                                                        marginTop: 2,
+                                                        maxHeight: 38,
+                                                        overflowY: 'auto',
+                                                        wordBreak: 'break-word',
+                                                        paddingRight: 4
+                                                    }}>
+                                                        {booking.address || '—'}
+                                                    </div>
                                                 </div>
 
                                                 {/* Date */}
