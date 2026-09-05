@@ -189,6 +189,9 @@ function FAQCard({ q, a, index }) {
 
 export default function HomePage() {
   const { settings } = useSettings();
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ name: '', location: '', stars: 5, text: '' });
   
   // Safely extract city from the address or default to 'Abu Dhabi'
   const addressParts = settings?.business_address ? settings.business_address.split(',') : [];
@@ -594,7 +597,7 @@ export default function HomePage() {
       </section>
 
       {/* ── 8. Verified Reviews ── */}
-      <section className="py-28 bg-white">
+      <section className="py-28 bg-white relative">
         <div className="max-w-7xl mx-auto px-6 sm:px-8">
           <Reveal>
             <div className="text-center max-w-2xl mx-auto mb-16">
@@ -604,6 +607,17 @@ export default function HomePage() {
               <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
                 Trusted Across Abu Dhabi
               </h2>
+              <p className="text-slate-500 mt-4 text-sm sm:text-base">
+                Read real experiences from our clients across Abu Dhabi or share your own feedback.
+              </p>
+              <div className="mt-6">
+                <button
+                  onClick={() => setShowReviewModal(true)}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-extrabold text-sm transition-all transform hover:scale-105 shadow-lg"
+                >
+                  <span>⭐ Write a Review</span>
+                </button>
+              </div>
             </div>
           </Reveal>
 
@@ -640,6 +654,118 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+
+        {/* ── Review Submission Modal Template ── */}
+        {showReviewModal && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl relative border border-slate-100 animate-in fade-in zoom-in duration-200">
+              <button
+                onClick={() => setShowReviewModal(false)}
+                className="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold transition-all"
+              >
+                ✕
+              </button>
+
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center font-black text-lg">
+                  ⭐
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-xl">Leave a Client Review</h3>
+                  <p className="text-slate-500 text-xs">Share your experience with CitiMaids Cleaning Services</p>
+                </div>
+              </div>
+
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                setReviewSubmitted(true);
+                setTimeout(() => {
+                  setReviewSubmitted(false);
+                  setShowReviewModal(false);
+                }, 2000);
+              }} className="space-y-4">
+                {reviewSubmitted ? (
+                  <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-center">
+                    <div className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center mx-auto mb-3 font-bold text-xl">✓</div>
+                    <h4 className="font-bold text-emerald-900 text-base">Thank You for Your Feedback!</h4>
+                    <p className="text-emerald-700 text-xs mt-1">Review template submitted. Integration ready for landing page.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Rating</label>
+                      <div className="flex gap-2 text-2xl">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setReviewForm({ ...reviewForm, stars: star })}
+                            className={`transition-all transform hover:scale-110 ${
+                              star <= reviewForm.stars ? 'text-amber-400' : 'text-slate-200'
+                            }`}
+                          >
+                            ★
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Your Full Name</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Mariam Al Zaabi"
+                        value={reviewForm.name}
+                        onChange={(e) => setReviewForm({ ...reviewForm, name: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Location / District</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Al Reem Island, Abu Dhabi"
+                        value={reviewForm.location}
+                        onChange={(e) => setReviewForm({ ...reviewForm, location: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Your Review</label>
+                      <textarea
+                        required
+                        rows={4}
+                        placeholder="Tell us about your experience with CitiMaids cleaners..."
+                        value={reviewForm.text}
+                        onChange={(e) => setReviewForm({ ...reviewForm, text: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-900"
+                      />
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowReviewModal(false)}
+                        className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 font-extrabold text-sm hover:bg-slate-50 transition-all"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-1 py-3 rounded-xl bg-blue-950 text-white font-extrabold text-sm hover:bg-blue-900 transition-all shadow-lg"
+                      >
+                        Submit Review
+                      </button>
+                    </div>
+                  </>
+                )}
+              </form>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ── 9. FAQ Accordion ── */}
