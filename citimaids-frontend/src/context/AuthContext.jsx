@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 
 const AuthContext = createContext(null);
@@ -11,6 +10,29 @@ export function AuthProvider({ children }) {
     });
     const [token, setToken] = useState(() => localStorage.getItem('citimaids_token'));
     const [loading, setLoading] = useState(false);
+    const [initializing, setInitializing] = useState(true);
+
+    // On mount, verify the stored token is still valid with the server
+    useEffect(() => {
+        const storedToken = localStorage.getItem('citimaids_token');
+        if (!storedToken) {
+            setInitializing(false);
+            return;
+        }
+        api.get('/auth/me')
+            .then((res) => {
+                setUser(res.data);
+                localStorage.setItem('citimaids_user', JSON.stringify(res.data));
+            })
+            .catch(() => {
+                // Token invalid or expired — clear session
+                localStorage.removeItem('citimaids_token');
+                localStorage.removeItem('citimaids_user');
+                setUser(null);
+                setToken(null);
+            })
+            .finally(() => setInitializing(false));
+    }, []);
 
     const login = async (email, password) => {
         setLoading(true);
@@ -40,7 +62,7 @@ export function AuthProvider({ children }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, loading, isAuthenticated: !!token }}>
+        <AuthContext.Provider value={{ user, token, login, logout, loading, initializing, isAuthenticated: !!token }}>
             {children}
         </AuthContext.Provider>
     );

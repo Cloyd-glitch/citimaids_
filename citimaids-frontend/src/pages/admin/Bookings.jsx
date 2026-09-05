@@ -1,24 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
+import { brand, fonts, pageTitle, pageSubtitle, card, solidBtn as solidBtnBase, outlineBtn as outlineBtnBase, searchBar, searchInput, tabBtn, idBadge, statusBadge, avatar } from './adminStyles';
+import { getAdminDispatchWALink } from '../../utils/whatsapp';
 
 const STATUS_TABS = ['all', 'pending', 'confirmed', 'completed', 'cancelled'];
 
-const statusColors = {
-    pending: { color: '#f59e0b', bg: '#fef3c7' },
-    confirmed: { color: '#3b82f6', bg: '#dbeafe' },
-    completed: { color: '#10b981', bg: '#d1fae5' },
-    cancelled: { color: '#ef4444', bg: '#fee2e2' },
-};
-
 const serviceColors = {
-    'Home Cleaning': '#10b981',
-    'Office Cleaning': '#3b82f6',
-    'Villa Cleaning': '#8b5cf6',
-    'Deep Cleaning': '#f59e0b',
+    'Home Cleaning': '#059669',
+    'Office Cleaning': '#2563eb',
+    'Villa Cleaning': '#7c3aed',
+    'Deep Cleaning': '#d97706',
     'Carpet & Sofa Cleaning': '#ec4899',
-    'Window & Glass Cleaning': '#06b6d4',
-    'Move-in / Move-out Cleaning': '#ef4444',
+    'Window & Glass Cleaning': '#0891b2',
+    'Move-in / Move-out Cleaning': '#dc2626',
 };
 
 export default function Bookings() {
@@ -59,7 +54,6 @@ export default function Bookings() {
         }
     };
 
-    // Calculate tab counts from meta or visible data
     const tabCounts = {
         all: meta.total || bookings.length,
         pending: bookings.filter(b => b.status === 'pending').length,
@@ -68,45 +62,27 @@ export default function Bookings() {
         cancelled: bookings.filter(b => b.status === 'cancelled').length,
     };
 
-    const avatarColors = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4'];
+    const avatarColors = ['#2563eb', '#7c3aed', '#ec4899', '#d97706', '#059669', '#0891b2'];
 
     return (
-        <div style={{ fontFamily: "'Inter', -apple-system, sans-serif" }}>
+        <div style={{ fontFamily: fonts.body }}>
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
                 <div>
-                    <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1a1f37', margin: 0 }}>Bookings</h1>
-                    <p style={{ color: '#64748b', fontSize: 14, margin: '4px 0 0' }}>Manage all booking requests</p>
+                    <h1 style={pageTitle}>Bookings</h1>
+                    <p style={pageSubtitle}>Manage all customer booking requests</p>
                 </div>
-                <button style={{
-                    background: '#3b82f6',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 8,
-                    padding: '10px 20px',
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                }}>
-                    + New Booking
+                <button style={solidBtnBase}>
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    New Booking
                 </button>
             </div>
 
-            {/* Search & Filters */}
-            <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-                <div style={{
-                    flex: 1,
-                    maxWidth: 400,
-                    display: 'flex',
-                    alignItems: 'center',
-                    background: '#fff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 8,
-                    padding: '0 14px',
-                }}>
+            {/* Search & Toolbar */}
+            <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+                <div style={searchBar}>
                     <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2">
                         <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
                     </svg>
@@ -115,239 +91,158 @@ export default function Bookings() {
                         placeholder="Search by name, service, or booking ID..."
                         value={search}
                         onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                        style={{
-                            border: 'none',
-                            outline: 'none',
-                            padding: '11px 10px',
-                            fontSize: 14,
-                            width: '100%',
-                            background: 'transparent',
-                        }}
+                        style={searchInput}
                     />
                 </div>
-                <button style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '10px 18px',
-                    background: '#fff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 8,
-                    fontSize: 14,
-                    color: '#374151',
-                    cursor: 'pointer',
-                }}>
+                <button style={outlineBtnBase}>
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path d="M3 4h18M7 8h10M10 12h4" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 8h10M10 12h4" />
                     </svg>
                     Filters
                 </button>
-                <button style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '10px 18px',
-                    background: '#fff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 8,
-                    fontSize: 14,
-                    color: '#374151',
-                    cursor: 'pointer',
-                }}>
+                <button style={outlineBtnBase}>
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                     </svg>
                     Export
                 </button>
             </div>
 
             {/* Status Tabs */}
-            <div style={{ display: 'flex', gap: 4, marginBottom: 20 }}>
-                {STATUS_TABS.map(tab => {
-                    const isActive = activeTab === tab;
-                    return (
-                        <button
-                            key={tab}
-                            onClick={() => { setActiveTab(tab); setPage(1); }}
-                            style={{
-                                padding: '7px 16px',
-                                borderRadius: 20,
-                                border: 'none',
-                                fontSize: 13,
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                                background: isActive ? '#3b82f6' : 'transparent',
-                                color: isActive ? '#fff' : '#64748b',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 6,
-                                transition: 'all 0.15s',
-                            }}
-                        >
-                            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                            <span style={{
-                                fontSize: 11,
-                                fontWeight: 700,
-                                color: isActive ? '#fff' : '#94a3b8',
-                            }}>{tabCounts[tab] || 0}</span>
-                        </button>
-                    );
-                })}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 22 }}>
+                {STATUS_TABS.map(tab => (
+                    <button
+                        key={tab}
+                        onClick={() => { setActiveTab(tab); setPage(1); }}
+                        style={tabBtn(activeTab === tab)}
+                    >
+                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                        <span style={{
+                            fontSize: 10, fontWeight: 800, marginLeft: 4,
+                            opacity: activeTab === tab ? 0.8 : 0.5,
+                        }}>{tabCounts[tab] || 0}</span>
+                    </button>
+                ))}
             </div>
 
             {/* Table */}
-            <div style={{
-                background: '#fff',
-                borderRadius: 12,
-                border: '1px solid #e2e8f0',
-                overflow: 'hidden',
-            }}>
+            <div style={{ ...card, overflow: 'hidden' }}>
                 {/* Table Header */}
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: '100px 1fr 1fr 1fr 120px 80px',
+                    gridTemplateColumns: '100px 1fr 1fr 1fr 130px 90px',
                     padding: '14px 24px',
-                    borderBottom: '1px solid #e2e8f0',
-                    background: '#fafbfc',
+                    borderBottom: `1px solid ${brand.border}`,
+                    background: brand.softBg,
                 }}>
                     {['BOOKING ID', 'CLIENT', 'SERVICE', 'PREFERRED DATE', 'STATUS', 'ACTIONS'].map(h => (
                         <span key={h} style={{
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: '#64748b',
-                            letterSpacing: 0.8,
+                            fontSize: 10, fontWeight: 700, color: '#64748b',
+                            letterSpacing: 0.8, textTransform: 'uppercase',
                         }}>{h}</span>
                     ))}
                 </div>
 
                 {/* Table Body */}
                 {loading ? (
-                    <div style={{ textAlign: 'center', padding: 60, color: '#94a3b8' }}>Loading bookings...</div>
+                    <div style={{ textAlign: 'center', padding: 60, color: '#94a3b8', fontSize: 14 }}>Loading bookings...</div>
                 ) : bookings.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: 60, color: '#94a3b8' }}>No bookings found</div>
+                    <div style={{ textAlign: 'center', padding: 60 }}>
+                        <div style={{
+                            width: 48, height: 48, borderRadius: '50%', background: '#eff6ff',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            margin: '0 auto 12px', color: '#2563eb',
+                        }}>
+                            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+                            </svg>
+                        </div>
+                        <div style={{ fontWeight: 700, color: brand.navy, fontSize: 15, marginBottom: 4 }}>No bookings found</div>
+                        <div style={{ color: '#64748b', fontSize: 13 }}>Bookings from the public website will appear here.</div>
+                    </div>
                 ) : (
                     bookings.map((booking) => {
                         const initials = booking.client?.name
                             ? booking.client.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-                            : '??';
+                            : 'CM';
                         const avatarColor = avatarColors[booking.id % avatarColors.length];
-                        const sc = statusColors[booking.status] || statusColors.pending;
                         const svcColor = serviceColors[booking.service?.name] || '#6366f1';
                         const bookingIdStr = `#${String(booking.id).padStart(4, '0')}`;
 
                         return (
                             <div key={booking.id} style={{
                                 display: 'grid',
-                                gridTemplateColumns: '100px 1fr 1fr 1fr 120px 80px',
+                                gridTemplateColumns: '100px 1fr 1fr 1fr 130px 90px',
                                 padding: '16px 24px',
                                 borderBottom: '1px solid #f1f5f9',
                                 alignItems: 'center',
-                                transition: 'background 0.1s',
+                                transition: 'background 0.15s',
+                                cursor: 'pointer',
                             }}
-                                onMouseEnter={e => e.currentTarget.style.background = '#fafbfc'}
+                                onClick={() => navigate(`/admin/bookings/${booking.id}`)}
+                                onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                                 onMouseLeave={e => e.currentTarget.style.background = '#fff'}
                             >
                                 {/* Booking ID */}
-                                <span style={{
-                                    fontSize: 13,
-                                    fontWeight: 600,
-                                    color: '#3b82f6',
-                                    background: '#eff6ff',
-                                    padding: '4px 10px',
-                                    borderRadius: 6,
-                                    width: 'fit-content',
-                                }}>{bookingIdStr}</span>
+                                <span style={idBadge}>{bookingIdStr}</span>
 
                                 {/* Client */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                    <div style={{
-                                        width: 34,
-                                        height: 34,
-                                        borderRadius: '50%',
-                                        background: avatarColor,
-                                        color: '#fff',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: 12,
-                                        fontWeight: 700,
-                                        flexShrink: 0,
-                                    }}>{initials}</div>
-                                    <span style={{ fontSize: 14, fontWeight: 500, color: '#1a1f37' }}>{booking.client?.name || '—'}</span>
+                                    <div style={avatar(avatarColor, 36)}>{initials}</div>
+                                    <span style={{ fontSize: 14, fontWeight: 600, color: brand.navy }}>{booking.client?.name || '—'}</span>
                                 </div>
 
                                 {/* Service */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                     <span style={{ width: 7, height: 7, borderRadius: '50%', background: svcColor, flexShrink: 0 }} />
                                     <span style={{
-                                        fontSize: 13,
-                                        fontWeight: 500,
-                                        color: '#fff',
-                                        background: svcColor,
-                                        padding: '3px 10px',
-                                        borderRadius: 6,
+                                        fontSize: 13, fontWeight: 600, color: svcColor,
                                     }}>{booking.service?.name || '—'}</span>
                                 </div>
 
                                 {/* Date */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#64748b', fontSize: 14 }}>
-                                    📅 {new Date(booking.preferred_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#64748b', fontSize: 13 }}>
+                                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+                                    </svg>
+                                    {new Date(booking.preferred_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                 </div>
 
                                 {/* Status */}
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 5,
-                                    color: sc.color,
-                                    fontSize: 13,
-                                    fontWeight: 600,
-                                }}>
-                                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: sc.color }} />
-                                    {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                                <div>
+                                    <span style={statusBadge(booking.status)}>
+                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} />
+                                        {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                                    </span>
                                 </div>
 
                                 {/* Actions */}
-                                <div style={{ display: 'flex', gap: 6 }}>
-                                    <button
-                                        title="View"
-                                        onClick={() => navigate(`/admin/bookings/${booking.id}`)}
+                                <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
+                                    {/* Direct WhatsApp Client Dispatch Action with Live Tracking Link */}
+                                    <a
+                                        href={getAdminDispatchWALink(booking, booking.status === 'completed' ? 'completed' : 'confirmed')}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title="WhatsApp Client (Status & Tracking Link)"
                                         style={{
-                                            width: 30,
-                                            height: 30,
-                                            borderRadius: 6,
-                                            border: '1px solid #e2e8f0',
-                                            background: '#fff',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            color: '#64748b',
+                                            ...actionBtn,
+                                            color: '#16a34a',
+                                            borderColor: '#bbf7d0',
+                                            background: '#f0fdf4',
+                                            textDecoration: 'none',
                                         }}
                                     >
-                                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                            <circle cx="12" cy="12" r="3" />
+                                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2z" />
                                         </svg>
-                                    </button>
+                                    </a>
                                     <button
-                                        title="Edit"
-                                        style={{
-                                            width: 30,
-                                            height: 30,
-                                            borderRadius: 6,
-                                            border: '1px solid #e2e8f0',
-                                            background: '#fff',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            color: '#64748b',
-                                        }}
+                                        title="View Details"
+                                        onClick={() => navigate(`/admin/bookings/${booking.id}`)}
+                                        style={actionBtn}
                                     >
                                         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
                                         </svg>
                                     </button>
                                 </div>
@@ -363,18 +258,13 @@ export default function Bookings() {
                         justifyContent: 'space-between',
                         alignItems: 'center',
                         padding: '16px 24px',
-                        borderTop: '1px solid #e2e8f0',
+                        borderTop: `1px solid ${brand.border}`,
                     }}>
                         <span style={{ fontSize: 13, color: '#64748b' }}>
                             Showing {meta.from}–{meta.to} of {meta.total} entries
                         </span>
                         <div style={{ display: 'flex', gap: 4 }}>
-                            <PaginationBtn
-                                label="‹"
-                                active={false}
-                                disabled={page <= 1}
-                                onClick={() => setPage(p => Math.max(1, p - 1))}
-                            />
+                            <PaginationBtn label="‹" active={false} disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))} />
                             {Array.from({ length: Math.min(meta.last_page, 5) }, (_, i) => i + 1).map(p => (
                                 <PaginationBtn key={p} label={p} active={p === page} onClick={() => setPage(p)} />
                             ))}
@@ -382,12 +272,7 @@ export default function Bookings() {
                             {meta.last_page > 5 && (
                                 <PaginationBtn label={meta.last_page} active={page === meta.last_page} onClick={() => setPage(meta.last_page)} />
                             )}
-                            <PaginationBtn
-                                label="›"
-                                active={false}
-                                disabled={page >= meta.last_page}
-                                onClick={() => setPage(p => Math.min(meta.last_page, p + 1))}
-                            />
+                            <PaginationBtn label="›" active={false} disabled={page >= meta.last_page} onClick={() => setPage(p => Math.min(meta.last_page, p + 1))} />
                         </div>
                     </div>
                 )}
@@ -396,24 +281,27 @@ export default function Bookings() {
     );
 }
 
+const actionBtn = {
+    width: 32, height: 32, borderRadius: 10,
+    border: `1.5px solid ${brand.border}`, background: '#fff',
+    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: '#64748b', transition: 'all 0.15s',
+};
+
 function PaginationBtn({ label, active, disabled, onClick }) {
     return (
         <button
             onClick={onClick}
             disabled={disabled}
             style={{
-                minWidth: 32,
-                height: 32,
-                borderRadius: 6,
-                border: active ? 'none' : '1px solid #e2e8f0',
-                background: active ? '#3b82f6' : '#fff',
+                minWidth: 34, height: 34, borderRadius: 10,
+                border: active ? 'none' : `1.5px solid ${brand.border}`,
+                background: active ? `linear-gradient(135deg, ${brand.navy} 0%, ${brand.midBlue} 100%)` : '#fff',
                 color: active ? '#fff' : disabled ? '#cbd5e1' : '#374151',
-                fontSize: 13,
-                fontWeight: active ? 700 : 500,
+                fontSize: 13, fontWeight: active ? 700 : 500,
                 cursor: disabled ? 'default' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: active ? '0 2px 8px rgba(10,35,66,0.2)' : 'none',
             }}
         >{label}</button>
     );
