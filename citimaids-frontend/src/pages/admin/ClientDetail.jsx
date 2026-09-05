@@ -40,8 +40,7 @@ export default function ClientDetail() {
         e.preventDefault();
         setFormLoading(true);
         try {
-            const res = await api.put(`/clients/${id}`, form);
-            // Refresh full client data to also update booking list
+            await api.put(`/clients/${id}`, form);
             await fetchClient();
             setEditModal(false);
             showToast('Client updated successfully.', 'success');
@@ -66,25 +65,24 @@ export default function ClientDetail() {
         showToast(`${label} copied to clipboard!`, 'success');
     };
 
-    const handleOpenWhatsApp = (customText) => {
+    const handleOpenWhatsApp = () => {
         if (!client?.contact_number || client.contact_number.trim() === '') {
             showToast('No contact number registered for this client.', 'error');
             return;
         }
         const formattedPhone = formatWhatsAppPhone(client.contact_number);
         const defaultText = `Hello ${client.name}! Greetings from CitiMaids Cleaning Services Abu Dhabi. How can we assist you today?`;
-        const textToSend = customText || defaultText;
-        window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(textToSend)}`, '_blank', 'noopener,noreferrer');
+        window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(defaultText)}`, '_blank', 'noopener,noreferrer');
         showToast('Opening WhatsApp...', 'success');
     };
 
-    const handleOpenEmail = (customSubject, customBody) => {
+    const handleOpenEmail = () => {
         if (!client?.email || client.email.trim() === '') {
             showToast('No email address registered for this client.', 'error');
             return;
         }
-        const subject = customSubject || `CitiMaids Support - Greetings ${client.name}`;
-        const body = customBody || `Dear ${client.name},\n\nGreetings from CitiMaids Cleaning Services Abu Dhabi.\n\nBest regards,\nCitiMaids Management`;
+        const subject = `CitiMaids Support - Greetings ${client.name}`;
+        const body = `Dear ${client.name},\n\nGreetings from CitiMaids Cleaning Services Abu Dhabi.\n\nBest regards,\nCitiMaids Management`;
         window.location.href = `mailto:${encodeURIComponent(client.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         showToast('Opening Mail client...', 'success');
     };
@@ -101,12 +99,12 @@ export default function ClientDetail() {
         <div style={{ textAlign: 'center', padding: 80 }}>
             <h2 style={{ color: brand.navy, fontFamily: fonts.heading }}>{error || 'Client not found'}</h2>
             <button onClick={() => navigate('/admin/clients')} style={outlineBtnToken}>
-                ← Back to Clients
+                Back to Clients
             </button>
         </div>
     );
 
-    const initials = client.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    const initials = client.name ? client.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'CM';
     const avatarColors = ['#2563eb', '#7c3aed', '#ec4899', '#d97706', '#059669', '#0891b2', '#dc2626'];
     const avatarColor = avatarColors[client.id % avatarColors.length];
 
@@ -208,7 +206,7 @@ export default function ClientDetail() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <h1 style={pageTitle}>{client.name}</h1>
                     </div>
-                    <p style={pageSubtitle}>Client #{String(client.id).padStart(3, '0')}</p>
+                    <p style={pageSubtitle}>Registered Client Account · Abu Dhabi</p>
                 </div>
 
                 <div style={{ display: 'flex', gap: 10 }}>
@@ -226,7 +224,7 @@ export default function ClientDetail() {
             </div>
 
             {/* Content Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: 24, alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr', gap: 24, alignItems: 'start' }}>
 
                 {/* Left Column */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -234,7 +232,7 @@ export default function ClientDetail() {
                     {/* Client Information */}
                     <div style={{ ...card, padding: '26px 28px' }}>
                         <h3 style={{ fontSize: 16, fontWeight: 800, color: brand.navy, margin: '0 0 20px', fontFamily: fonts.heading }}>
-                            Contact Information
+                            Client Information
                         </h3>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, paddingBottom: 18, borderBottom: `1px solid ${brand.border}` }}>
                             <div style={avatar(avatarColor, 52)}>{initials}</div>
@@ -243,7 +241,7 @@ export default function ClientDetail() {
                                     {client.name}
                                 </div>
                                 <div style={{ fontSize: 12, color: '#64748b', marginTop: 2, fontWeight: 500 }}>
-                                    Joined on {new Date(client.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                                    Registered Client Account · Abu Dhabi
                                 </div>
                             </div>
                         </div>
@@ -255,7 +253,7 @@ export default function ClientDetail() {
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                     </svg>
                                 }
-                                label="Contact Number"
+                                label="CONTACT NUMBER"
                                 value={client.contact_number || '—'}
                                 onCopy={() => handleCopy(client.contact_number, 'Contact Number')}
                             />
@@ -265,7 +263,7 @@ export default function ClientDetail() {
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                     </svg>
                                 }
-                                label="Email Address"
+                                label="EMAIL ADDRESS"
                                 value={client.email || '—'}
                                 onCopy={() => handleCopy(client.email, 'Email Address')}
                             />
@@ -276,15 +274,15 @@ export default function ClientDetail() {
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><circle cx="12" cy="11" r="3" />
                                         </svg>
                                     }
-                                    label="Saved Address"
+                                    label="SERVICE ADDRESS"
                                     value={client.address || '—'}
-                                    onCopy={() => handleCopy(client.address, 'Saved Address')}
+                                    onCopy={() => handleCopy(client.address, 'Service Address')}
                                 />
                             </div>
                         </div>
                     </div>
 
-                    {/* Booking History */}
+                    {/* Booking History Card */}
                     <div style={{ ...card, overflow: 'hidden' }}>
                         <div style={{ padding: '20px 24px', borderBottom: `1px solid ${brand.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h3 style={{ fontSize: 16, fontWeight: 800, color: brand.navy, margin: 0, fontFamily: fonts.heading }}>
@@ -297,29 +295,27 @@ export default function ClientDetail() {
 
                         {!client.bookings || client.bookings.length === 0 ? (
                             <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>
-                                <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
-                                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                </div>
                                 No bookings found for this client.
                             </div>
                         ) : (
                             <div>
-                                {/* Table Column Header */}
+                                {/* Strict Grid Table Header */}
                                 <div style={{
-                                    display: 'grid', gridTemplateColumns: '90px 1fr 130px 100px 70px',
-                                    padding: '10px 24px', background: '#f8fafc',
+                                    display: 'grid',
+                                    gridTemplateColumns: '100px minmax(180px, 1fr) 120px 100px 75px',
+                                    padding: '12px 24px', background: '#f8fafc',
                                     borderBottom: `1px solid ${brand.border}`,
                                     fontSize: 11, fontWeight: 700, color: '#64748b',
                                     letterSpacing: 0.6, textTransform: 'uppercase', alignItems: 'center', gap: 16
                                 }}>
-                                    <div>Booking ID</div>
-                                    <div>Service & Address</div>
-                                    <div>Date</div>
-                                    <div>Status</div>
-                                    <div style={{ textAlign: 'right' }}>Action</div>
+                                    <div>BOOKING ID</div>
+                                    <div>SERVICE & ADDRESS</div>
+                                    <div>DATE</div>
+                                    <div>STATUS</div>
+                                    <div style={{ textAlign: 'right' }}>ACTION</div>
                                 </div>
 
-                                {/* Table Rows Container */}
+                                {/* Table Rows Scroll Container */}
                                 <div style={{ maxHeight: 380, overflowY: 'auto' }}>
                                     {client.bookings.map((booking, i) => {
                                         const statusColor = {
@@ -331,18 +327,42 @@ export default function ClientDetail() {
 
                                         return (
                                             <div key={booking.id} style={{
-                                                display: 'grid', gridTemplateColumns: '90px 1fr 130px 100px 70px',
-                                                padding: '14px 24px', borderBottom: i < client.bookings.length - 1 ? `1px solid ${brand.border}` : 'none',
+                                                display: 'grid',
+                                                gridTemplateColumns: '100px minmax(180px, 1fr) 120px 100px 75px',
+                                                padding: '14px 24px',
+                                                borderBottom: i < client.bookings.length - 1 ? `1px solid ${brand.border}` : 'none',
                                                 alignItems: 'center', gap: 16, transition: 'background 0.15s'
                                             }} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                                                <span style={{ fontSize: 12, fontWeight: 700, color: '#64748b', fontFamily: 'monospace' }}>#{String(booking.id).padStart(4, '0')}</span>
+                                                
+                                                {/* Booking ID */}
+                                                <span style={{ fontSize: 12, fontWeight: 700, color: brand.navy, fontFamily: 'monospace' }}>
+                                                    #{String(booking.id).padStart(4, '0')}
+                                                </span>
+
+                                                {/* Service & Address (Inner Scroll Container for long addresses) */}
                                                 <div>
-                                                    <div style={{ fontSize: 13.5, fontWeight: 700, color: brand.navy }}>{booking.service?.name || 'Service'}</div>
-                                                    <div style={{ fontSize: 12, color: '#64748b', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{booking.address || '—'}</div>
+                                                    <div style={{ fontSize: 13.5, fontWeight: 700, color: brand.navy }}>
+                                                        {booking.service?.name || 'Cleaning Service'}
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: 12,
+                                                        color: '#64748b',
+                                                        marginTop: 2,
+                                                        maxHeight: 38,
+                                                        overflowY: 'auto',
+                                                        wordBreak: 'break-word',
+                                                        paddingRight: 4
+                                                    }}>
+                                                        {booking.address || '—'}
+                                                    </div>
                                                 </div>
+
+                                                {/* Date */}
                                                 <div style={{ fontSize: 12.5, color: '#374151', fontWeight: 500 }}>
                                                     {booking.preferred_date ? new Date(booking.preferred_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                                                 </div>
+
+                                                {/* Status */}
                                                 <div>
                                                     <span style={{
                                                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '3px 10px',
@@ -353,6 +373,8 @@ export default function ClientDetail() {
                                                         {booking.status}
                                                     </span>
                                                 </div>
+
+                                                {/* Action */}
                                                 <div style={{ textAlign: 'right' }}>
                                                     <HoverButton
                                                         onClick={() => navigate(`/admin/bookings/${booking.id}`)}
@@ -373,7 +395,7 @@ export default function ClientDetail() {
 
                 {/* Right Column */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                    {/* Activity Overview */}
+                    {/* Activity Overview Card */}
                     <div style={{ ...card, padding: '26px' }}>
                         <h3 style={{ fontSize: 16, fontWeight: 800, color: brand.navy, margin: '0 0 20px', fontFamily: fonts.heading }}>
                             Activity Overview
@@ -402,36 +424,26 @@ export default function ClientDetail() {
                             lineHeight: 1.5,
                             background: '#f8fafc',
                             padding: '14px 16px',
-                            borderRadius: 10,
+                            borderRadius: 12,
                             border: `1px solid ${brand.border}`
                         }}>
-                            <strong style={{ color: brand.navy }}>Customer Value Insights:</strong>{' '}
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 }}>
+                                Customer Value Insights
+                            </div>
                             {getCustomerInsight()}
                         </div>
                     </div>
 
                     {/* Quick Actions Card */}
                     <div style={{ ...card, padding: '24px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                            <div style={{
-                                width: 28, height: 28, borderRadius: 8,
-                                background: '#eff6ff', color: '#2563eb',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            }}>
-                                <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                </svg>
-                            </div>
-                            <h3 style={{ fontSize: 15, fontWeight: 800, color: brand.navy, margin: 0, fontFamily: fonts.heading }}>
-                                Quick Actions
-                            </h3>
-                        </div>
+                        <h3 style={{ fontSize: 16, fontWeight: 800, color: brand.navy, margin: '0 0 16px', fontFamily: fonts.heading }}>
+                            Quick Actions
+                        </h3>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {/* Primary WhatsApp Action */}
                             <QuickActionButton
                                 variant="whatsapp"
-                                onClick={() => handleOpenWhatsApp()}
+                                onClick={handleOpenWhatsApp}
                                 icon={
                                     <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2z" />
@@ -441,10 +453,9 @@ export default function ClientDetail() {
                                 badge={client.contact_number ? formatWhatsAppPhone(client.contact_number) : 'Not Provided'}
                             />
 
-                            {/* Primary Email Action */}
                             <QuickActionButton
                                 variant="email"
-                                onClick={() => handleOpenEmail()}
+                                onClick={handleOpenEmail}
                                 icon={
                                     <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -518,11 +529,12 @@ function FormField({ label, required, children }) {
     );
 }
 
-function HoverButton({ children, onClick, base, hoverStyle }) {
+function HoverButton({ children, onClick, base, hoverStyle, disabled }) {
     const [hovered, setHovered] = useState(false);
     return (
         <button
             onClick={onClick}
+            disabled={disabled}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             style={{ ...base, ...(hovered ? hoverStyle : {}), transition: 'all 0.15s' }}
