@@ -1,22 +1,11 @@
 import { useState, useEffect } from 'react';
+import { services as fallbackServices } from '../data/services';
 
 /**
  * Fetch public (active-only) services from the backend API.
- * Falls back to an empty array if the API is offline.
+ * Falls back to static services if the API is offline or empty.
  *
  * Returns { services, loading, error, refetch }
- *
- * Each service object from the DB has:
- *   id, name, description, base_price, icon, status, bookings_count
- *
- * Helper fields added for UI compatibility:
- *   title        → same as name
- *   startingPrice → "AED {base_price} / hr" (generic fallback)
- *   basePrice    → Number(base_price)
- *   rateUnit     → inferred from service name (or defaults to 'hour')
- *   image        → default Unsplash image (no image stored in DB)
- *   included     → [] (detail not stored in DB)
- *   category     → inferred from service name
  */
 
 const SERVICE_IMAGES = {
@@ -129,11 +118,15 @@ export function useServices() {
 
       const json = await res.json();
       const raw = Array.isArray(json) ? json : (json?.data || []);
-      setServices(raw.map(enrichService));
+      if (raw.length > 0) {
+        setServices(raw.map(enrichService));
+      } else {
+        setServices(fallbackServices);
+      }
     } catch (err) {
-      console.warn('useServices fetch error:', err);
-      setError(err);
-      setServices([]);
+      console.warn('useServices fetch error (using fallback):', err);
+      setError(null);
+      setServices(fallbackServices);
     } finally {
       setLoading(false);
     }

@@ -148,7 +148,7 @@ export default function ServicesPage() {
                         {service.description}
                       </p>
                       <ul className="space-y-2 mb-6 text-xs sm:text-sm text-slate-700">
-                        {service.included.slice(0, 4).map((inc) => (
+                        {(service.included || []).slice(0, 4).map((inc) => (
                           <li key={inc} className="flex items-start gap-2.5">
                             <span className="text-emerald-600 font-bold text-base leading-none">✓</span>
                             <span>{inc}</span>
