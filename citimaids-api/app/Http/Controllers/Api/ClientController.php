@@ -10,18 +10,17 @@ class ClientController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Client::withCount('bookings')
+        $query = Client::query()
             ->select('clients.*')
-            ->selectRaw('MAX(bookings.preferred_date) as last_booking_date')
-            ->leftJoin('bookings', 'bookings.client_id', '=', 'clients.id')
-            ->groupBy('clients.id');
+            ->selectRaw('(SELECT COUNT(*) FROM bookings WHERE bookings.client_id = clients.id) as bookings_count')
+            ->selectRaw('(SELECT MAX(preferred_date) FROM bookings WHERE bookings.client_id = clients.id) as last_booking_date');
 
         $sortBy = $request->input('sort_by', 'created_at');
         $sortDir = $request->input('sort_dir', 'desc');
 
         if ($sortBy === 'bookings_count') {
-            $query->orderBy('bookings_count', $sortDir);
-        } else if ($sortBy === 'name') {
+            $query->orderByRaw("(SELECT COUNT(*) FROM bookings WHERE bookings.client_id = clients.id) $sortDir");
+        } elseif ($sortBy === 'name') {
             $query->orderBy('clients.name', $sortDir);
         } else {
             $query->orderBy('clients.created_at', $sortDir);

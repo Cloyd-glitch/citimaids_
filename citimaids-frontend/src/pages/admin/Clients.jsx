@@ -472,12 +472,26 @@ function ColHead({ children, style }) {
 }
 
 function ActionBtn({ title, onClick, icon, danger }) {
+    const [hovered, setHovered] = useState(false);
+    const bgHover = danger ? '#fef2f2' : '#f1f5f9';
+    const borderHover = danger ? '#fecaca' : '#cbd5e1';
     return (
-        <button title={title} onClick={onClick} style={{
-            width: 32, height: 32, borderRadius: 10, border: `1.5px solid ${brand.border}`, background: '#fff',
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: danger ? '#dc2626' : '#64748b', transition: 'all 0.15s',
-        }}>{icon}</button>
+        <button
+            title={title}
+            onClick={onClick}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{
+                width: 32, height: 32, borderRadius: 10,
+                border: `1.5px solid ${hovered ? borderHover : brand.border}`,
+                background: hovered ? bgHover : '#fff',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: danger ? '#dc2626' : hovered ? brand.navy : '#64748b',
+                transition: 'all 0.15s',
+                transform: hovered ? 'translateY(-1px)' : 'none',
+                boxShadow: hovered ? '0 4px 10px rgba(0,0,0,0.06)' : 'none',
+            }}
+        >{icon}</button>
     );
 }
 

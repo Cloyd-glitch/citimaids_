@@ -40,7 +40,8 @@ export default function ClientDetail() {
         setFormLoading(true);
         try {
             const res = await api.put(`/clients/${id}`, form);
-            setClient(prev => ({ ...prev, ...res.data.client }));
+            // Refresh full client data to also update booking list
+            await fetchClient();
             setEditModal(false);
             showToast('Client updated successfully.', 'success');
         } catch {
@@ -155,12 +156,16 @@ export default function ClientDetail() {
                 </div>
 
                 <div style={{ display: 'flex', gap: 10 }}>
-                    <button onClick={() => setEditModal(true)} style={solidBtnToken}>
+                    <HoverButton
+                        onClick={() => setEditModal(true)}
+                        base={solidBtnToken}
+                        hoverStyle={{ opacity: 0.88, transform: 'translateY(-1px)', boxShadow: '0 6px 18px rgba(10,35,66,0.28)' }}
+                    >
                         <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                         </svg>
                         Edit Client
-                    </button>
+                    </HoverButton>
                 </div>
             </div>
 
@@ -270,12 +275,13 @@ export default function ClientDetail() {
                                             }}>
                                                 {booking.status}
                                             </span>
-                                            <button
+                                            <HoverButton
                                                 onClick={() => navigate(`/admin/bookings/${booking.id}`)}
-                                                style={{ ...outlineBtnToken, fontSize: 12, padding: '6px 12px', justifyContent: 'center' }}
+                                                base={{ ...outlineBtnToken, fontSize: 12, padding: '6px 12px', justifyContent: 'center' }}
+                                                hoverStyle={{ background: '#f1f5f9', borderColor: '#cbd5e1', transform: 'translateY(-1px)' }}
                                             >
                                                 View
-                                            </button>
+                                            </HoverButton>
                                         </div>
                                     );
                                 })}
@@ -405,5 +411,19 @@ function FormField({ label, required, children }) {
             </label>
             {children}
         </div>
+    );
+}
+
+function HoverButton({ children, onClick, base, hoverStyle }) {
+    const [hovered, setHovered] = useState(false);
+    return (
+        <button
+            onClick={onClick}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{ ...base, ...(hovered ? hoverStyle : {}), transition: 'all 0.15s' }}
+        >
+            {children}
+        </button>
     );
 }
