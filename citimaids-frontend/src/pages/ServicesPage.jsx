@@ -99,7 +99,8 @@ export default function ServicesPage() {
               { key: 'all', label: 'All Services' },
               { key: 'residential', label: 'Residential' },
               { key: 'commercial', label: 'Commercial' },
-              { key: 'specialized', label: 'Specialized & Handover' },
+              { key: 'specialized', label: 'Specialized & Deep Care' },
+              { key: 'maintenance', label: 'Outdoor Maintenance' },
             ].map((tab) => (
               <button
                 key={tab.key}
