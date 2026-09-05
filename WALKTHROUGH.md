@@ -102,6 +102,7 @@ This branch consolidates extensive upgrades across the CitiMaids platform: expan
 - **Brand Badge**:
   - Saved official circular CitiMaids emblem to `/images/citimaids-badge.png`.
   - Embedded in `Navbar.jsx` and `Footer.jsx` brand anchors.
+  - Embedded in the **Admin Panel Sidebar** (`AdminLayout.jsx`) and the **Staff Login Screen** (`Login.jsx`), replacing the generic map pin icon with the official emblem.
 - **Browser Favicon**:
   - Deployed `/favicon.png` from the brand badge.
   - Linked in `index.html` as `icon` and `apple-touch-icon`.
