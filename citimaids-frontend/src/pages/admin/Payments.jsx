@@ -76,6 +76,7 @@ export default function Payments({ defaultTab = 'payments' }) {
     const [actionLoading, setActionLoading] = useState(false);
     const [actionMessage, setActionMessage] = useState(null);
     const [copiedId, setCopiedId] = useState(null);
+    const [refreshHovered, setRefreshHovered] = useState(false);
 
     // Fetch Payments
     useEffect(() => {
@@ -237,12 +238,43 @@ export default function Payments({ defaultTab = 'payments' }) {
                 <div style={{ display: 'flex', gap: 10 }}>
                     <button
                         onClick={() => { if (activeTab === 'payments') fetchPayments(); else fetchTransactions(); }}
-                        style={outlineBtn}
+                        onMouseEnter={() => setRefreshHovered(true)}
+                        onMouseLeave={() => setRefreshHovered(false)}
+                        disabled={activeTab === 'payments' ? paymentsLoading : transactionsLoading}
+                        style={{
+                            ...outlineBtn,
+                            background: refreshHovered ? '#eff6ff' : '#fff',
+                            borderColor: refreshHovered ? '#93c5fd' : '#e2e8f0',
+                            color: refreshHovered ? '#1d4ed8' : '#334155',
+                            boxShadow: refreshHovered ? '0 4px 12px rgba(37, 99, 235, 0.12)' : '0 1px 2px rgba(0, 0, 0, 0.04)',
+                            transform: refreshHovered ? 'translateY(-1px)' : 'translateY(0)',
+                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            cursor: (activeTab === 'payments' ? paymentsLoading : transactionsLoading) ? 'not-allowed' : 'pointer',
+                            opacity: (activeTab === 'payments' ? paymentsLoading : transactionsLoading) ? 0.7 : 1,
+                        }}
                     >
-                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <svg
+                            width="14"
+                            height="14"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            style={{
+                                transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                                transform: (activeTab === 'payments' ? paymentsLoading : transactionsLoading)
+                                    ? 'rotate(360deg)'
+                                    : refreshHovered
+                                    ? 'rotate(180deg)'
+                                    : 'rotate(0deg)',
+                                animation: (activeTab === 'payments' ? paymentsLoading : transactionsLoading)
+                                    ? 'spin 0.8s linear infinite'
+                                    : 'none',
+                            }}
+                        >
                             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
-                        Refresh
+                        {(activeTab === 'payments' ? paymentsLoading : transactionsLoading) ? 'Refreshing...' : 'Refresh'}
                     </button>
                 </div>
             </div>
