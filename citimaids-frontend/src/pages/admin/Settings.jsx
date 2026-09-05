@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
+import { formatUAEPhone } from '../../utils/formatters';
 
 const TABS = [
     {
@@ -156,7 +157,9 @@ function GeneralSettings({ showToast }) {
     const [form, setForm] = useState({
         business_name: 'CitiMaids Cleaning Services LLC',
         contact_number: '+971 50 000 0000',
+        additional_number: '',
         business_email: 'operations@citimaids.ae',
+        additional_email: '',
         business_address: 'Al Reem Island, Abu Dhabi, United Arab Emirates',
         description: 'Luxury residential and commercial cleaning services tailored across Abu Dhabi.',
         timezone: 'Asia/Dubai',
@@ -197,12 +200,20 @@ function GeneralSettings({ showToast }) {
                         <input value={form.business_name} onChange={e => setForm({ ...form, business_name: e.target.value })} style={inputStyle} />
                     </Field>
                     <Field label="Contact Number">
-                        <input value={form.contact_number} onChange={e => setForm({ ...form, contact_number: e.target.value })} style={inputStyle} />
+                        <input value={form.contact_number} onChange={e => setForm({ ...form, contact_number: formatUAEPhone(e.target.value) })} style={inputStyle} />
                     </Field>
                 </div>
-                <div style={{ marginBottom: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                     <Field label="Business Email">
                         <input type="email" value={form.business_email} onChange={e => setForm({ ...form, business_email: e.target.value })} style={inputStyle} />
+                    </Field>
+                    <Field label="Additional Number">
+                        <input value={form.additional_number || ''} onChange={e => setForm({ ...form, additional_number: formatUAEPhone(e.target.value) })} style={inputStyle} placeholder="Optional" />
+                    </Field>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                    <Field label="Additional Email">
+                        <input type="email" value={form.additional_email || ''} onChange={e => setForm({ ...form, additional_email: e.target.value })} style={inputStyle} placeholder="Optional" />
                     </Field>
                 </div>
                 <div style={{ marginBottom: 16 }}>

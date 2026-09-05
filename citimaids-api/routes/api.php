@@ -22,7 +22,8 @@ Route::get('/bookings/track', [BookingController::class, 'track']);
 // Public services list (customer-facing; active only unless auth token present)
 Route::get('/services', [ServiceController::class, 'index']);
 
-
+// Public settings (business info, etc)
+Route::get('/settings', [SettingController::class, 'index']);
 
 // ─── Protected Routes (Sanctum Auth Required) ─────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
@@ -44,6 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/clients', [ClientController::class, 'index']);
     Route::get('/clients/{id}', [ClientController::class, 'show']);
     Route::post('/clients', [ClientController::class, 'store']);
+    Route::put('/clients/{id}', [ClientController::class, 'update']);
     Route::delete('/clients/{id}', [ClientController::class, 'destroy']);
 
     // Services (admin CRUD)
@@ -53,8 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/services/reorder', [ServiceController::class, 'reorder']);
 
 
-    // Settings
-    Route::get('/settings', [SettingController::class, 'index']);
+    // Settings (admin CRUD)
     Route::put('/settings', [SettingController::class, 'update']);
 
     // Payments
