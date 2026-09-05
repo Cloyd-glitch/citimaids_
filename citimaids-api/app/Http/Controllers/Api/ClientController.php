@@ -10,6 +10,7 @@ class ClientController extends Controller
 {
     public function index(Request $request)
     {
+<<<<<<< Updated upstream
         $query = Client::query()
             ->select('clients.*')
             ->selectRaw('(SELECT COUNT(*) FROM bookings WHERE bookings.client_id = clients.id) as bookings_count')
@@ -25,6 +26,14 @@ class ClientController extends Controller
         } else {
             $query->orderBy('clients.created_at', $sortDir);
         }
+=======
+        $query = Client::select('clients.*')
+            ->selectRaw('COUNT(bookings.id) as bookings_count')
+            ->selectRaw('MAX(bookings.preferred_date) as last_booking_date')
+            ->leftJoin('bookings', 'bookings.client_id', '=', 'clients.id')
+            ->groupBy('clients.id')
+            ->latest('clients.created_at');
+>>>>>>> Stashed changes
 
         if ($request->filled('search')) {
             $s = '%' . $request->search . '%';

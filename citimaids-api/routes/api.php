@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\ReportsController;
 use App\Http\Controllers\Api\ServiceController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\TransactionController;
@@ -34,6 +35,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Dashboard
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+
+    // Reports (live DB calculations)
+    Route::get('/reports/overview', [ReportsController::class, 'overview']);
+    Route::get('/reports/bookings', [ReportsController::class, 'bookings']);
+    Route::get('/reports/clients',  [ReportsController::class, 'clients']);
+    Route::get('/reports/services', [ReportsController::class, 'services']);
+    Route::get('/reports/revenue',  [ReportsController::class, 'revenue']);
 
     // Bookings (admin)
     Route::get('/bookings', [BookingController::class, 'index']);
