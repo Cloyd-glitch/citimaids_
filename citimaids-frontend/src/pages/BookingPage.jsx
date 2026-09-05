@@ -71,6 +71,29 @@ export const uaeDistricts = {
   ],
 };
 
+const CATEGORY_TABS = [
+  { key: 'all', label: 'All Services' },
+  { key: 'residential', label: 'Residential' },
+  { key: 'commercial', label: 'Commercial' },
+  { key: 'specialized', label: 'Specialized & Deep Care' },
+  { key: 'maintenance', label: 'Outdoor Maintenance' },
+];
+
+function getCategoryBadge(category) {
+  switch (category) {
+    case 'residential':
+      return { label: 'Residential', bg: '#ecfdf5', color: '#047857' };
+    case 'commercial':
+      return { label: 'Commercial', bg: '#eff6ff', color: '#1d4ed8' };
+    case 'specialized':
+      return { label: 'Specialized', bg: '#fffbeb', color: '#b45309' };
+    case 'maintenance':
+      return { label: 'Maintenance', bg: '#ecfeff', color: '#0e7490' };
+    default:
+      return { label: 'Service', bg: '#f1f5f9', color: '#475569' };
+  }
+}
+
 export default function BookingPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -81,6 +104,7 @@ export default function BookingPage() {
   const { services, loading: servicesLoading } = useServices();
 
   const [step, setStep] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [submitLoading, setSubmitLoading] = useState(false);
   const [contactErrors, setContactErrors] = useState({});
   const [data, setData] = useState({
@@ -110,14 +134,29 @@ export default function BookingPage() {
     if (preselectedServiceId !== undefined) {
       // Try matching by numeric DB id first, then by slug fallback
       const byId   = services.find((s) => s.id === preselectedServiceId || String(s.id) === String(preselectedServiceId));
-      const bySlug = services.find((s) => s.slug === preselectedServiceId);
+      const bySlug = services.find((s) => s.slug === preselectedServiceId || s.id === preselectedServiceId);
       picked = byId || bySlug || services[0];
+      if (picked?.category) {
+        setSelectedCategory(picked.category);
+      }
     }
 
     setData((prev) => ({ ...prev, serviceId: picked.id }));
   }, [services]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const categoryCounts = useMemo(() => {
+    const counts = { all: services.length, residential: 0, commercial: 0, specialized: 0, maintenance: 0 };
+    services.forEach((s) => {
+      if (counts[s.category] !== undefined) counts[s.category]++;
+      else counts[s.category] = 1;
+    });
+    return counts;
+  }, [services]);
 
+  const filteredServices = useMemo(() => {
+    if (selectedCategory === 'all') return services;
+    return services.filter((s) => s.category === selectedCategory);
+  }, [services, selectedCategory]);
 
   const set = (field, value) => setData((prev) => ({ ...prev, [field]: value }));
 
@@ -335,49 +374,162 @@ export default function BookingPage() {
           {step === 0 && (
             <div>
               <h2 style={{ fontSize: 26, fontWeight: 800, color: '#0A2342', margin: '0 0 4px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                What do you need cleaned?
+                Select Your Service
               </h2>
-              <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 24px' }}>
-                Select the service that best fits your property.
+              <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 20px' }}>
+                Choose from our certified residential, commercial, and outdoor maintenance services across Abu Dhabi.
               </p>
 
+              {/* Category Filter Pills */}
+              <div style={{
+                display: 'flex',
+                gap: 8,
+                overflowX: 'auto',
+                paddingBottom: 8,
+                marginBottom: 20,
+                scrollbarWidth: 'none',
+              }}>
+                {CATEGORY_TABS.map((tab) => {
+                  const isActive = selectedCategory === tab.key;
+                  const count = categoryCounts[tab.key] || 0;
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => setSelectedCategory(tab.key)}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: 20,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        whiteSpace: 'nowrap',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 7,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        border: isActive ? '1.5px solid #0A2342' : '1.5px solid #e2e8f0',
+                        background: isActive ? '#0A2342' : '#f8fafc',
+                        color: isActive ? '#ffffff' : '#475569',
+                        boxShadow: isActive ? '0 4px 12px rgba(10,35,66,0.15)' : 'none',
+                      }}
+                    >
+                      <span>{tab.label}</span>
+                      <span style={{
+                        fontSize: 10,
+                        fontWeight: 800,
+                        padding: '1px 7px',
+                        borderRadius: 10,
+                        background: isActive ? 'rgba(255,255,255,0.22)' : '#e2e8f0',
+                        color: isActive ? '#ffffff' : '#64748b',
+                      }}>
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Service Cards */}
               {servicesLoading ? (
                 /* Skeleton loader while services fetch */
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  {[1, 2, 3, 4].map((n) => (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+                  {[1, 2, 3, 4, 5, 6].map((n) => (
                     <div key={n} style={{
-                      height: 76, borderRadius: 14, background: '#f1f5f9',
+                      height: 110, borderRadius: 16, background: '#f1f5f9',
                       animation: 'pulse 1.5s ease-in-out infinite',
                     }} />
                   ))}
                   <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.45} }`}</style>
                 </div>
+              ) : filteredServices.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '36px 16px', background: '#f8fafc', borderRadius: 16, border: '1px dashed #cbd5e1' }}>
+                  <p style={{ color: '#64748b', fontSize: 13, margin: 0 }}>No services currently available in this category.</p>
+                </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  {services.map((s) => {
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+                  {filteredServices.map((s) => {
                     const isSelected = data.serviceId === s.id;
+                    const catBadge = getCategoryBadge(s.category);
+
                     return (
-                      <label key={s.id} style={{
-                        display: 'flex', alignItems: 'flex-start', gap: 12,
-                        padding: '16px 16px', borderRadius: 14,
-                        border: isSelected ? '2px solid #0A2342' : '1.5px solid #e2e8f0',
-                        background: isSelected ? '#eff6ff' : '#fff',
-                        cursor: 'pointer', transition: 'all 0.2s',
-                      }}>
-                        <input
-                          type="radio" name="service" value={s.id}
-                          checked={isSelected}
-                          onChange={() => set('serviceId', s.id)}
-                          style={{ marginTop: 3, accentColor: '#0A2342' }}
-                        />
+                      <div
+                        key={s.id}
+                        onClick={() => set('serviceId', s.id)}
+                        style={{
+                          position: 'relative',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          padding: '16px 18px',
+                          borderRadius: 16,
+                          border: isSelected ? '2px solid #0A2342' : '1.5px solid #e2e8f0',
+                          background: isSelected ? '#f0f7ff' : '#ffffff',
+                          boxShadow: isSelected ? '0 6px 20px rgba(10,35,66,0.08)' : '0 1px 3px rgba(0,0,0,0.02)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
                         <div>
-                          <div style={{ fontWeight: 700, fontSize: 14, color: '#0A2342' }}>{s.title}</div>
-                          <div style={{ fontSize: 12, fontWeight: 800, color: '#2563eb', marginTop: 2 }}>{s.startingPrice}</div>
-                          <div style={{ fontSize: 11, color: '#64748b', marginTop: 3, lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {/* Category badge and radio indicator */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                            <span style={{
+                              fontSize: 10,
+                              fontWeight: 800,
+                              textTransform: 'uppercase',
+                              letterSpacing: 0.5,
+                              padding: '3px 8px',
+                              borderRadius: 6,
+                              background: catBadge.bg,
+                              color: catBadge.color,
+                            }}>
+                              {catBadge.label}
+                            </span>
+                            <div style={{
+                              width: 18, height: 18, borderRadius: '50%',
+                              border: isSelected ? '5px solid #0A2342' : '2px solid #cbd5e1',
+                              background: '#fff',
+                              transition: 'all 0.2s',
+                              flexShrink: 0,
+                            }} />
+                          </div>
+
+                          {/* Service Title */}
+                          <div style={{ fontWeight: 800, fontSize: 15, color: '#0A2342', lineHeight: 1.3, marginBottom: 5 }}>
+                            {s.title}
+                          </div>
+
+                          {/* Description */}
+                          <div style={{
+                            fontSize: 12,
+                            color: '#64748b',
+                            lineHeight: 1.45,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            marginBottom: 12,
+                          }}>
                             {s.description}
                           </div>
                         </div>
-                      </label>
+
+                        {/* Rate Footer */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          paddingTop: 10,
+                          borderTop: isSelected ? '1px solid rgba(10,35,66,0.08)' : '1px solid #f1f5f9',
+                        }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
+                            Starting Rate
+                          </span>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: '#2563eb' }}>
+                            {s.startingPrice}
+                          </span>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>

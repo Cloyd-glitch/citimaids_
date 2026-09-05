@@ -210,11 +210,17 @@ export default function HomePage() {
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover scale-105"
-          poster="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1600&h=900&fit=crop&auto=format"
+          ref={(el) => {
+            if (el) {
+              el.muted = true;
+              el.play().catch(() => {});
+            }
+          }}
+          className="absolute inset-0 w-full h-full object-cover scale-105 pointer-events-none"
+          poster="/images/services/window-cleaning.jpg"
         >
-          <source src="https://videos.pexels.com/video-files/3195394/3195394-hd_1920_1080_24fps.mp4" type="video/mp4" />
-          <source src="https://videos.pexels.com/video-files/7688163/7688163-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          <source src="/citimaid-hero.mp4" type="video/mp4" />
+          <source src="/citimaid%20video.mp4" type="video/mp4" />
         </video>
 
         {/* Rich Figma Navy Gradient Overlay */}
@@ -395,16 +401,16 @@ export default function HomePage() {
             <Reveal direction="left">
               <BeforeAfterSlider
                 label="Living Room & Marble Floor Restoration"
-                beforeImage="https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=900&auto=format&fit=crop&q=80"
-                afterImage="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=900&auto=format&fit=crop&q=80"
+                beforeImage="/images/transformations/living-room-before.jpg"
+                afterImage="/images/transformations/living-room-after.jpg"
               />
             </Reveal>
 
             <Reveal direction="right">
               <BeforeAfterSlider
                 label="Kitchen Counters & Cooker Hood Degreasing"
-                beforeImage="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=900&auto=format&fit=crop&q=80"
-                afterImage="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=900&auto=format&fit=crop&q=80"
+                beforeImage="/images/transformations/kitchen-before.jpg"
+                afterImage="/images/transformations/kitchen-after.jpg"
               />
             </Reveal>
           </div>
@@ -467,7 +473,7 @@ export default function HomePage() {
                 to="/services"
                 className="inline-flex items-center gap-2 text-sm font-extrabold text-blue-900 hover:text-blue-700 transition-colors"
               >
-                <span>View all 7 services</span>
+                <span>View all {services.length} services</span>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                 </svg>

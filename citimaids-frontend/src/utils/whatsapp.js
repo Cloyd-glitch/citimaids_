@@ -7,7 +7,7 @@
  */
 
 // Default CitiMaids customer service and dispatch WhatsApp number
-export const CITIMAIDS_WA_NUMBER = '97150000000';
+export const CITIMAIDS_WA_NUMBER = '971526349461';
 
 /**
  * Clean and format any UAE phone number to international wa.me format.
