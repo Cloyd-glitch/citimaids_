@@ -81,10 +81,10 @@ export default function Navbar() {
         <div className="hidden lg:flex items-center gap-4">
           <Link
             to="/book"
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-slate-900 bg-white hover:bg-sky-50 shadow-xl transition-all duration-200 hover:scale-105 active:scale-95"
+            className="btn-3d-nav group"
           >
             <span>Book Now</span>
-            <svg className="w-4 h-4 text-blue-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-blue-900 group-hover:text-white transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
           </Link>
@@ -125,9 +125,9 @@ export default function Navbar() {
           <div className="pt-4 border-t border-white/10 flex flex-col gap-3">
             <Link
               to="/book"
-              className="w-full py-3.5 rounded-xl text-sm font-bold text-slate-900 bg-white text-center shadow-lg hover:bg-sky-50 transition-all"
+              className="btn-3d-primary w-full text-center py-3"
             >
-              Book an Appointment
+              <span>Book Now</span>
             </Link>
           </div>
         </div>
