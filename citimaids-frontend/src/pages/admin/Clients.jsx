@@ -263,15 +263,19 @@ export default function Clients() {
                         Manage all clients — <strong>{meta.total || 0}</strong> total
                     </p>
                 </div>
-                <button onClick={() => {
-                    setForm({ name: '', contact_number: '', email: '', address: '' });
-                    setAddModal(true);
-                }} style={solidBtnToken}>
+                <HoverBtn
+                    onClick={() => {
+                        setForm({ name: '', contact_number: '', email: '', address: '' });
+                        setAddModal(true);
+                    }}
+                    base={solidBtnToken}
+                    hoverStyle={{ opacity: 0.88, transform: 'translateY(-1px)', boxShadow: '0 6px 20px rgba(10,35,66,0.30)' }}
+                >
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
                     Add Client
-                </button>
+                </HoverBtn>
             </div>
 
             {/* Search & Actions */}
@@ -312,14 +316,22 @@ export default function Clients() {
                         </div>
                     )}
                 </div>
-                <button onClick={() => setFilterModal(true)} style={outlineBtnToken}>
+                <HoverBtn
+                    onClick={() => setFilterModal(true)}
+                    base={outlineBtnToken}
+                    hoverStyle={{ background: '#f1f5f9', borderColor: '#cbd5e1', color: brand.navy, transform: 'translateY(-1px)' }}
+                >
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M3 4h18M7 8h10M10 12h4" /></svg>
                     Sort & Filters
-                </button>
-                <button onClick={handleExport} style={outlineBtnToken}>
+                </HoverBtn>
+                <HoverBtn
+                    onClick={handleExport}
+                    base={outlineBtnToken}
+                    hoverStyle={{ background: '#f1f5f9', borderColor: '#cbd5e1', color: brand.navy, transform: 'translateY(-1px)' }}
+                >
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
                     Export CSV
-                </button>
+                </HoverBtn>
             </div>
 
             {/* Table */}
@@ -380,13 +392,11 @@ export default function Clients() {
                                 </div>
                                 {/* Email */}
                                 <div style={{ fontSize: 13, color: '#2563eb', fontWeight: 500 }}>{client.email || '—'}</div>
-                                {/* Bookings */}
+                                {/* Bookings — single dot always */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <div style={{ display: 'flex', gap: 2 }}>
-                                        {Array.from({ length: Math.min(bookingCount, 5) }).map((_, i) => (
-                                            <span key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: color, opacity: 0.8 }} />
-                                        ))}
-                                    </div>
+                                    {bookingCount > 0 && (
+                                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, opacity: 0.85, flexShrink: 0 }} />
+                                    )}
                                     <span style={{ fontSize: 13, fontWeight: 700, color: brand.navy }}>{bookingCount}</span>
                                 </div>
                                 {/* Last Booking */}
@@ -520,3 +530,17 @@ const tableRowStyle = {
     padding: '16px 24px', borderBottom: '1px solid #f1f5f9',
     alignItems: 'center', gap: 16, transition: 'background 0.15s',
 };
+
+function HoverBtn({ children, onClick, base, hoverStyle }) {
+    const [hovered, setHovered] = useState(false);
+    return (
+        <button
+            onClick={onClick}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{ ...base, ...(hovered ? hoverStyle : {}), transition: 'all 0.15s' }}
+        >
+            {children}
+        </button>
+    );
+}

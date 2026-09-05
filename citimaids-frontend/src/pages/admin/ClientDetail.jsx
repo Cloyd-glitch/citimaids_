@@ -136,19 +136,7 @@ export default function ClientDetail() {
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
                 <div>
-                    <button
-                        onClick={() => navigate('/admin/clients')}
-                        style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 6,
-                            color: '#64748b', background: 'none', border: 'none',
-                            fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0, marginBottom: 8,
-                        }}
-                    >
-                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                        </svg>
-                        Back to Clients
-                    </button>
+                    <BackBtn onClick={() => navigate('/admin/clients')} />
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <h1 style={pageTitle}>{client.name}</h1>
                     </div>
@@ -424,6 +412,29 @@ function HoverButton({ children, onClick, base, hoverStyle }) {
             style={{ ...base, ...(hovered ? hoverStyle : {}), transition: 'all 0.15s' }}
         >
             {children}
+        </button>
+    );
+}
+
+function BackBtn({ onClick }) {
+    const [hovered, setHovered] = useState(false);
+    return (
+        <button
+            onClick={onClick}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                color: hovered ? '#2563eb' : '#64748b',
+                background: 'none', border: 'none',
+                fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0, marginBottom: 8,
+                transition: 'color 0.15s',
+            }}
+        >
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Clients
         </button>
     );
 }
