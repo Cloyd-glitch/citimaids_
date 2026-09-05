@@ -44,23 +44,19 @@ export default function AdminLayout() {
                     gap: 12,
                     borderBottom: '1px solid rgba(255,255,255,0.08)',
                 }}>
-                    <div style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 12,
-                        background: 'linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#fff',
-                        boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
-                        flexShrink: 0,
-                    }}>
-                        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                    </div>
+                    <img
+                        src="/images/citimaids-badge.png"
+                        alt="CitiMaids Logo"
+                        style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+                            flexShrink: 0,
+                        }}
+                    />
                     <div>
                         <div style={{ color: '#fff', fontWeight: 800, fontSize: 16, letterSpacing: 0.8, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>CITIMAIDS</div>
                         <div style={{ color: '#93c5fd', fontSize: 11, fontWeight: 600, letterSpacing: 0.5 }}>Staff Portal</div>
