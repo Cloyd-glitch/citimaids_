@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../api/axios';
 import { brand, fonts, card, pageTitle, pageSubtitle, solidBtn as solidBtnToken, outlineBtn as outlineBtnToken, inputStyle as inputStyleToken, avatar } from './adminStyles';
+import { formatWhatsAppPhone } from '../../utils/whatsapp';
 
 export default function ClientDetail() {
     const navigate = useNavigate();
@@ -16,6 +17,10 @@ export default function ClientDetail() {
     const [editModal, setEditModal] = useState(false);
     const [form, setForm] = useState({ name: '', contact_number: '', email: '', address: '' });
     const [formLoading, setFormLoading] = useState(false);
+
+    // Quick Action Template Modals
+    const [waModal, setWaModal] = useState(false);
+    const [emailModal, setEmailModal] = useState(false);
 
     useEffect(() => { fetchClient(); }, [id]);
 
@@ -54,6 +59,38 @@ export default function ClientDetail() {
     const showToast = (msg, type) => {
         setToast({ msg, type });
         setTimeout(() => setToast(null), 3000);
+    };
+
+    const handleCopy = (text, label) => {
+        if (!text || text === '—') {
+            showToast(`No ${label.toLowerCase()} registered for this client.`, 'error');
+            return;
+        }
+        navigator.clipboard.writeText(text);
+        showToast(`${label} copied to clipboard!`, 'success');
+    };
+
+    const handleOpenWhatsApp = (customText) => {
+        if (!client?.contact_number || client.contact_number.trim() === '') {
+            showToast('No contact number registered for this client.', 'error');
+            return;
+        }
+        const formattedPhone = formatWhatsAppPhone(client.contact_number);
+        const defaultText = `Hello ${client.name}! Greetings from CitiMaids Cleaning Services Abu Dhabi. How can we assist you today?`;
+        const textToSend = customText || defaultText;
+        window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(textToSend)}`, '_blank', 'noopener,noreferrer');
+        showToast('Opening WhatsApp...', 'success');
+    };
+
+    const handleOpenEmail = (customSubject, customBody) => {
+        if (!client?.email || client.email.trim() === '') {
+            showToast('No email address registered for this client.', 'error');
+            return;
+        }
+        const subject = customSubject || `CitiMaids Support - Greetings ${client.name}`;
+        const body = customBody || `Dear ${client.name},\n\nGreetings from CitiMaids Cleaning Services Abu Dhabi.\n\nBest regards,\nCitiMaids Management`;
+        window.location.href = `mailto:${encodeURIComponent(client.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        showToast('Opening Mail client...', 'success');
     };
 
     if (loading) return (
@@ -189,6 +226,7 @@ export default function ClientDetail() {
                                 }
                                 label="Contact Number"
                                 value={client.contact_number || '—'}
+                                onCopy={() => handleCopy(client.contact_number, 'Contact Number')}
                             />
                             <FieldItem
                                 icon={
@@ -198,6 +236,7 @@ export default function ClientDetail() {
                                 }
                                 label="Email Address"
                                 value={client.email || '—'}
+                                onCopy={() => handleCopy(client.email, 'Email Address')}
                             />
                             <div style={{ gridColumn: 'span 2' }}>
                                 <FieldItem
@@ -208,6 +247,7 @@ export default function ClientDetail() {
                                     }
                                     label="Saved Address"
                                     value={client.address || '—'}
+                                    onCopy={() => handleCopy(client.address, 'Saved Address')}
                                 />
                             </div>
                         </div>
@@ -308,7 +348,150 @@ export default function ClientDetail() {
                         </div>
                     </div>
 
-                    {/* Quick Actions */}
+            {/* WhatsApp Templates Modal */}
+            {waModal && (
+                <Modal onClose={() => setWaModal(false)} title="Select WhatsApp Template">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 8px' }}>
+                            Choose a pre-formatted message to send to <strong>{client.name}</strong> ({client.contact_number ? formatWhatsAppPhone(client.contact_number) : 'N/A'}):
+                        </p>
+
+                        {[
+                            {
+                                title: '💬 General Support & Care',
+                                text: `Hello ${client.name}! Greetings from CitiMaids Cleaning Services Abu Dhabi. How may we assist you today?`
+                            },
+                            {
+                                title: '📅 Schedule Next Cleaning',
+                                text: `Hello ${client.name}! We noticed it might be time for your next regular cleaning visit. Would you like to reserve a slot with CitiMaids this week?`
+                            },
+                            {
+                                title: '⭐ Service Quality & Feedback',
+                                text: `Hello ${client.name}! Thank you for choosing CitiMaids. We hope your space is sparkling clean and fresh! How was your recent cleaning service?`
+                            },
+                            {
+                                title: '💳 Invoice & Billing Follow-up',
+                                text: `Hello ${client.name}! Greetings from CitiMaids Accounts team. We are following up regarding your account invoice and payment status.`
+                            }
+                        ].map((tpl, idx) => (
+                            <div
+                                key={idx}
+                                style={{
+                                    padding: '12px 14px', borderRadius: 12, background: '#f0fdf4',
+                                    border: '1px solid #bbf7d0', display: 'flex', flexDirection: 'column', gap: 6
+                                }}
+                            >
+                                <div style={{ fontSize: 13, fontWeight: 700, color: '#15803d' }}>{tpl.title}</div>
+                                <div style={{ fontSize: 12, color: '#374151', fontStyle: 'italic', background: '#fff', padding: 8, borderRadius: 8, border: '1px solid #dcfce7' }}>
+                                    "{tpl.text}"
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setWaModal(false);
+                                        handleOpenWhatsApp(tpl.text);
+                                    }}
+                                    style={{
+                                        alignSelf: 'flex-end', padding: '6px 12px', borderRadius: 8,
+                                        background: '#16a34a', color: '#fff', border: 'none',
+                                        fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                                        boxShadow: '0 2px 6px rgba(22,163,74,0.2)'
+                                    }}
+                                >
+                                    Send on WhatsApp ➔
+                                </button>
+                            </div>
+                        ))}
+
+                        <button
+                            onClick={() => setWaModal(false)}
+                            style={{ ...outlineBtnToken, marginTop: 8, justifyContent: 'center' }}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </Modal>
+            )}
+
+            {/* Email Templates & Tools Modal */}
+            {emailModal && (
+                <Modal onClose={() => setEmailModal(false)} title="Select Email Action & Template">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 8px' }}>
+                            Send formatted email to <strong>{client.email || 'N/A'}</strong>:
+                        </p>
+
+                        <button
+                            onClick={() => handleCopy(client.email, 'Email Address')}
+                            style={{
+                                padding: '10px 14px', borderRadius: 10, background: '#f8fafc',
+                                border: `1px solid ${brand.border}`, fontSize: 13, fontWeight: 600,
+                                color: brand.navy, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                            }}
+                        >
+                            <span>📋 Copy Email Address ({client.email})</span>
+                            <span style={{ fontSize: 12, color: '#2563eb', fontWeight: 700 }}>Copy</span>
+                        </button>
+
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 4 }}>
+                            Email Message Templates
+                        </div>
+
+                        {[
+                            {
+                                title: '✉️ General Support Inquiry',
+                                subject: `CitiMaids Cleaning Services - Support Inquiry`,
+                                body: `Dear ${client.name},\n\nGreetings from CitiMaids Abu Dhabi. Please let us know if you have any questions or require support regarding our services.\n\nBest regards,\nCitiMaids Customer Care`
+                            },
+                            {
+                                title: '🗓️ Schedule Next Cleaning Visit',
+                                subject: `CitiMaids - Schedule Your Next Cleaning Visit`,
+                                body: `Dear ${client.name},\n\nWe hope your home is feeling fresh and clean! Contact us anytime to reserve your next cleaning appointment.\n\nBest regards,\nCitiMaids Team`
+                            },
+                            {
+                                title: '⭐ Feedback & Quality Review',
+                                subject: `CitiMaids - We'd Love Your Feedback!`,
+                                body: `Dear ${client.name},\n\nThank you for choosing CitiMaids! We value your feedback on our service.\n\nBest regards,\nCitiMaids Service Team`
+                            }
+                        ].map((tpl, idx) => (
+                            <div
+                                key={idx}
+                                style={{
+                                    padding: '12px 14px', borderRadius: 12, background: '#eff6ff',
+                                    border: '1px solid #bfdbfe', display: 'flex', flexDirection: 'column', gap: 6
+                                }}
+                            >
+                                <div style={{ fontSize: 13, fontWeight: 700, color: '#1d4ed8' }}>{tpl.title}</div>
+                                <div style={{ fontSize: 12, color: '#1e293b', fontWeight: 600 }}>Subject: {tpl.subject}</div>
+                                <button
+                                    onClick={() => {
+                                        setEmailModal(false);
+                                        handleOpenEmail(tpl.subject, tpl.body);
+                                    }}
+                                    style={{
+                                        alignSelf: 'flex-end', padding: '6px 12px', borderRadius: 8,
+                                        background: '#2563eb', color: '#fff', border: 'none',
+                                        fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                                        boxShadow: '0 2px 6px rgba(37,99,235,0.2)'
+                                    }}
+                                >
+                                    Open Mail App ➔
+                                </button>
+                            </div>
+                        ))}
+
+                        <button
+                            onClick={() => setEmailModal(false)}
+                            style={{ ...outlineBtnToken, marginTop: 8, justifyContent: 'center' }}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </Modal>
+            )}
+
+                    {/* Quick Actions Card */}
                     <div style={{ ...card, padding: '24px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
                             <div style={{
@@ -325,29 +508,78 @@ export default function ClientDetail() {
                             </h3>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            <QuickActionLink
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {/* Primary WhatsApp Action */}
+                            <QuickActionButton
                                 variant="whatsapp"
-                                href={`https://wa.me/${(client.contact_number || '').replace(/[^0-9]/g, '')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                onClick={() => handleOpenWhatsApp()}
                                 icon={
                                     <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2z" />
                                     </svg>
                                 }
                                 label="Message via WhatsApp"
+                                badge={client.contact_number ? formatWhatsAppPhone(client.contact_number) : 'Not Provided'}
                             />
-                            <QuickActionLink
+
+                            {/* WhatsApp Template Selector Button */}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (!client.contact_number || client.contact_number.trim() === '') {
+                                        showToast('No contact number registered for this client.', 'error');
+                                    } else {
+                                        setWaModal(true);
+                                    }
+                                }}
+                                style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                    padding: '9px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700,
+                                    color: '#15803d', background: '#f0fdf4', border: '1px dashed #86efac',
+                                    cursor: 'pointer', transition: 'all 0.15s', width: '100%'
+                                }}
+                            >
+                                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    💬 Select WhatsApp Template
+                                </span>
+                                <span>➔</span>
+                            </button>
+
+                            {/* Primary Email Action */}
+                            <QuickActionButton
                                 variant="email"
-                                href={`mailto:${client.email || ''}`}
+                                onClick={() => handleOpenEmail()}
                                 icon={
                                     <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                     </svg>
                                 }
                                 label="Send Email"
+                                badge={client.email || 'Not Provided'}
                             />
+
+                            {/* Email Template Selector Button */}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (!client.email || client.email.trim() === '') {
+                                        showToast('No email address registered for this client.', 'error');
+                                    } else {
+                                        setEmailModal(true);
+                                    }
+                                }}
+                                style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                    padding: '9px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700,
+                                    color: '#1d4ed8', background: '#eff6ff', border: '1px dashed #93c5fd',
+                                    cursor: 'pointer', transition: 'all 0.15s', width: '100%'
+                                }}
+                            >
+                                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    ✉️ Select Email Template & Copy
+                                </span>
+                                <span>➔</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -427,7 +659,7 @@ function HoverButton({ children, onClick, base, hoverStyle }) {
     );
 }
 
-function QuickActionLink({ href, target, rel, icon, label, variant }) {
+function QuickActionButton({ onClick, icon, label, variant, badge }) {
     const [hovered, setHovered] = useState(false);
     const isWa = variant === 'whatsapp';
     
@@ -446,24 +678,35 @@ function QuickActionLink({ href, target, rel, icon, label, variant }) {
     };
 
     return (
-        <a
-            href={href}
-            target={target}
-            rel={rel}
+        <button
+            type="button"
+            onClick={onClick}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             style={{
-                display: 'flex', alignItems: 'center', gap: 10,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '12px 16px', borderRadius: 12,
-                fontSize: 13, fontWeight: 700, textDecoration: 'none',
-                transition: 'all 0.15s',
+                fontSize: 13, fontWeight: 700, cursor: 'pointer', width: '100%',
+                transition: 'all 0.15s', textAlign: 'left',
                 ...baseStyle,
                 ...(hovered ? hoverStyle : {})
             }}
         >
-            {icon}
-            {label}
-        </a>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {icon}
+                <span>{label}</span>
+            </div>
+            {badge && (
+                <span style={{
+                    fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 12,
+                    background: isWa ? 'rgba(22,101,52,0.1)' : 'rgba(15,23,42,0.06)',
+                    color: isWa ? '#166534' : '#64748b', maxWidth: 140,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                }}>
+                    {badge}
+                </span>
+            )}
+        </button>
     );
 }
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { brand, fonts, pageTitle, pageSubtitle, card, solidBtn as solidBtnToken, outlineBtn as outlineBtnToken, searchBar, searchInput, avatar as avatarToken, inputStyle as inputStyleToken } from './adminStyles';
+import { formatWhatsAppPhone } from '../../utils/whatsapp';
 
 const avatarColors = ['#2563eb', '#7c3aed', '#ec4899', '#d97706', '#059669', '#0891b2', '#dc2626'];
 
@@ -112,6 +113,28 @@ export default function Clients() {
     const showToast = (msg, type) => {
         setToast({ msg, type });
         setTimeout(() => setToast(null), 3000);
+    };
+
+    const handleWhatsApp = (client) => {
+        if (!client?.contact_number || client.contact_number.trim() === '') {
+            showToast('No contact number registered for this client.', 'error');
+            return;
+        }
+        const formatted = formatWhatsAppPhone(client.contact_number);
+        const text = `Hello ${client.name}! Greetings from CitiMaids Cleaning Services Abu Dhabi. How can we assist you today?`;
+        window.open(`https://wa.me/${formatted}?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
+        showToast('Opening WhatsApp...', 'success');
+    };
+
+    const handleEmail = (client) => {
+        if (!client?.email || client.email.trim() === '') {
+            showToast('No email address registered for this client.', 'error');
+            return;
+        }
+        const subject = `CitiMaids Support - Greetings ${client.name}`;
+        const body = `Dear ${client.name},\n\nGreetings from CitiMaids Cleaning Services Abu Dhabi.\n\nBest regards,\nCitiMaids Management`;
+        window.location.href = `mailto:${encodeURIComponent(client.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        showToast('Opening Mail client...', 'success');
     };
 
     const totalPages = meta.last_page || 1;
@@ -403,7 +426,17 @@ export default function Clients() {
                                 <div style={{ fontSize: 13, color: '#64748b' }}>{lastBooking}</div>
                                 {/* Actions */}
                                 <div style={{ display: 'flex', gap: 6 }}>
-                                    <ActionBtn title="View" onClick={() => navigate(`/admin/clients/${client.id}`)} icon={
+                                    <ActionBtn title="Message via WhatsApp" onClick={() => handleWhatsApp(client)} icon={
+                                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" style={{ color: '#16a34a' }}>
+                                            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2z" />
+                                        </svg>
+                                    } />
+                                    <ActionBtn title="Send Email" onClick={() => handleEmail(client)} icon={
+                                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#2563eb" strokeWidth="2">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
+                                    } />
+                                    <ActionBtn title="View Details" onClick={() => navigate(`/admin/clients/${client.id}`)} icon={
                                         <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
                                         </svg>
