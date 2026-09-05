@@ -75,7 +75,6 @@ export default function Payments({ defaultTab = 'payments' }) {
     const [refundReason, setRefundReason] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
     const [actionMessage, setActionMessage] = useState(null);
-    const [copiedId, setCopiedId] = useState(null);
     const [refreshHovered, setRefreshHovered] = useState(false);
 
     // Fetch Payments
@@ -169,13 +168,6 @@ export default function Payments({ defaultTab = 'payments' }) {
             setActionLoading(false);
             setTimeout(() => setActionMessage(null), 4000);
         }
-    };
-
-    const copyText = (text, id) => {
-        if (!text) return;
-        navigator.clipboard.writeText(text);
-        setCopiedId(id);
-        setTimeout(() => setCopiedId(null), 2000);
     };
 
     // Derived Statistics
@@ -688,31 +680,6 @@ export default function Payments({ defaultTab = 'payments' }) {
                                                             >
                                                                 View
                                                             </button>
-                                                            {p.payment_link && (
-                                                                <button
-                                                                    onClick={() => copyText(p.payment_link, p.id)}
-                                                                    title="Copy Checkout Link"
-                                                                    style={{
-                                                                        padding: '5px 8px',
-                                                                        borderRadius: 8,
-                                                                        border: '1px solid #bfdbfe',
-                                                                        background: copiedId === p.id ? '#059669' : '#eff6ff',
-                                                                        color: copiedId === p.id ? '#fff' : '#1e40af',
-                                                                        fontSize: 11,
-                                                                        fontWeight: 700,
-                                                                        cursor: 'pointer',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        gap: 4,
-                                                                        transition: 'all 0.15s',
-                                                                    }}
-                                                                >
-                                                                    <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                                                                    </svg>
-                                                                    {copiedId === p.id ? 'Copied' : 'Link'}
-                                                                </button>
-                                                            )}
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -1094,82 +1061,6 @@ export default function Payments({ defaultTab = 'payments' }) {
                                     </button>
                                 </div>
                             </div>
-
-                            {/* ADCB Pace Pay Checkout Link */}
-                            {selectedPayment.payment_link && (
-                                <div style={{
-                                    border: '1px solid #bfdbfe',
-                                    background: '#eff6ff',
-                                    padding: '14px 16px',
-                                    borderRadius: 12,
-                                    marginBottom: 20,
-                                }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                                        <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1e40af' }}>
-                                            ADCB Pace Pay Hosted Link
-                                        </span>
-                                        {selectedPayment.payment_link_expires_at && (
-                                            <span style={{ fontSize: 10.5, color: '#60a5fa' }}>
-                                                Expires: {new Date(selectedPayment.payment_link_expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 8,
-                                        background: '#fff',
-                                        padding: '6px 10px',
-                                        borderRadius: 8,
-                                        border: '1px solid #dbeafe',
-                                    }}>
-                                        <input
-                                            type="text"
-                                            readOnly
-                                            value={selectedPayment.payment_link}
-                                            style={{
-                                                flex: 1,
-                                                border: 'none',
-                                                outline: 'none',
-                                                fontSize: 12,
-                                                color: '#1e3a8a',
-                                                background: 'transparent',
-                                            }}
-                                        />
-                                        <button
-                                            onClick={() => copyText(selectedPayment.payment_link, 'modal')}
-                                            style={{
-                                                padding: '5px 10px',
-                                                borderRadius: 6,
-                                                background: copiedId === 'modal' ? '#059669' : brand.navy,
-                                                color: '#fff',
-                                                border: 'none',
-                                                fontSize: 11,
-                                                fontWeight: 700,
-                                                cursor: 'pointer',
-                                            }}
-                                        >
-                                            {copiedId === 'modal' ? 'Copied' : 'Copy'}
-                                        </button>
-                                        <a
-                                            href={selectedPayment.payment_link}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            style={{
-                                                padding: '5px 10px',
-                                                borderRadius: 6,
-                                                background: '#dbeafe',
-                                                color: '#1e40af',
-                                                textDecoration: 'none',
-                                                fontSize: 11,
-                                                fontWeight: 700,
-                                            }}
-                                        >
-                                            Open ↗
-                                        </a>
-                                    </div>
-                                </div>
-                            )}
 
                             {/* Management Actions */}
                             <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16 }}>
