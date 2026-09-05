@@ -19,9 +19,11 @@ export default function Clients() {
     const [editId, setEditId] = useState(null);
     const [form, setForm] = useState({ name: '', contact_number: '', email: '', address: '' });
     const [formLoading, setFormLoading] = useState(false);
+    const [filterModal, setFilterModal] = useState(false);
+    const [filters, setFilters] = useState({ sort_by: 'created_at', sort_dir: 'desc' });
     const searchTimer = useRef(null);
 
-    useEffect(() => { fetchClients(); }, [page]);
+    useEffect(() => { fetchClients(); }, [page, filters]);
     useEffect(() => {
         clearTimeout(searchTimer.current);
         searchTimer.current = setTimeout(() => { setPage(1); fetchClients(); }, 400);
@@ -31,7 +33,7 @@ export default function Clients() {
     const fetchClients = async () => {
         setLoading(true);
         try {
-            const params = { page };
+            const params = { page, sort_by: filters.sort_by, sort_dir: filters.sort_dir };
             if (search) params.search = search;
             const res = await api.get('/clients', { params });
             setClients(res.data.data || []);
@@ -41,6 +43,28 @@ export default function Clients() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleExport = () => {
+        const headers = ['ID', 'Name', 'Contact Number', 'Email', 'Address', 'Total Bookings', 'Joined Date'];
+        const rows = clients.map(c => [
+            `C${String(c.id).padStart(3, '0')}`,
+            `"${c.name}"`,
+            `"${c.contact_number || ''}"`,
+            `"${c.email || ''}"`,
+            `"${c.address || ''}"`,
+            c.bookings_count || (c.bookings?.length || 0),
+            new Date(c.created_at).toLocaleDateString()
+        ]);
+        const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `citimaids_clients_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        showToast('Clients exported successfully.', 'success');
     };
 
     const handleDelete = async () => {
@@ -169,6 +193,38 @@ export default function Clients() {
                 </Modal>
             )}
 
+            {/* Filter Modal */}
+            {filterModal && (
+                <Modal onClose={() => setFilterModal(false)} title="Sort & Filter Clients">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <FormField label="Sort By">
+                            <select
+                                value={filters.sort_by}
+                                onChange={e => setFilters(prev => ({ ...prev, sort_by: e.target.value }))}
+                                style={inputStyleToken}
+                            >
+                                <option value="created_at">Joined Date</option>
+                                <option value="bookings_count">Total Bookings</option>
+                                <option value="name">Name</option>
+                            </select>
+                        </FormField>
+                        <FormField label="Sort Direction">
+                            <select
+                                value={filters.sort_dir}
+                                onChange={e => setFilters(prev => ({ ...prev, sort_dir: e.target.value }))}
+                                style={inputStyleToken}
+                            >
+                                <option value="desc">Descending (Newest / Highest First)</option>
+                                <option value="asc">Ascending (Oldest / Lowest First)</option>
+                            </select>
+                        </FormField>
+                        <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                            <button type="button" onClick={() => setFilterModal(false)} style={{ ...outlineBtnToken, flex: 1, justifyContent: 'center' }}>Close</button>
+                        </div>
+                    </div>
+                </Modal>
+            )}
+
             {/* Edit Client Modal */}
             {editModal && (
                 <Modal onClose={() => setEditModal(false)} title="Edit Client">
@@ -219,26 +275,50 @@ export default function Clients() {
             </div>
 
             {/* Search & Actions */}
-            <div style={{ display: 'flex', gap: 10, margin: '20px 0 20px' }}>
-                <div style={searchBar}>
-                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2">
-                        <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-                    </svg>
-                    <input
-                        type="text"
-                        placeholder="Search client by name, phone, or email..."
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        style={searchInput}
-                    />
+            <div style={{ display: 'flex', gap: 10, margin: '20px 0 20px', alignItems: 'flex-start' }}>
+                <div style={{ position: 'relative', flex: 1, maxWidth: 440 }}>
+                    <div style={{ ...searchBar, maxWidth: '100%' }}>
+                        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2">
+                            <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+                        </svg>
+                        <input
+                            type="text"
+                            placeholder="Search client by name, phone, or email..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            style={searchInput}
+                        />
+                    </div>
+                    {search && (
+                        <div style={{
+                            position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 8,
+                            background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(10px)',
+                            borderRadius: 12, border: `1px solid ${brand.border}`,
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
+                            maxHeight: 250, overflowY: 'auto', zIndex: 50,
+                        }}>
+                            {clients.length > 0 ? clients.map(c => (
+                                <div key={c.id}
+                                     onClick={() => navigate(`/admin/clients/${c.id}`)}
+                                     style={{ padding: '10px 16px', fontSize: 14, color: brand.navy, cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.03)'}
+                                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                >
+                                    <strong>{c.name}</strong> <span style={{color: '#64748b', fontSize: 12, marginLeft: 8}}>{c.contact_number}</span>
+                                </div>
+                            )) : (
+                                <div style={{ padding: '10px 16px', fontSize: 13, color: '#64748b' }}>No matches found...</div>
+                            )}
+                        </div>
+                    )}
                 </div>
-                <button style={outlineBtnToken}>
+                <button onClick={() => setFilterModal(true)} style={outlineBtnToken}>
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M3 4h18M7 8h10M10 12h4" /></svg>
-                    Filters
+                    Sort & Filters
                 </button>
-                <button style={outlineBtnToken}>
+                <button onClick={handleExport} style={outlineBtnToken}>
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
-                    Export
+                    Export CSV
                 </button>
             </div>
 

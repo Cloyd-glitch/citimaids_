@@ -14,8 +14,18 @@ class ClientController extends Controller
             ->select('clients.*')
             ->selectRaw('MAX(bookings.preferred_date) as last_booking_date')
             ->leftJoin('bookings', 'bookings.client_id', '=', 'clients.id')
-            ->groupBy('clients.id')
-            ->latest('clients.created_at');
+            ->groupBy('clients.id');
+
+        $sortBy = $request->input('sort_by', 'created_at');
+        $sortDir = $request->input('sort_dir', 'desc');
+
+        if ($sortBy === 'bookings_count') {
+            $query->orderBy('bookings_count', $sortDir);
+        } else if ($sortBy === 'name') {
+            $query->orderBy('clients.name', $sortDir);
+        } else {
+            $query->orderBy('clients.created_at', $sortDir);
+        }
 
         if ($request->filled('search')) {
             $s = '%' . $request->search . '%';
