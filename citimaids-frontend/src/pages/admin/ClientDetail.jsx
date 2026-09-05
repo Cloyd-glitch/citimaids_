@@ -109,11 +109,46 @@ export default function ClientDetail() {
     const initials = client.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     const avatarColors = ['#2563eb', '#7c3aed', '#ec4899', '#d97706', '#059669', '#0891b2', '#dc2626'];
     const avatarColor = avatarColors[client.id % avatarColors.length];
-    
-    // Stats
+
+    // Stats & Insights
     const totalBookings = client.bookings?.length || 0;
     const completedBookings = client.bookings?.filter(b => b.status === 'completed').length || 0;
     const cancelledBookings = client.bookings?.filter(b => b.status === 'cancelled').length || 0;
+
+    const getCustomerInsight = () => {
+        if (!client.bookings || client.bookings.length === 0) {
+            return "No booking activity recorded yet for this client.";
+        }
+
+        const total = client.bookings.length;
+        const completed = client.bookings.filter(b => b.status === 'completed').length;
+        const completionRate = Math.round((completed / total) * 100);
+
+        const serviceCounts = {};
+        client.bookings.forEach(b => {
+            const name = b.service?.name || b.service?.title || 'Cleaning Service';
+            serviceCounts[name] = (serviceCounts[name] || 0) + 1;
+        });
+
+        let topService = '';
+        let topCount = 0;
+        Object.entries(serviceCounts).forEach(([name, count]) => {
+            if (count > topCount) {
+                topCount = count;
+                topService = name;
+            }
+        });
+
+        if (total === 1) {
+            return `1 booking recorded for ${topService}. Status: ${client.bookings[0].status}.`;
+        }
+
+        if (topCount > 1) {
+            return `Frequent client with ${total} total bookings. Most requested service is ${topService} (${topCount} bookings) with a ${completionRate}% completion rate.`;
+        }
+
+        return `Active client with ${total} total bookings across multiple services and a ${completionRate}% completion rate.`;
+    };
 
     return (
         <div style={{ fontFamily: fonts.body }}>
@@ -192,10 +227,10 @@ export default function ClientDetail() {
 
             {/* Content Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: 24, alignItems: 'start' }}>
-                
+
                 {/* Left Column */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                    
+
                     {/* Client Information */}
                     <div style={{ ...card, padding: '26px 28px' }}>
                         <h3 style={{ fontSize: 16, fontWeight: 800, color: brand.navy, margin: '0 0 20px', fontFamily: fonts.heading }}>
@@ -259,7 +294,7 @@ export default function ClientDetail() {
                                 {totalBookings} Total
                             </span>
                         </div>
-                        
+
                         {!client.bookings || client.bookings.length === 0 ? (
                             <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8', fontSize: 14 }}>
                                 <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
@@ -268,47 +303,69 @@ export default function ClientDetail() {
                                 No bookings found for this client.
                             </div>
                         ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                {client.bookings.map((booking, i) => {
-                                    const statusColor = {
-                                        pending: { bg: '#fef9c3', text: '#854d0e' },
-                                        confirmed: { bg: '#dbeafe', text: '#1e40af' },
-                                        completed: { bg: '#dcfce7', text: '#166534' },
-                                        cancelled: { bg: '#fee2e2', text: '#991b1b' },
-                                    }[booking.status] || { bg: '#f1f5f9', text: '#475569' };
+                            <div>
+                                {/* Table Column Header */}
+                                <div style={{
+                                    display: 'grid', gridTemplateColumns: '90px 1fr 130px 100px 70px',
+                                    padding: '10px 24px', background: '#f8fafc',
+                                    borderBottom: `1px solid ${brand.border}`,
+                                    fontSize: 11, fontWeight: 700, color: '#64748b',
+                                    letterSpacing: 0.6, textTransform: 'uppercase', alignItems: 'center', gap: 16
+                                }}>
+                                    <div>Booking ID</div>
+                                    <div>Service & Address</div>
+                                    <div>Date</div>
+                                    <div>Status</div>
+                                    <div style={{ textAlign: 'right' }}>Action</div>
+                                </div>
 
-                                    return (
-                                        <div key={booking.id} style={{
-                                            display: 'grid', gridTemplateColumns: '80px 1fr 140px 110px 80px',
-                                            padding: '16px 24px', borderBottom: i < client.bookings.length - 1 ? `1px solid ${brand.border}` : 'none',
-                                            alignItems: 'center', gap: 16, transition: 'background 0.15s'
-                                        }} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                                            <span style={{ fontSize: 12, fontWeight: 700, color: '#94a3b8', fontFamily: 'monospace' }}>#{String(booking.id).padStart(4, '0')}</span>
-                                            <div>
-                                                <div style={{ fontSize: 14, fontWeight: 700, color: brand.navy }}>{booking.service?.name || 'Service'}</div>
-                                                <div style={{ fontSize: 12, color: '#64748b', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{booking.address || '—'}</div>
+                                {/* Table Rows Container */}
+                                <div style={{ maxHeight: 380, overflowY: 'auto' }}>
+                                    {client.bookings.map((booking, i) => {
+                                        const statusColor = {
+                                            pending: { bg: '#fef9c3', text: '#854d0e' },
+                                            confirmed: { bg: '#dbeafe', text: '#1e40af' },
+                                            completed: { bg: '#dcfce7', text: '#166534' },
+                                            cancelled: { bg: '#fee2e2', text: '#991b1b' },
+                                        }[booking.status] || { bg: '#f1f5f9', text: '#475569' };
+
+                                        return (
+                                            <div key={booking.id} style={{
+                                                display: 'grid', gridTemplateColumns: '90px 1fr 130px 100px 70px',
+                                                padding: '14px 24px', borderBottom: i < client.bookings.length - 1 ? `1px solid ${brand.border}` : 'none',
+                                                alignItems: 'center', gap: 16, transition: 'background 0.15s'
+                                            }} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                                                <span style={{ fontSize: 12, fontWeight: 700, color: '#64748b', fontFamily: 'monospace' }}>#{String(booking.id).padStart(4, '0')}</span>
+                                                <div>
+                                                    <div style={{ fontSize: 13.5, fontWeight: 700, color: brand.navy }}>{booking.service?.name || 'Service'}</div>
+                                                    <div style={{ fontSize: 12, color: '#64748b', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{booking.address || '—'}</div>
+                                                </div>
+                                                <div style={{ fontSize: 12.5, color: '#374151', fontWeight: 500 }}>
+                                                    {booking.preferred_date ? new Date(booking.preferred_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                                                </div>
+                                                <div>
+                                                    <span style={{
+                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '3px 10px',
+                                                        borderRadius: 20, fontSize: 11, fontWeight: 700,
+                                                        background: statusColor.bg, color: statusColor.text,
+                                                        textTransform: 'capitalize',
+                                                    }}>
+                                                        {booking.status}
+                                                    </span>
+                                                </div>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <HoverButton
+                                                        onClick={() => navigate(`/admin/bookings/${booking.id}`)}
+                                                        base={{ ...outlineBtnToken, fontSize: 12, padding: '5px 10px', justifyContent: 'center' }}
+                                                        hoverStyle={{ background: '#eff6ff', borderColor: '#bfdbfe', color: '#1d4ed8', transform: 'translateY(-1px)' }}
+                                                    >
+                                                        View
+                                                    </HoverButton>
+                                                </div>
                                             </div>
-                                            <div style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>
-                                                {booking.preferred_date ? new Date(booking.preferred_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
-                                            </div>
-                                            <span style={{
-                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px 10px',
-                                                borderRadius: 20, fontSize: 11, fontWeight: 700,
-                                                background: statusColor.bg, color: statusColor.text,
-                                                textTransform: 'capitalize',
-                                            }}>
-                                                {booking.status}
-                                            </span>
-                                            <HoverButton
-                                                onClick={() => navigate(`/admin/bookings/${booking.id}`)}
-                                                base={{ ...outlineBtnToken, fontSize: 12, padding: '6px 12px', justifyContent: 'center' }}
-                                                hoverStyle={{ background: '#eff6ff', borderColor: '#bfdbfe', color: '#1d4ed8', transform: 'translateY(-1px)' }}
-                                            >
-                                                View
-                                            </HoverButton>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
+                                </div>
                             </div>
                         )}
                     </div>
@@ -321,8 +378,8 @@ export default function ClientDetail() {
                         <h3 style={{ fontSize: 16, fontWeight: 800, color: brand.navy, margin: '0 0 20px', fontFamily: fonts.heading }}>
                             Activity Overview
                         </h3>
-                        
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
                             <div style={{ background: '#f8fafc', padding: '16px', borderRadius: 12, border: `1px solid ${brand.border}`, textAlign: 'center' }}>
                                 <div style={{ fontSize: 24, fontWeight: 800, color: brand.navy, fontFamily: fonts.heading, lineHeight: 1 }}>{totalBookings}</div>
                                 <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 6 }}>Total Bookings</div>
@@ -339,8 +396,17 @@ export default function ClientDetail() {
                             )}
                         </div>
 
-                        <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.5 }}>
-                            <strong>Customer Value Insights:</strong> This customer prefers {client.bookings?.length > 0 ? (client.bookings[0]?.service?.name || 'our services') : 'our services'} and has a good track record. Keep them engaged!
+                        <div style={{
+                            fontSize: 13,
+                            color: '#475569',
+                            lineHeight: 1.5,
+                            background: '#f8fafc',
+                            padding: '14px 16px',
+                            borderRadius: 10,
+                            border: `1px solid ${brand.border}`
+                        }}>
+                            <strong style={{ color: brand.navy }}>Customer Value Insights:</strong>{' '}
+                            {getCustomerInsight()}
                         </div>
                     </div>
 
@@ -469,7 +535,7 @@ function HoverButton({ children, onClick, base, hoverStyle }) {
 function QuickActionButton({ onClick, icon, label, variant, badge }) {
     const [hovered, setHovered] = useState(false);
     const isWa = variant === 'whatsapp';
-    
+
     const baseStyle = isWa ? {
         background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d'
     } : {
