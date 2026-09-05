@@ -124,10 +124,10 @@ export default function ClientDetail() {
                                 placeholder="Al Reem Island, Abu Dhabi" style={inputStyleToken} />
                         </FormField>
                         <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-                            <button type="button" onClick={() => setEditModal(false)} style={{ ...outlineBtnToken, flex: 1, justifyContent: 'center' }}>Cancel</button>
-                            <button type="submit" disabled={formLoading} style={{ ...solidBtnToken, flex: 1, justifyContent: 'center', opacity: formLoading ? 0.6 : 1 }}>
+                            <HoverButton type="button" onClick={() => setEditModal(false)} base={{ ...outlineBtnToken, flex: 1, justifyContent: 'center' }} hoverStyle={{ background: '#f1f5f9', borderColor: '#cbd5e1', color: brand.navy }}>Cancel</HoverButton>
+                            <HoverButton type="submit" disabled={formLoading} base={{ ...solidBtnToken, flex: 1, justifyContent: 'center', opacity: formLoading ? 0.6 : 1 }} hoverStyle={{ opacity: 0.88, transform: 'translateY(-1px)', boxShadow: '0 6px 18px rgba(10,35,66,0.28)' }}>
                                 {formLoading ? 'Saving...' : 'Save Changes'}
-                            </button>
+                            </HoverButton>
                         </div>
                     </form>
                 </Modal>
@@ -266,7 +266,7 @@ export default function ClientDetail() {
                                             <HoverButton
                                                 onClick={() => navigate(`/admin/bookings/${booking.id}`)}
                                                 base={{ ...outlineBtnToken, fontSize: 12, padding: '6px 12px', justifyContent: 'center' }}
-                                                hoverStyle={{ background: '#f1f5f9', borderColor: '#cbd5e1', transform: 'translateY(-1px)' }}
+                                                hoverStyle={{ background: '#eff6ff', borderColor: '#bfdbfe', color: '#1d4ed8', transform: 'translateY(-1px)' }}
                                             >
                                                 View
                                             </HoverButton>
@@ -326,38 +326,28 @@ export default function ClientDetail() {
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            <a
+                            <QuickActionLink
+                                variant="whatsapp"
                                 href={`https://wa.me/${(client.contact_number || '').replace(/[^0-9]/g, '')}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: 10,
-                                    padding: '12px 16px', borderRadius: 12,
-                                    background: '#f0fdf4', border: '1px solid #bbf7d0',
-                                    color: '#15803d', fontSize: 13, fontWeight: 700,
-                                    textDecoration: 'none', transition: 'all 0.15s',
-                                }}
-                            >
-                                <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2z" />
-                                </svg>
-                                Message via WhatsApp
-                            </a>
-                            <a
+                                icon={
+                                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0012.04 2z" />
+                                    </svg>
+                                }
+                                label="Message via WhatsApp"
+                            />
+                            <QuickActionLink
+                                variant="email"
                                 href={`mailto:${client.email || ''}`}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: 10,
-                                    padding: '12px 16px', borderRadius: 12,
-                                    background: '#f8fafc', border: `1px solid ${brand.border}`,
-                                    color: brand.navy, fontSize: 13, fontWeight: 700,
-                                    textDecoration: 'none', transition: 'all 0.15s',
-                                }}
-                            >
-                                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                </svg>
-                                Send Email
-                            </a>
+                                icon={
+                                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                }
+                                label="Send Email"
+                            />
                         </div>
                     </div>
                 </div>
@@ -381,9 +371,30 @@ function FieldItem({ icon, label, value }) {
 }
 
 function Modal({ children, onClose, title }) {
+    const [closeHover, setCloseHover] = useState(false);
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(6,20,41,0.55)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ background: '#fff', borderRadius: 20, padding: 32, width: 440, maxWidth: '90vw', boxShadow: '0 25px 60px rgba(10,35,66,0.2)' }}>
+            <div style={{ position: 'relative', background: '#fff', borderRadius: 20, padding: 32, width: 440, maxWidth: '90vw', boxShadow: '0 25px 60px rgba(10,35,66,0.2)' }}>
+                {onClose && (
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        onMouseEnter={() => setCloseHover(true)}
+                        onMouseLeave={() => setCloseHover(false)}
+                        style={{
+                            position: 'absolute', top: 20, right: 20,
+                            width: 32, height: 32, borderRadius: 10,
+                            border: 'none', background: closeHover ? '#f1f5f9' : 'transparent',
+                            color: closeHover ? '#0f172a' : '#94a3b8',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', transition: 'all 0.15s',
+                        }}
+                    >
+                        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                )}
                 {title && <h3 style={{ margin: '0 0 22px', fontSize: 20, fontWeight: 800, color: '#0f172a', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{title}</h3>}
                 {children}
             </div>
@@ -413,6 +424,46 @@ function HoverButton({ children, onClick, base, hoverStyle }) {
         >
             {children}
         </button>
+    );
+}
+
+function QuickActionLink({ href, target, rel, icon, label, variant }) {
+    const [hovered, setHovered] = useState(false);
+    const isWa = variant === 'whatsapp';
+    
+    const baseStyle = isWa ? {
+        background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d'
+    } : {
+        background: '#f8fafc', border: `1px solid ${brand.border}`, color: brand.navy
+    };
+
+    const hoverStyle = isWa ? {
+        background: '#dcfce7', border: '1px solid #86efac', color: '#166534',
+        transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(22,101,52,0.15)'
+    } : {
+        background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1d4ed8',
+        transform: 'translateY(-1px)', boxShadow: '0 4px 14px rgba(37,99,235,0.15)'
+    };
+
+    return (
+        <a
+            href={href}
+            target={target}
+            rel={rel}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '12px 16px', borderRadius: 12,
+                fontSize: 13, fontWeight: 700, textDecoration: 'none',
+                transition: 'all 0.15s',
+                ...baseStyle,
+                ...(hovered ? hoverStyle : {})
+            }}
+        >
+            {icon}
+            {label}
+        </a>
     );
 }
 

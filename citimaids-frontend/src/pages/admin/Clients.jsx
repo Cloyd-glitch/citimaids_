@@ -156,8 +156,8 @@ export default function Clients() {
                             Are you sure you want to delete <strong>{deleteModal.name}</strong>? This cannot be undone.
                         </p>
                         <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-                            <button onClick={() => setDeleteModal(null)} style={outlineBtnToken}>Cancel</button>
-                            <button onClick={handleDelete} style={{ ...solidBtnToken, background: '#dc2626', boxShadow: '0 4px 12px rgba(220,38,38,0.25)' }}>Delete</button>
+                            <HoverBtn onClick={() => setDeleteModal(null)} base={outlineBtnToken} hoverStyle={{ background: '#f1f5f9', borderColor: '#cbd5e1', color: brand.navy }}>Cancel</HoverBtn>
+                            <HoverBtn onClick={handleDelete} base={{ ...solidBtnToken, background: '#dc2626', boxShadow: '0 4px 12px rgba(220,38,38,0.25)' }} hoverStyle={{ background: '#b91c1c', opacity: 0.95, transform: 'translateY(-1px)', boxShadow: '0 6px 16px rgba(220,38,38,0.35)' }}>Delete</HoverBtn>
                         </div>
                     </div>
                 </Modal>
@@ -184,10 +184,10 @@ export default function Clients() {
                                 placeholder="Al Reem Island, Abu Dhabi" style={inputStyleToken} />
                         </FormField>
                         <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-                            <button type="button" onClick={() => setAddModal(false)} style={{ ...outlineBtnToken, flex: 1, justifyContent: 'center' }}>Cancel</button>
-                            <button type="submit" disabled={formLoading} style={{ ...solidBtnToken, flex: 1, justifyContent: 'center', opacity: formLoading ? 0.6 : 1 }}>
+                            <HoverBtn type="button" onClick={() => setAddModal(false)} base={{ ...outlineBtnToken, flex: 1, justifyContent: 'center' }} hoverStyle={{ background: '#f1f5f9', borderColor: '#cbd5e1', color: brand.navy }}>Cancel</HoverBtn>
+                            <HoverBtn type="submit" disabled={formLoading} base={{ ...solidBtnToken, flex: 1, justifyContent: 'center', opacity: formLoading ? 0.6 : 1 }} hoverStyle={{ opacity: 0.88, transform: 'translateY(-1px)', boxShadow: '0 6px 18px rgba(10,35,66,0.3)' }}>
                                 {formLoading ? 'Saving...' : 'Add Client'}
-                            </button>
+                            </HoverBtn>
                         </div>
                     </form>
                 </Modal>
@@ -219,7 +219,7 @@ export default function Clients() {
                             </select>
                         </FormField>
                         <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-                            <button type="button" onClick={() => setFilterModal(false)} style={{ ...outlineBtnToken, flex: 1, justifyContent: 'center' }}>Close</button>
+                            <HoverBtn type="button" onClick={() => setFilterModal(false)} base={{ ...outlineBtnToken, flex: 1, justifyContent: 'center' }} hoverStyle={{ background: '#eff6ff', borderColor: '#93c5fd', color: '#1d4ed8', transform: 'translateY(-1px)' }}>Close</HoverBtn>
                         </div>
                     </div>
                 </Modal>
@@ -246,10 +246,10 @@ export default function Clients() {
                                 placeholder="Al Reem Island, Abu Dhabi" style={inputStyleToken} />
                         </FormField>
                         <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-                            <button type="button" onClick={() => setEditModal(false)} style={{ ...outlineBtnToken, flex: 1, justifyContent: 'center' }}>Cancel</button>
-                            <button type="submit" disabled={formLoading} style={{ ...solidBtnToken, flex: 1, justifyContent: 'center', opacity: formLoading ? 0.6 : 1 }}>
+                            <HoverBtn type="button" onClick={() => setEditModal(false)} base={{ ...outlineBtnToken, flex: 1, justifyContent: 'center' }} hoverStyle={{ background: '#f1f5f9', borderColor: '#cbd5e1', color: brand.navy }}>Cancel</HoverBtn>
+                            <HoverBtn type="submit" disabled={formLoading} base={{ ...solidBtnToken, flex: 1, justifyContent: 'center', opacity: formLoading ? 0.6 : 1 }} hoverStyle={{ opacity: 0.88, transform: 'translateY(-1px)', boxShadow: '0 6px 18px rgba(10,35,66,0.3)' }}>
                                 {formLoading ? 'Saving...' : 'Save Changes'}
-                            </button>
+                            </HoverBtn>
                         </div>
                     </form>
                 </Modal>
@@ -456,9 +456,30 @@ export default function Clients() {
 /* ── Shared Sub-components ───────────────────────── */
 
 function Modal({ children, onClose, title }) {
+    const [closeHover, setCloseHover] = useState(false);
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(6,20,41,0.55)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ background: '#fff', borderRadius: 20, padding: 32, width: 440, maxWidth: '90vw', boxShadow: '0 25px 60px rgba(10,35,66,0.2)' }}>
+            <div style={{ position: 'relative', background: '#fff', borderRadius: 20, padding: 32, width: 440, maxWidth: '90vw', boxShadow: '0 25px 60px rgba(10,35,66,0.2)' }}>
+                {onClose && (
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        onMouseEnter={() => setCloseHover(true)}
+                        onMouseLeave={() => setCloseHover(false)}
+                        style={{
+                            position: 'absolute', top: 20, right: 20,
+                            width: 32, height: 32, borderRadius: 10,
+                            border: 'none', background: closeHover ? '#f1f5f9' : 'transparent',
+                            color: closeHover ? '#0f172a' : '#94a3b8',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer', transition: 'all 0.15s',
+                        }}
+                    >
+                        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                )}
                 {title && <h3 style={{ margin: '0 0 22px', fontSize: 20, fontWeight: 800, color: brand.navy, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{title}</h3>}
                 {children}
             </div>
@@ -483,8 +504,10 @@ function ColHead({ children, style }) {
 
 function ActionBtn({ title, onClick, icon, danger }) {
     const [hovered, setHovered] = useState(false);
-    const bgHover = danger ? '#fef2f2' : '#f1f5f9';
-    const borderHover = danger ? '#fecaca' : '#cbd5e1';
+    const isView = title === 'View';
+    const bgHover = danger ? '#fef2f2' : isView ? '#eff6ff' : '#f1f5f9';
+    const borderHover = danger ? '#fecaca' : isView ? '#bfdbfe' : '#cbd5e1';
+    const textHover = danger ? '#dc2626' : isView ? '#2563eb' : brand.navy;
     return (
         <button
             title={title}
@@ -496,7 +519,7 @@ function ActionBtn({ title, onClick, icon, danger }) {
                 border: `1.5px solid ${hovered ? borderHover : brand.border}`,
                 background: hovered ? bgHover : '#fff',
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: danger ? '#dc2626' : hovered ? brand.navy : '#64748b',
+                color: hovered ? textHover : '#64748b',
                 transition: 'all 0.15s',
                 transform: hovered ? 'translateY(-1px)' : 'none',
                 boxShadow: hovered ? '0 4px 10px rgba(0,0,0,0.06)' : 'none',
@@ -506,16 +529,24 @@ function ActionBtn({ title, onClick, icon, danger }) {
 }
 
 function PageBtn({ label, active, disabled, onClick }) {
+    const [hovered, setHovered] = useState(false);
     return (
-        <button onClick={onClick} disabled={disabled} style={{
-            minWidth: 34, height: 34, borderRadius: 10, fontSize: 13, fontWeight: active ? 700 : 500,
-            border: active ? 'none' : `1.5px solid ${brand.border}`,
-            background: active ? `linear-gradient(135deg, ${brand.navy} 0%, ${brand.midBlue} 100%)` : '#fff',
-            color: active ? '#fff' : disabled ? '#cbd5e1' : '#374151',
-            cursor: disabled ? 'default' : 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: active ? '0 2px 8px rgba(10,35,66,0.2)' : 'none',
-        }}>{label}</button>
+        <button
+            onClick={onClick}
+            disabled={disabled}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{
+                minWidth: 34, height: 34, borderRadius: 10, fontSize: 13, fontWeight: active ? 700 : 500,
+                border: active ? 'none' : `1.5px solid ${hovered && !disabled ? '#cbd5e1' : brand.border}`,
+                background: active ? `linear-gradient(135deg, ${brand.navy} 0%, ${brand.midBlue} 100%)` : (hovered && !disabled ? '#f1f5f9' : '#fff'),
+                color: active ? '#fff' : disabled ? '#cbd5e1' : (hovered ? brand.navy : '#374151'),
+                cursor: disabled ? 'default' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: active ? '0 2px 8px rgba(10,35,66,0.2)' : 'none',
+                transition: 'all 0.15s',
+            }}
+        >{label}</button>
     );
 }
 
