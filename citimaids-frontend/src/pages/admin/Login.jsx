@@ -104,22 +104,19 @@ export default function Login() {
 
                 {/* Logo & Header */}
                 <div style={{ textAlign: 'center', marginBottom: 32 }}>
-                    <div style={{
-                        width: 58,
-                        height: 58,
-                        borderRadius: 16,
-                        background: 'linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%)',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: 16,
-                        boxShadow: '0 8px 20px rgba(37,99,235,0.3)',
-                    }}>
-                        <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth="2.2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                    </div>
+                    <img
+                        src="/images/citimaids-badge.png"
+                        alt="CitiMaids Logo"
+                        style={{
+                            width: 64,
+                            height: 64,
+                            borderRadius: '50%',
+                            objectFit: 'cover',
+                            marginBottom: 16,
+                            border: '2px solid #e2e8f0',
+                            boxShadow: '0 8px 20px rgba(10,35,66,0.15)',
+                        }}
+                    />
                     <h1 style={{ fontSize: 24, fontWeight: 800, color: '#0A2342', margin: 0, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                         CITIMAIDS
                     </h1>
