@@ -10,12 +10,21 @@ class ClientController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Client::withCount('bookings')
+        $query = Client::query()
             ->select('clients.*')
-            ->selectRaw('MAX(bookings.preferred_date) as last_booking_date')
-            ->leftJoin('bookings', 'bookings.client_id', '=', 'clients.id')
-            ->groupBy('clients.id')
-            ->latest('clients.created_at');
+            ->selectRaw('(SELECT COUNT(*) FROM bookings WHERE bookings.client_id = clients.id) as bookings_count')
+            ->selectRaw('(SELECT MAX(preferred_date) FROM bookings WHERE bookings.client_id = clients.id) as last_booking_date');
+
+        $sortBy = $request->input('sort_by', 'created_at');
+        $sortDir = $request->input('sort_dir', 'desc');
+
+        if ($sortBy === 'bookings_count') {
+            $query->orderByRaw("(SELECT COUNT(*) FROM bookings WHERE bookings.client_id = clients.id) $sortDir");
+        } elseif ($sortBy === 'name') {
+            $query->orderBy('clients.name', $sortDir);
+        } else {
+            $query->orderBy('clients.created_at', $sortDir);
+        }
 
         if ($request->filled('search')) {
             $s = '%' . $request->search . '%';
@@ -53,5 +62,20 @@ class ClientController extends Controller
         $client = Client::findOrFail($id);
         $client->delete();
         return response()->json(['message' => 'Client deleted.']);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $client = Client::findOrFail($id);
+
+        $validated = $request->validate([
+            'name'           => 'required|string|max:255',
+            'contact_number' => 'nullable|string|max:50',
+            'email'          => 'nullable|email|max:255',
+            'address'        => 'nullable|string|max:500',
+        ]);
+
+        $client->update($validated);
+        return response()->json(['message' => 'Client updated.', 'client' => $client]);
     }
 }

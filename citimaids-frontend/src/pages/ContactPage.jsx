@@ -1,8 +1,19 @@
 import { useState } from 'react';
-
+import { useSettings } from '../hooks/useSettings';
+import { formatUAEPhone } from '../utils/formatters';
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
+  const { settings } = useSettings();
+
+  const addressParts = settings?.business_address ? settings.business_address.split(',') : [];
+  const city = addressParts.length > 1 ? addressParts[1].trim() : 'Abu Dhabi';
+  const businessName = settings?.business_name || 'CitiMaids';
+  const phone = settings?.contact_number || '';
+  const additionalPhone = settings?.additional_number || '';
+  const email = settings?.business_email || '';
+  const additionalEmail = settings?.additional_email || '';
+  const address = settings?.business_address || 'Musrif Area, Abu Dhabi, UAE';
 
   const set = (field, value) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -23,9 +34,9 @@ export default function ContactPage() {
           <span className="inline-block px-4 py-1.5 rounded-full bg-white/15 text-xs font-semibold uppercase tracking-widest mb-4 backdrop-blur-sm">
             Get In Touch
           </span>
-          <h1 className="text-4xl sm:text-5xl font-extrabold mb-3 tracking-tight">Contact CitiMaids</h1>
+          <h1 className="text-4xl sm:text-5xl font-extrabold mb-3 tracking-tight">Contact {businessName}</h1>
           <p className="text-blue-100 text-sm sm:text-base leading-relaxed">
-            Have a question or require a tailored corporate cleaning quote? Our Abu Dhabi team is at your service.
+            Have a question or require a tailored corporate cleaning quote? Our {city} team is at your service.
           </p>
         </div>
       </div>
@@ -45,9 +56,19 @@ export default function ContactPage() {
                     </svg>
                   ),
                   label: 'Direct Phone',
-                  value: '+971 2 650 5050',
-                  href: 'tel:+97126505050',
+                  value: phone,
+                  href: `tel:${phone.replace(/\s+/g, '')}`,
                 },
+                additionalPhone ? {
+                  icon: (
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#1E3A8A" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  ),
+                  label: 'Additional Phone',
+                  value: additionalPhone,
+                  href: `tel:${additionalPhone.replace(/\s+/g, '')}`,
+                } : null,
                 {
                   icon: (
                     <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#1E3A8A" strokeWidth="2">
@@ -55,9 +76,19 @@ export default function ContactPage() {
                     </svg>
                   ),
                   label: 'Inquiries Email',
-                  value: 'info@citimaids.ae',
-                  href: 'mailto:info@citimaids.ae',
+                  value: email,
+                  href: `mailto:${email}`,
                 },
+                additionalEmail ? {
+                  icon: (
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#1E3A8A" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  ),
+                  label: 'Additional Email',
+                  value: additionalEmail,
+                  href: `mailto:${additionalEmail}`,
+                } : null,
                 {
                   icon: (
                     <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#1E3A8A" strokeWidth="2">
@@ -65,7 +96,7 @@ export default function ContactPage() {
                     </svg>
                   ),
                   label: 'Central Office',
-                  value: 'Musrif Area, Abu Dhabi, UAE',
+                  value: address,
                   href: null,
                 },
                 {
@@ -78,7 +109,7 @@ export default function ContactPage() {
                   value: 'Mon–Sat: 7AM–9PM | Sun: 8AM–6PM',
                   href: null,
                 },
-              ].map(({ icon, label, value, href }) => (
+              ].filter(Boolean).map(({ icon, label, value, href }) => (
                 <div
                   key={label}
                   className="flex items-start gap-4 bg-white rounded-2xl p-4.5 border border-slate-100"
@@ -176,7 +207,7 @@ export default function ContactPage() {
                       type="tel"
                       required
                       value={form.phone}
-                      onChange={(e) => set('phone', e.target.value)}
+                      onChange={(e) => set('phone', formatUAEPhone(e.target.value))}
                       placeholder="+971 50 000 0000"
                       className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500 transition-colors"
                     />

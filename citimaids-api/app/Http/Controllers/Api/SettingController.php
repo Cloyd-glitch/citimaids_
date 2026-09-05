@@ -17,10 +17,10 @@ class SettingController extends Controller
     public function update(Request $request)
     {
         $data = $request->validate([
-            'settings' => 'required|array',
+            '*' => 'nullable|string', // Validate all incoming fields as string/nullable
         ]);
 
-        foreach ($data['settings'] as $key => $value) {
+        foreach ($data as $key => $value) {
             Setting::updateOrCreate(['key' => $key], ['value' => $value]);
         }
 

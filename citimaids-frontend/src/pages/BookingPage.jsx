@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { services as localServices } from '../data/services';
 import api from '../api/axios';
+import { formatUAEPhone } from '../utils/formatters';
 
 const STEPS = [
   { key: 'service', label: 'Service', icon: StepServiceIcon },
@@ -528,7 +529,7 @@ export default function BookingPage() {
                   <span style={labelStyle}>Phone</span>
                   <input
                     type="tel" value={data.phone}
-                    onChange={(e) => { set('phone', e.target.value); if (contactErrors.phone) setContactErrors((p) => ({ ...p, phone: '' })); }}
+                    onChange={(e) => { set('phone', formatUAEPhone(e.target.value)); if (contactErrors.phone) setContactErrors((p) => ({ ...p, phone: '' })); }}
                     placeholder="+971 50 000 0000"
                     style={{ ...inputStyle, ...(contactErrors.phone ? { borderColor: '#fca5a5', background: '#fff5f5' } : {}) }}
                   />

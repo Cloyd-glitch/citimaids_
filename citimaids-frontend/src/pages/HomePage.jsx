@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { services } from '../data/services';
+import { useSettings } from '../hooks/useSettings';
 import Reveal from '../components/Reveal';
 import BeforeAfterSlider from '../components/BeforeAfterSlider';
 import {
@@ -187,6 +188,15 @@ function FAQCard({ q, a, index }) {
 }
 
 export default function HomePage() {
+  const { settings } = useSettings();
+  
+  // Safely extract city from the address or default to 'Abu Dhabi'
+  const addressParts = settings?.business_address ? settings.business_address.split(',') : [];
+  const city = addressParts.length > 1 ? addressParts[1].trim() : 'Abu Dhabi';
+  
+  const businessName = settings?.business_name || 'CitiMaids';
+  const description = settings?.description || "From luxury villas and private apartments to corporate offices across Abu Dhabi, CitiMaids delivers hospital-grade sanitization and spotless finishing tailored to your schedule.";
+
   return (
     <div>
       {/* ── 1. Hero Section with Video Background ── */}
@@ -217,7 +227,7 @@ export default function HomePage() {
             {/* Top Eyebrow Badge */}
             <div className="inline-flex items-center gap-2.5 glass-pill px-4 py-2 rounded-full text-white text-xs font-bold uppercase tracking-widest mb-6 shadow-md">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Abu Dhabi's Premier Cleaning Service</span>
+              <span>{city}'s Premier Cleaning Service</span>
             </div>
 
             {/* Main Headline */}
@@ -227,8 +237,8 @@ export default function HomePage() {
                 Trusted Cleaners
               </span><br />
               <span className="text-xl sm:text-3xl lg:text-4xl font-semibold opacity-90">
-    in UAE's biggest cities: Abu Dhabi, Dubai, and Sharjah.
-  </span>
+                in UAE's biggest cities: Abu Dhabi, Dubai, and Sharjah.
+              </span>
             </h1>
 
             {/* Subtitles */}
@@ -236,7 +246,7 @@ export default function HomePage() {
               Reliable &nbsp;•&nbsp; Transparent Pricing &nbsp;•&nbsp; Vetted Professionals
             </p>
             <p className="text-slate-300 text-sm sm:text-base mb-10 max-w-xl leading-relaxed">
-              From luxury villas and private apartments to corporate offices across Abu Dhabi, CitiMaids delivers hospital-grade sanitization and spotless finishing tailored to your schedule.
+              {description}
             </p>
 
             {/* Primary Action Buttons */}
