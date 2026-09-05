@@ -19,7 +19,7 @@ Route::post('/bookings', [BookingController::class, 'store']);
 // Public booking tracking
 Route::get('/bookings/track', [BookingController::class, 'track']);
 
-// Public services list (customer-facing, active only)
+// Public services list (customer-facing; active only unless auth token present)
 Route::get('/services', [ServiceController::class, 'index']);
 
 // Public settings (business info, etc)
@@ -48,10 +48,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/clients/{id}', [ClientController::class, 'update']);
     Route::delete('/clients/{id}', [ClientController::class, 'destroy']);
 
-    // Services (admin CRUD — uses ?public for public listing override)
+    // Services (admin CRUD)
     Route::post('/services', [ServiceController::class, 'store']);
     Route::put('/services/{id}', [ServiceController::class, 'update']);
     Route::delete('/services/{id}', [ServiceController::class, 'destroy']);
+    Route::post('/services/reorder', [ServiceController::class, 'reorder']);
+
 
     // Settings (admin CRUD)
     Route::put('/settings', [SettingController::class, 'update']);

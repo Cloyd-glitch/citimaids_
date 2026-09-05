@@ -1,9 +1,22 @@
+import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { services } from '../data/services';
+import { useServices } from '../hooks/useServices';
 
 export default function ServiceDetailPage() {
   const { serviceId } = useParams();
-  const service = services.find((s) => s.id === serviceId);
+  const { services, loading } = useServices();
+
+  // serviceId in the URL is the DB integer id (as a string)
+  const service = services.find((s) => String(s.id) === serviceId);
+
+  if (loading) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center text-center px-6 pt-32">
+        <div className="w-12 h-12 rounded-full border-4 border-slate-200 border-t-blue-900 animate-spin mb-4" />
+        <p className="text-slate-500 text-sm">Loading service...</p>
+      </div>
+    );
+  }
 
   if (!service) {
     return (
@@ -65,22 +78,6 @@ export default function ServiceDetailPage() {
               {service.description} Our trained and police-vetted specialists bring 5-star hotel cleaning standards, UAE-approved eco-friendly products, and high-performance industrial equipment to ensure your living space is pristine and sanitized.
             </p>
 
-            {/* Checklist */}
-            <h3 className="text-2xl font-black text-slate-900 mb-6 tracking-tight">What Is Included</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-14">
-              {service.included.map((item) => (
-                <div
-                  key={item}
-                  className="flex items-start gap-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl p-4.5 shadow-sm"
-                >
-                  <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 text-xs font-black shadow-sm mt-0.5">
-                    ✓
-                  </div>
-                  <span className="text-slate-800 text-sm font-semibold leading-snug">{item}</span>
-                </div>
-              ))}
-            </div>
-
             {/* Process */}
             <h3 className="text-2xl font-black text-slate-900 mb-6 tracking-tight">Our 4-Step Standard</h3>
             <div className="space-y-4">
@@ -111,9 +108,7 @@ export default function ServiceDetailPage() {
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div
-              className="rounded-3xl p-8 sticky top-28 border border-slate-200 bg-slate-50 shadow-xl"
-            >
+            <div className="rounded-3xl p-8 sticky top-28 border border-slate-200 bg-slate-50 shadow-xl">
               <span className="text-xs text-slate-400 font-extrabold uppercase tracking-widest block mb-2">
                 Standard Pricing
               </span>

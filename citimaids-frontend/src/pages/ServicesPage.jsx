@@ -31,11 +31,42 @@ function getIcon(iconName) {
 }
 
 export default function ServicesPage() {
-  const { services, loading, error } = useServices();
+  const { services, loading, error, refetch } = useServices();
   const [filter, setFilter] = useState('all');
 
-  if (loading) return <div className="pt-36 text-center pb-24 text-slate-500">Loading services...</div>;
-  if (error) return <div className="pt-36 text-center pb-24 text-red-500">Failed to load services. Please try again.</div>;
+  if (loading) {
+    return (
+      <div className="pt-36 pb-24 text-center">
+        <div className="inline-block w-10 h-10 rounded-full border-4 border-slate-200 border-t-blue-900 animate-spin mb-4" />
+        <p className="text-slate-500 text-sm font-medium">Loading services...</p>
+      </div>
+    );
+  }
+
+  if (error || services.length === 0) {
+    return (
+      <div className="pt-36 pb-24 text-center px-6">
+        <div className="max-w-sm mx-auto">
+          <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-7 h-7 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-black text-slate-900 mb-2">Could not load services</h2>
+          <p className="text-slate-500 text-sm mb-6 leading-relaxed">
+            {error ? 'There was a problem connecting to the server.' : 'No services are available right now.'}
+          </p>
+          <button
+            onClick={refetch}
+            className="px-7 py-3 rounded-xl bg-[#0A2342] text-white font-bold text-sm shadow-md hover:bg-[#1E3A8A] transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
 
   const filtered = filter === 'all'
     ? services
@@ -117,7 +148,7 @@ export default function ServicesPage() {
                         {service.description}
                       </p>
                       <ul className="space-y-2 mb-6 text-xs sm:text-sm text-slate-700">
-                        {service.included.slice(0, 4).map((inc) => (
+                        {(service.included || []).slice(0, 4).map((inc) => (
                           <li key={inc} className="flex items-start gap-2.5">
                             <span className="text-emerald-600 font-bold text-base leading-none">✓</span>
                             <span>{inc}</span>

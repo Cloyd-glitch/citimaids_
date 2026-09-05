@@ -17,12 +17,17 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 responses
+// Handle 401 responses — only redirect to login on protected admin routes
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      if (window.location.pathname.startsWith('/admin') && window.location.pathname !== '/admin/login') {
+      const url = error.config?.url || '';
+      // Only force-logout on protected routes, NOT on public endpoints like /services
+      const isPublicRoute = url === '/services' || url.startsWith('/services?') || url === '/bookings';
+      const isAdminRoute = window.location.pathname.startsWith('/admin') && window.location.pathname !== '/admin/login';
+      
+      if (!isPublicRoute && isAdminRoute) {
         localStorage.removeItem('citimaids_token');
         localStorage.removeItem('citimaids_user');
         window.location.href = '/admin/login';

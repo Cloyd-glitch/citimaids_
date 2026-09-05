@@ -1,23 +1,11 @@
 import { useState, useEffect } from 'react';
-import api from '../api/axios';
+import { services as fallbackServices } from '../data/services';
 
 /**
  * Fetch public (active-only) services from the backend API.
- * Falls back to an empty array if the API is offline.
+ * Falls back to static services if the API is offline or empty.
  *
  * Returns { services, loading, error, refetch }
- *
- * Each service object from the DB has:
- *   id, name, description, base_price, icon, status, bookings_count
- *
- * Helper fields added for UI compatibility:
- *   title        → same as name
- *   startingPrice → "AED {base_price} / hr" (generic fallback)
- *   basePrice    → Number(base_price)
- *   rateUnit     → inferred from service name (or defaults to 'hour')
- *   image        → default Unsplash image (no image stored in DB)
- *   included     → [] (detail not stored in DB)
- *   category     → inferred from service name
  */
 
 const SERVICE_IMAGES = {
@@ -115,12 +103,30 @@ export function useServices() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get('/services');
-      const raw = Array.isArray(res.data) ? res.data : (res.data?.data || []);
-      setServices(raw.map(enrichService));
+      // Use the native fetch so we bypass the axios 401 interceptor
+      // that would redirect the customer to /admin/login on token issues.
+      // We still send the token if present so the admin sees all services.
+      const token = localStorage.getItem('citimaids_token');
+      const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch('http://localhost:8000/api/services', { headers });
+
+      if (!res.ok) {
+        throw new Error(`API returned ${res.status}`);
+      }
+
+      const json = await res.json();
+      const raw = Array.isArray(json) ? json : (json?.data || []);
+      if (raw.length > 0) {
+        setServices(raw.map(enrichService));
+      } else {
+        setServices(fallbackServices);
+      }
     } catch (err) {
-      setError(err);
-      setServices([]);
+      console.warn('useServices fetch error (using fallback):', err);
+      setError(null);
+      setServices(fallbackServices);
     } finally {
       setLoading(false);
     }
