@@ -13,9 +13,8 @@ export default function ClientDetail() {
     const [error, setError] = useState('');
     const [toast, setToast] = useState(null);
 
-    // Edit Modal & Email Modal state
+    // Edit Modal state
     const [editModal, setEditModal] = useState(false);
-    const [emailModal, setEmailModal] = useState(false);
     const [form, setForm] = useState({ name: '', contact_number: '', email: '', address: '' });
     const [formLoading, setFormLoading] = useState(false);
 
@@ -345,84 +344,6 @@ export default function ClientDetail() {
                         </div>
                     </div>
 
-                    {/* Email Templates & Tools Modal */}
-                    {emailModal && (
-                        <Modal onClose={() => setEmailModal(false)} title="Select Email Action & Template">
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 8px' }}>
-                                    Send formatted email to <strong>{client.email || 'N/A'}</strong>:
-                                </p>
-
-                                <button
-                                    onClick={() => handleCopy(client.email, 'Email Address')}
-                                    style={{
-                                        padding: '10px 14px', borderRadius: 10, background: '#f8fafc',
-                                        border: `1px solid ${brand.border}`, fontSize: 13, fontWeight: 600,
-                                        color: brand.navy, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-                                    }}
-                                >
-                                    <span>📋 Copy Email Address ({client.email})</span>
-                                    <span style={{ fontSize: 12, color: '#2563eb', fontWeight: 700 }}>Copy</span>
-                                </button>
-
-                                <div style={{ fontSize: 12, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 4 }}>
-                                    Email Message Templates
-                                </div>
-
-                                {[
-                                    {
-                                        title: '✉️ General Support Inquiry',
-                                        subject: `CitiMaids Cleaning Services - Support Inquiry`,
-                                        body: `Dear ${client.name},\n\nGreetings from CitiMaids Abu Dhabi. Please let us know if you have any questions or require support regarding our services.\n\nBest regards,\nCitiMaids Customer Care`
-                                    },
-                                    {
-                                        title: '🗓️ Schedule Next Cleaning Visit',
-                                        subject: `CitiMaids - Schedule Your Next Cleaning Visit`,
-                                        body: `Dear ${client.name},\n\nWe hope your home is feeling fresh and clean! Contact us anytime to reserve your next cleaning appointment.\n\nBest regards,\nCitiMaids Team`
-                                    },
-                                    {
-                                        title: '⭐ Feedback & Quality Review',
-                                        subject: `CitiMaids - We'd Love Your Feedback!`,
-                                        body: `Dear ${client.name},\n\nThank you for choosing CitiMaids! We value your feedback on our service.\n\nBest regards,\nCitiMaids Service Team`
-                                    }
-                                ].map((tpl, idx) => (
-                                    <div
-                                        key={idx}
-                                        style={{
-                                            padding: '12px 14px', borderRadius: 12, background: '#eff6ff',
-                                            border: '1px solid #bfdbfe', display: 'flex', flexDirection: 'column', gap: 6
-                                        }}
-                                    >
-                                        <div style={{ fontSize: 13, fontWeight: 700, color: '#1d4ed8' }}>{tpl.title}</div>
-                                        <div style={{ fontSize: 12, color: '#1e293b', fontWeight: 600 }}>Subject: {tpl.subject}</div>
-                                        <button
-                                            onClick={() => {
-                                                setEmailModal(false);
-                                                handleOpenEmail(tpl.subject, tpl.body);
-                                            }}
-                                            style={{
-                                                alignSelf: 'flex-end', padding: '6px 12px', borderRadius: 8,
-                                                background: '#2563eb', color: '#fff', border: 'none',
-                                                fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                                                display: 'inline-flex', alignItems: 'center', gap: 4,
-                                                boxShadow: '0 2px 6px rgba(37,99,235,0.2)'
-                                            }}
-                                        >
-                                            Open Mail App ➔
-                                        </button>
-                                    </div>
-                                ))}
-
-                                <button
-                                    onClick={() => setEmailModal(false)}
-                                    style={{ ...outlineBtnToken, marginTop: 8, justifyContent: 'center' }}
-                                >
-                                    Cancel
-                                </button>
-                            </div>
-                        </Modal>
-                    )}
-
                     {/* Quick Actions Card */}
                     <div style={{ ...card, padding: '24px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
@@ -466,29 +387,6 @@ export default function ClientDetail() {
                                 label="Send Email"
                                 badge={client.email || 'Not Provided'}
                             />
-
-                            {/* Email Template Selector & Copy Button */}
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    if (!client.email || client.email.trim() === '') {
-                                        showToast('No email address registered for this client.', 'error');
-                                    } else {
-                                        setEmailModal(true);
-                                    }
-                                }}
-                                style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    padding: '9px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700,
-                                    color: '#1d4ed8', background: '#eff6ff', border: '1px dashed #93c5fd',
-                                    cursor: 'pointer', transition: 'all 0.15s', width: '100%'
-                                }}
-                            >
-                                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    ✉️ Select Email Template & Copy
-                                </span>
-                                <span>➔</span>
-                            </button>
                         </div>
                     </div>
                 </div>
