@@ -262,17 +262,17 @@ export default function HomePage() {
             <div className="flex flex-wrap items-center gap-4 mb-12">
               <Link
                 to="/book"
-                className="px-8 py-4 rounded-2xl bg-white text-[#0A2342] font-extrabold text-sm sm:text-base transition-all duration-200 hover:bg-sky-50 hover:scale-105 active:scale-95 shadow-2xl flex items-center gap-2.5"
+                className="btn-3d-primary group text-sm sm:text-base"
               >
                 <span>Book a Cleaning</span>
-                <svg className="w-4 h-4 text-blue-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-blue-900 group-hover:text-white transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
               </Link>
 
               <Link
                 to="/services"
-                className="glass-pill px-7 py-4 rounded-2xl text-white font-bold text-sm sm:text-base transition-all duration-200 hover:bg-white/20 flex items-center gap-2"
+                className="btn-3d-secondary group text-sm sm:text-base"
               >
                 <span>Explore Services</span>
               </Link>
@@ -815,12 +815,15 @@ export default function HomePage() {
           </Reveal>
 
           <Reveal delay={100}>
-            <div className="flex flex-wrap gap-4 justify-center">
+            <div className="flex flex-wrap gap-4 justify-center items-center">
               <Link
                 to="/book"
-                className="px-10 py-4 rounded-2xl bg-white text-slate-900 font-black text-base hover:bg-sky-50 transition-all hover:scale-105 shadow-2xl"
+                className="btn-3d-primary group text-base"
               >
-                Book Online Now
+                <span>Book Now</span>
+                <svg className="w-4 h-4 text-blue-900 group-hover:text-white transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
               </Link>
               <a
                 href="https://wa.me/97150000000"
