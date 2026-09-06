@@ -13,7 +13,7 @@ class AdminSeeder extends Seeder
             ['email' => 'admin@citimaids.com'],
             [
                 'name'     => 'Admin',
-                'password' => 'admin123',
+                'password' => 'Citimaids@admin!$123',
                 'role'     => 'admin',
             ]
         );
