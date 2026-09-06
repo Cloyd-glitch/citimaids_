@@ -168,7 +168,7 @@ export function useServices() {
       const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch('http://localhost:8000/api/services', { headers });
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/services`, { headers });
 
       if (!res.ok) {
         throw new Error(`API returned ${res.status}`);
@@ -190,6 +190,7 @@ export function useServices() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchServices(); }, []);
 
   return { services, loading, error, refetch: fetchServices };

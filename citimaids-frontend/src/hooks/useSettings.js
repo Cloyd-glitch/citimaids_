@@ -1,17 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 const DEFAULT_SETTINGS = {
-  business_name: 'CitiMaids Cleaning Services',
-  contact_number: '+971 52 634 9461',
-  additional_number: '+971 58 175 3958',
-  business_email: 'info@citi-maids.com',
-  additional_email: 'citimaidsuae@gmail.com',
-  business_address: 'Aljazeera Tower, Room 45, Hamdan St, Abu Dhabi, UAE',
-  facebook_url: 'https://web.facebook.com/people/CitiMaids-Cleaning-Services/61550129471847/',
-  tiktok_url: 'https://www.tiktok.com/@citimaids?_t=8pO7VCQjaUy&_r=1',
-  description: 'Premier residential, commercial, and maintenance services across Abu Dhabi.',
-  timezone: 'Asia/Dubai',
-  currency: 'AED',
+  business_name: "CitiMaids Cleaning Services",
+  contact_number: "+971 52 634 9461",
+  additional_number: "+971 58 175 3958",
+  business_email: "info@citi-maids.com",
+  additional_email: "citimaidsuae@gmail.com",
+  business_address: "Aljazeera Tower, Room 45, Hamdan St, Abu Dhabi, UAE",
+  facebook_url:
+    "https://web.facebook.com/people/CitiMaids-Cleaning-Services/61550129471847/",
+  tiktok_url: "https://www.tiktok.com/@citimaids?_t=8pO7VCQjaUy&_r=1",
+  description:
+    "Premier residential, commercial, and maintenance services across Abu Dhabi.",
+  timezone: "Asia/Dubai",
+  currency: "AED",
 };
 
 let globalSettings = DEFAULT_SETTINGS;
@@ -24,14 +26,19 @@ export function useSettings() {
 
   useEffect(() => {
     if (globalSettings && globalSettings !== DEFAULT_SETTINGS) {
-      setSettings(globalSettings);
       return;
     }
 
     if (!globalSettingsPromise) {
-      globalSettingsPromise = fetch('http://localhost:8000/api/settings', {
-        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
-      }).then(async (res) => {
+      globalSettingsPromise = fetch(
+        `${import.meta.env.VITE_API_URL}/settings`,
+        {
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        },
+      ).then(async (res) => {
         if (!res.ok) {
           throw new Error(`API returned ${res.status}`);
         }
@@ -42,15 +49,17 @@ export function useSettings() {
       });
     }
 
-    globalSettingsPromise.then(data => {
-      setSettings(data);
-      setLoading(false);
-    }).catch(err => {
-      console.warn('useSettings fetch error (using defaults):', err);
-      setError(err);
-      setLoading(false);
-      globalSettingsPromise = null;
-    });
+    globalSettingsPromise
+      .then((data) => {
+        setSettings(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.warn("useSettings fetch error (using defaults):", err);
+        setError(err);
+        setLoading(false);
+        globalSettingsPromise = null;
+      });
   }, []);
 
   return { settings, loading, error };
