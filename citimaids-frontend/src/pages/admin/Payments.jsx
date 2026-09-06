@@ -15,21 +15,12 @@ import {
     inputStyle,
 } from './adminStyles';
 
-const PAYMENT_METHODS = [
-    { value: 'all', label: 'All Methods' },
-    { value: 'adcb_pace_pay', label: 'ADCB Pace Pay' },
-    { value: 'card', label: 'Card Payment' },
-    { value: 'bank_transfer', label: 'Bank Transfer' },
-    { value: 'cash', label: 'Cash on Delivery' },
-];
-
 const PAYMENT_STATUSES = [
     { value: 'all', label: 'All Statuses' },
     { value: 'paid', label: 'Paid' },
     { value: 'pending', label: 'Pending' },
     { value: 'failed', label: 'Failed' },
     { value: 'refunded', label: 'Refunded' },
-    { value: 'expired', label: 'Expired' },
 ];
 
 const TX_TYPES = [
@@ -56,7 +47,6 @@ export default function Payments({ defaultTab = 'payments' }) {
     const [paymentsLoading, setPaymentsLoading] = useState(true);
     const [paymentSearch, setPaymentSearch] = useState('');
     const [paymentStatusFilter, setPaymentStatusFilter] = useState('all');
-    const [paymentMethodFilter, setPaymentMethodFilter] = useState('all');
     const [paymentsPage, setPaymentsPage] = useState(1);
 
     // ── Transactions State ──
@@ -75,7 +65,6 @@ export default function Payments({ defaultTab = 'payments' }) {
     const [refundReason, setRefundReason] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
     const [actionMessage, setActionMessage] = useState(null);
-    const [copiedId, setCopiedId] = useState(null);
     const [refreshHovered, setRefreshHovered] = useState(false);
 
     // Fetch Payments
@@ -83,7 +72,7 @@ export default function Payments({ defaultTab = 'payments' }) {
         if (activeTab === 'payments') {
             fetchPayments();
         }
-    }, [activeTab, paymentsPage, paymentStatusFilter, paymentMethodFilter, paymentSearch]);
+    }, [activeTab, paymentsPage, paymentStatusFilter, paymentSearch]);
 
     // Fetch Transactions
     useEffect(() => {
@@ -97,7 +86,6 @@ export default function Payments({ defaultTab = 'payments' }) {
         try {
             const params = { page: paymentsPage, per_page: 12 };
             if (paymentStatusFilter !== 'all') params.status = paymentStatusFilter;
-            if (paymentMethodFilter !== 'all') params.payment_method = paymentMethodFilter;
             if (paymentSearch.trim()) params.search = paymentSearch.trim();
 
             const res = await api.get('/payments', { params });
@@ -169,13 +157,6 @@ export default function Payments({ defaultTab = 'payments' }) {
             setActionLoading(false);
             setTimeout(() => setActionMessage(null), 4000);
         }
-    };
-
-    const copyText = (text, id) => {
-        if (!text) return;
-        navigator.clipboard.writeText(text);
-        setCopiedId(id);
-        setTimeout(() => setCopiedId(null), 2000);
     };
 
     // Derived Statistics
@@ -527,16 +508,6 @@ export default function Payments({ defaultTab = 'payments' }) {
                                     <option key={s.value} value={s.value}>{s.label}</option>
                                 ))}
                             </select>
-
-                            <select
-                                value={paymentMethodFilter}
-                                onChange={(e) => { setPaymentMethodFilter(e.target.value); setPaymentsPage(1); }}
-                                style={{ ...selectStyle, width: 'auto', padding: '9px 14px', fontSize: 13 }}
-                            >
-                                {PAYMENT_METHODS.map(m => (
-                                    <option key={m.value} value={m.value}>{m.label}</option>
-                                ))}
-                            </select>
                         </div>
                     </div>
 
@@ -554,19 +525,16 @@ export default function Payments({ defaultTab = 'payments' }) {
                                         background: brand.softBg,
                                         borderBottom: `1px solid ${brand.border}`,
                                     }}>
-                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '18%' }}>
+                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '24%' }}>
                                             Invoice / Reference
                                         </th>
-                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '24%' }}>
+                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '32%' }}>
                                             Client & Booking
                                         </th>
-                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '18%' }}>
-                                            Payment Method
-                                        </th>
-                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '13%' }}>
+                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '16%' }}>
                                             Amount
                                         </th>
-                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '13%' }}>
+                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '14%' }}>
                                             Status
                                         </th>
                                         <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '14%', textAlign: 'right' }}>
@@ -577,13 +545,13 @@ export default function Payments({ defaultTab = 'payments' }) {
                                 <tbody>
                                     {paymentsLoading ? (
                                         <tr>
-                                            <td colSpan={6} style={{ padding: '48px 20px', textAlign: 'center', color: '#64748b', fontSize: 14 }}>
+                                            <td colSpan={5} style={{ padding: '48px 20px', textAlign: 'center', color: '#64748b', fontSize: 14 }}>
                                                 Loading invoices...
                                             </td>
                                         </tr>
                                     ) : payments.length === 0 ? (
                                         <tr>
-                                            <td colSpan={6} style={{ padding: '56px 20px', textAlign: 'center' }}>
+                                            <td colSpan={5} style={{ padding: '56px 20px', textAlign: 'center' }}>
                                                 <div style={{ fontWeight: 700, color: brand.navy, fontSize: 15, marginBottom: 4 }}>
                                                     No invoices match your filters
                                                 </div>
@@ -653,11 +621,6 @@ export default function Payments({ defaultTab = 'payments' }) {
                                                         </div>
                                                     </td>
 
-                                                    {/* Method */}
-                                                    <td style={{ padding: '14px 18px' }}>
-                                                        <MethodBadge method={p.payment_method} />
-                                                    </td>
-
                                                     {/* Amount */}
                                                     <td style={{ padding: '14px 18px' }}>
                                                         <div style={{ fontWeight: 800, color: brand.navy, fontSize: 14, fontFamily: fonts.heading }}>
@@ -688,31 +651,6 @@ export default function Payments({ defaultTab = 'payments' }) {
                                                             >
                                                                 View
                                                             </button>
-                                                            {p.payment_link && (
-                                                                <button
-                                                                    onClick={() => copyText(p.payment_link, p.id)}
-                                                                    title="Copy Checkout Link"
-                                                                    style={{
-                                                                        padding: '5px 8px',
-                                                                        borderRadius: 8,
-                                                                        border: '1px solid #bfdbfe',
-                                                                        background: copiedId === p.id ? '#059669' : '#eff6ff',
-                                                                        color: copiedId === p.id ? '#fff' : '#1e40af',
-                                                                        fontSize: 11,
-                                                                        fontWeight: 700,
-                                                                        cursor: 'pointer',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        gap: 4,
-                                                                        transition: 'all 0.15s',
-                                                                    }}
-                                                                >
-                                                                    <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                                                                    </svg>
-                                                                    {copiedId === p.id ? 'Copied' : 'Link'}
-                                                                </button>
-                                                            )}
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -1095,82 +1033,6 @@ export default function Payments({ defaultTab = 'payments' }) {
                                 </div>
                             </div>
 
-                            {/* ADCB Pace Pay Checkout Link */}
-                            {selectedPayment.payment_link && (
-                                <div style={{
-                                    border: '1px solid #bfdbfe',
-                                    background: '#eff6ff',
-                                    padding: '14px 16px',
-                                    borderRadius: 12,
-                                    marginBottom: 20,
-                                }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                                        <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1e40af' }}>
-                                            ADCB Pace Pay Hosted Link
-                                        </span>
-                                        {selectedPayment.payment_link_expires_at && (
-                                            <span style={{ fontSize: 10.5, color: '#60a5fa' }}>
-                                                Expires: {new Date(selectedPayment.payment_link_expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 8,
-                                        background: '#fff',
-                                        padding: '6px 10px',
-                                        borderRadius: 8,
-                                        border: '1px solid #dbeafe',
-                                    }}>
-                                        <input
-                                            type="text"
-                                            readOnly
-                                            value={selectedPayment.payment_link}
-                                            style={{
-                                                flex: 1,
-                                                border: 'none',
-                                                outline: 'none',
-                                                fontSize: 12,
-                                                color: '#1e3a8a',
-                                                background: 'transparent',
-                                            }}
-                                        />
-                                        <button
-                                            onClick={() => copyText(selectedPayment.payment_link, 'modal')}
-                                            style={{
-                                                padding: '5px 10px',
-                                                borderRadius: 6,
-                                                background: copiedId === 'modal' ? '#059669' : brand.navy,
-                                                color: '#fff',
-                                                border: 'none',
-                                                fontSize: 11,
-                                                fontWeight: 700,
-                                                cursor: 'pointer',
-                                            }}
-                                        >
-                                            {copiedId === 'modal' ? 'Copied' : 'Copy'}
-                                        </button>
-                                        <a
-                                            href={selectedPayment.payment_link}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            style={{
-                                                padding: '5px 10px',
-                                                borderRadius: 6,
-                                                background: '#dbeafe',
-                                                color: '#1e40af',
-                                                textDecoration: 'none',
-                                                fontSize: 11,
-                                                fontWeight: 700,
-                                            }}
-                                        >
-                                            Open ↗
-                                        </a>
-                                    </div>
-                                </div>
-                            )}
-
                             {/* Management Actions */}
                             <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16 }}>
                                 <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 10 }}>
@@ -1400,29 +1262,6 @@ function PaymentStatusBadge({ status }) {
     );
 }
 
-function MethodBadge({ method }) {
-    const map = {
-        adcb_pace_pay: { label: 'ADCB Pace Pay', bg: '#eff6ff', color: '#1e40af' },
-        card: { label: 'Card Payment', bg: '#f0fdf4', color: '#15803d' },
-        bank_transfer: { label: 'Bank Transfer', bg: '#faf5ff', color: '#7e22ce' },
-        cash: { label: 'Cash on Delivery', bg: '#fff7ed', color: '#c2410c' },
-    };
-    const m = map[method] || { label: method || 'Unknown', bg: '#f1f5f9', color: '#475569' };
-    return (
-        <span style={{
-            display: 'inline-block',
-            padding: '3px 8px',
-            borderRadius: 6,
-            fontSize: 11.5,
-            fontWeight: 700,
-            background: m.bg,
-            color: m.color,
-            whiteSpace: 'nowrap',
-        }}>
-            {m.label}
-        </span>
-    );
-}
 
 function TxTypeBadge({ type }) {
     const isRefund = type === 'refund';
