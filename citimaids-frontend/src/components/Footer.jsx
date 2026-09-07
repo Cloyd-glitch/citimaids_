@@ -10,7 +10,7 @@ export default function Footer() {
   const additionalPhone = settings?.additional_number || '+971 58 175 3958';
   const email = settings?.business_email || 'info@citi-maids.com';
   const additionalEmail = settings?.additional_email || 'citimaidsuae@gmail.com';
-  const address = settings?.business_address || 'Aljazeera Tower, Room 45, Hamdan St, Abu Dhabi, UAE';
+  const address = settings?.business_address || 'Al jazeera Tower, Room 45, Hamdan St, Abu Dhabi, UAE';
   const facebookUrl = settings?.facebook_url || 'https://web.facebook.com/people/CitiMaids-Cleaning-Services/61550129471847/';
   const tiktokUrl = settings?.tiktok_url || 'https://www.tiktok.com/@citimaids?_t=8pO7VCQjaUy&_r=1';
 
