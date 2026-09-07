@@ -97,13 +97,10 @@ export default function AboutPage() {
           <div className="relative">
             <div className="rounded-2xl overflow-hidden shadow-xl border border-slate-100">
               <img
-                src="https://images.unsplash.com/photo-1556909172-54557c7e4fb7?w=700&h=500&fit=crop&auto=format"
-                alt="CitiMaids professional cleaning team"
+                src="/images/about us/al jazeera tower.jpg"
+                alt="Al Jazeera Tower - Abu Dhabi, United Arab Emirates"
                 className="w-full h-80 sm:h-96 object-cover"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&auto=format&fit=crop&q=80';
-                }}
+                style={{ objectPosition: 'center 20%' }}
               />
             </div>
             <div
