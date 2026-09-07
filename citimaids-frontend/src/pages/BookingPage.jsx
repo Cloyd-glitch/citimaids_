@@ -105,6 +105,7 @@ export default function BookingPage() {
 
   const [step, setStep] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [expandedServiceId, setExpandedServiceId] = useState(null);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [contactErrors, setContactErrors] = useState({});
   const [data, setData] = useState({
@@ -142,6 +143,8 @@ export default function BookingPage() {
     }
 
     setData((prev) => ({ ...prev, serviceId: picked.id }));
+    // Auto-expand the initially selected card
+    setExpandedServiceId(picked.id);
   }, [services]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const categoryCounts = useMemo(() => {
@@ -277,7 +280,7 @@ export default function BookingPage() {
       {/* ═══ Hero Banner ═══ */}
       <div style={{
         background: 'linear-gradient(135deg, #061429 0%, #0A2342 50%, #1E3A8A 100%)',
-        padding: '96px 24px 56px',
+        padding: 'clamp(72px, 10vw, 96px) 20px clamp(48px, 7vw, 56px)',
         textAlign: 'center',
       }}>
         <div style={{ maxWidth: 560, margin: '0 auto' }}>
@@ -301,30 +304,32 @@ export default function BookingPage() {
       </div>
 
       {/* ═══ Step Progress Bar ═══ */}
-      <div style={{ maxWidth: 720, margin: '-24px auto 0', padding: '0 24px', position: 'relative', zIndex: 10 }}>
+      <div style={{ maxWidth: 720, margin: '-24px auto 0', padding: '0 12px', position: 'relative', zIndex: 10 }}>
         <div style={{
-          background: '#fff', borderRadius: 20, padding: '20px 28px',
+          background: '#fff', borderRadius: 20, padding: 'clamp(14px, 3vw, 20px) clamp(12px, 4vw, 28px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0 8px 32px rgba(10,35,66,0.08)',
           border: '1px solid #e2e8f0',
           gap: 0,
+          overflow: 'hidden',
         }}>
           {STEPS.map((s, i) => {
             const isDone = i < step;
             const isCurrent = i === step;
             return (
-              <div key={s.key} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 'none' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 56 }}>
+              <div key={s.key} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 'none', minWidth: 0 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 0, width: 'clamp(40px, 10vw, 56px)' }}>
                   <div style={{
-                    width: 36, height: 36, borderRadius: '50%',
+                    width: 'clamp(28px, 6vw, 36px)', height: 'clamp(28px, 6vw, 36px)', borderRadius: '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0,
                     background: isDone ? '#0A2342' : isCurrent ? '#0A2342' : '#e2e8f0',
                     color: isDone || isCurrent ? '#fff' : '#94a3b8',
                     transition: 'all 0.3s',
                     boxShadow: isCurrent ? '0 4px 12px rgba(10,35,66,0.25)' : 'none',
                   }}>
                     {isDone ? (
-                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     ) : (
@@ -332,17 +337,22 @@ export default function BookingPage() {
                     )}
                   </div>
                   <span style={{
-                    fontSize: 10, fontWeight: 700, marginTop: 6, textAlign: 'center',
+                    fontSize: 'clamp(8px, 1.8vw, 10px)', fontWeight: 700, marginTop: 4, textAlign: 'center',
                     color: isDone ? '#0A2342' : isCurrent ? '#0A2342' : '#94a3b8',
                     letterSpacing: 0.2,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '100%',
                   }}>{s.label}</span>
                 </div>
                 {i < STEPS.length - 1 && (
                   <div style={{
-                    flex: 1, height: 2, margin: '0 6px',
+                    flex: 1, height: 2, margin: '0 3px',
                     background: isDone ? '#0A2342' : '#e2e8f0',
                     borderRadius: 1, transition: 'background 0.3s',
                     marginBottom: 20,
+                    minWidth: 4,
                   }} />
                 )}
               </div>
@@ -353,15 +363,18 @@ export default function BookingPage() {
 
       {/* ═══ Main Content (Form + Order Reflection Sidebar) ═══ */}
       <div className="booking-grid" style={{
-        maxWidth: 1080, margin: '32px auto 64px', padding: '0 24px',
+        maxWidth: 1080, margin: '32px auto 64px', padding: '0 clamp(12px, 4vw, 24px)',
         display: 'grid', gap: 28,
         alignItems: 'start',
+        width: '100%',
       }}>
         {/* ── Left: Form Card ── */}
         <div style={{
-          background: '#fff', borderRadius: 20, padding: '36px 32px',
+          background: '#fff', borderRadius: 20, padding: 'clamp(20px, 5vw, 36px) clamp(16px, 5vw, 32px)',
           border: '1px solid #e2e8f0',
           boxShadow: '0 4px 24px rgba(10,35,66,0.04)',
+          minWidth: 0,
+          overflow: 'hidden',
         }}>
           {/* Step Label */}
           <div style={{ marginBottom: 8 }}>
@@ -388,6 +401,7 @@ export default function BookingPage() {
                 paddingBottom: 8,
                 marginBottom: 20,
                 scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
               }}>
                 {CATEGORY_TABS.map((tab) => {
                   const isActive = selectedCategory === tab.key;
@@ -433,7 +447,7 @@ export default function BookingPage() {
               {/* Service Cards */}
               {servicesLoading ? (
                 /* Skeleton loader while services fetch */
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {[1, 2, 3, 4, 5, 6].map((n) => (
                     <div key={n} style={{
                       height: 110, borderRadius: 16, background: '#f1f5f9',
@@ -447,79 +461,113 @@ export default function BookingPage() {
                   <p style={{ color: '#64748b', fontSize: 13, margin: 0 }}>No services currently available in this category.</p>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {filteredServices.map((s) => {
                     const isSelected = data.serviceId === s.id;
+                    const isExpanded = expandedServiceId === s.id;
                     const catBadge = getCategoryBadge(s.category);
+
+                    const handleCardClick = () => {
+                      // Select this service
+                      set('serviceId', s.id);
+                      // Toggle expand: if already expanded+selected, collapse; otherwise expand
+                      setExpandedServiceId(isExpanded ? null : s.id);
+                    };
 
                     return (
                       <div
                         key={s.id}
-                        onClick={() => set('serviceId', s.id)}
+                        onClick={handleCardClick}
                         style={{
                           position: 'relative',
                           display: 'flex',
                           flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          padding: '16px 18px',
+                          padding: '14px 16px',
                           borderRadius: 16,
                           border: isSelected ? '2px solid #0A2342' : '1.5px solid #e2e8f0',
                           background: isSelected ? '#f0f7ff' : '#ffffff',
-                          boxShadow: isSelected ? '0 6px 20px rgba(10,35,66,0.08)' : '0 1px 3px rgba(0,0,0,0.02)',
+                          boxShadow: isSelected
+                            ? '0 6px 20px rgba(10,35,66,0.10)'
+                            : '0 1px 3px rgba(0,0,0,0.02)',
                           cursor: 'pointer',
-                          transition: 'all 0.2s ease',
+                          transition: 'border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease',
                         }}
                       >
-                        <div>
-                          {/* Category badge and radio indicator */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                        {/* ── Always-visible header row ── */}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                          {/* Left: badge + title */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
                             <span style={{
                               fontSize: 10,
                               fontWeight: 800,
                               textTransform: 'uppercase',
                               letterSpacing: 0.5,
-                              padding: '3px 8px',
-                              borderRadius: 6,
+                              padding: '2px 7px',
+                              borderRadius: 5,
                               background: catBadge.bg,
                               color: catBadge.color,
+                              display: 'inline-block',
+                              marginBottom: 6,
                             }}>
                               {catBadge.label}
                             </span>
                             <div style={{
+                              fontWeight: 800,
+                              fontSize: 14,
+                              color: '#0A2342',
+                              lineHeight: 1.3,
+                            }}>
+                              {s.title}
+                            </div>
+                          </div>
+
+                          {/* Right: radio + chevron */}
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                            <div style={{
                               width: 18, height: 18, borderRadius: '50%',
                               border: isSelected ? '5px solid #0A2342' : '2px solid #cbd5e1',
                               background: '#fff',
-                              transition: 'all 0.2s',
-                              flexShrink: 0,
+                              transition: 'border 0.2s',
                             }} />
-                          </div>
-
-                          {/* Service Title */}
-                          <div style={{ fontWeight: 800, fontSize: 15, color: '#0A2342', lineHeight: 1.3, marginBottom: 5 }}>
-                            {s.title}
-                          </div>
-
-                          {/* Description */}
-                          <div style={{
-                            fontSize: 12,
-                            color: '#64748b',
-                            lineHeight: 1.45,
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                            marginBottom: 12,
-                          }}>
-                            {s.description}
+                            {/* Chevron */}
+                            <svg
+                              width="14" height="14" viewBox="0 0 24 24" fill="none"
+                              stroke={isExpanded ? '#0A2342' : '#94a3b8'} strokeWidth="2.5"
+                              style={{
+                                transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1), stroke 0.2s',
+                                transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                              }}
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
                           </div>
                         </div>
 
-                        {/* Rate Footer */}
+                        {/* ── Collapsible description (CSS grid animation) ── */}
+                        <div style={{
+                          display: 'grid',
+                          gridTemplateRows: isExpanded ? '1fr' : '0fr',
+                          transition: 'grid-template-rows 0.35s cubic-bezier(0.16,1,0.3,1)',
+                        }}>
+                          <div style={{ overflow: 'hidden' }}>
+                            <div style={{
+                              fontSize: 12,
+                              color: '#64748b',
+                              lineHeight: 1.5,
+                              paddingTop: 10,
+                            }}>
+                              {s.description}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* ── Rate footer ── */}
                         <div style={{
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
                           paddingTop: 10,
+                          marginTop: 8,
                           borderTop: isSelected ? '1px solid rgba(10,35,66,0.08)' : '1px solid #f1f5f9',
                         }}>
                           <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
@@ -891,7 +939,7 @@ export default function BookingPage() {
         </div>
 
         {/* ── Right: Order Reflection Sidebar ── */}
-        <div style={{ position: 'sticky', top: 100 }}>
+        <div style={{ position: 'sticky', top: 100, minWidth: 0 }}>
           <div style={{
             background: '#fff', borderRadius: 20, overflow: 'hidden',
             border: '1px solid #e2e8f0',
@@ -998,6 +1046,11 @@ export default function BookingPage() {
         @media (max-width: 860px) {
           .booking-grid {
             grid-template-columns: 1fr !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .booking-grid {
+            padding: 0 12px !important;
           }
         }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.45} }
