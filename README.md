@@ -9,7 +9,7 @@ A full-stack web platform for CitiMaids, a premium cleaning service company. It 
 ## ✨ Features
 
 ### Customer Portal
--  Browse **16 cleaning & maintenance services** across 4 categories
+-  Browse **Cleaning & maintenance services** across different categories
 -  **Smart booking system** with category tab filters, rate units, and task checklists
 -  **WhatsApp dispatch** — booking details sent directly to the business WhatsApp
 -  **Booking tracker** — look up your booking by reference number
