@@ -96,18 +96,6 @@ npm run dev
 # → http://localhost:5173
 ```
 
-### Default Admin Login
-
-| Field | Value |
-|---|---|
-| URL | `http://localhost:5173/admin/login` |
-| Email | `admin@citimaids.com` |
-| Password | `password` |
-
-> ⚠️ Change the default password immediately in production.
-
----
-
 ## 📚 Documentation
 
 Full developer documentation is available in the `docs-site/` Docusaurus site:
