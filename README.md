@@ -154,7 +154,7 @@ citimaids-frontend/
 
 ---
 
-## 📡 API Quick Reference
+<!-- ## 📡 API Quick Reference
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
@@ -170,7 +170,7 @@ citimaids-frontend/
 
 Full API reference → [docs/backend/routes.md](docs-site/docs/backend/routes.md)
 
----
+--- -->
 
 ## 🤝 Contributing
 
