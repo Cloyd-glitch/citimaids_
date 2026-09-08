@@ -2,46 +2,75 @@
 sidebar_position: 1
 ---
 
-# Tutorial Intro
+# CitiMaids Platform
 
-Let's discover **Docusaurus in less than 5 minutes**.
+Welcome to the **CitiMaids** developer documentation — your complete reference for the CitiMaids professional cleaning services platform based in Abu Dhabi, UAE.
 
-## Getting Started
+## What Is CitiMaids?
 
-Get started by **creating a new site**.
+CitiMaids is a full-stack web platform powering a premium cleaning service business. It consists of two sub-applications working together:
 
-Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
+| Sub-project | Tech | Purpose |
+|---|---|---|
+| `citimaids-api` | Laravel 13 + Sanctum | RESTful JSON API — bookings, payments, admin |
+| `citimaids-frontend` | React 19 + Vite + TailwindCSS | Customer portal & staff admin panel |
 
-### What you'll need
+---
 
-- [Node.js](https://nodejs.org/en/download/) version 20.0 or above:
-  - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
+## Key Features
 
-## Generate a new site
+- 🧹 **16 cleaning & maintenance services** across 4 categories (Residential, Commercial, Specialized, Outdoor)
+- 📅 **Customer booking system** with WhatsApp dispatch integration
+- 🔍 **Booking tracker** — customers track their booking by reference number
+- 💳 **Payment management** — create payment links, track statuses, issue refunds
+- 📊 **Admin dashboard** with live revenue, booking, and client analytics
+- 🔒 **Role-based auth** via Laravel Sanctum (admin / staff)
+- 🎥 **Hero video background** sourced from real CitiMaids TikTok content
+- 📱 **Fully responsive** — mobile-first design
 
-Generate a new Docusaurus site using the **classic template**.
+---
 
-The classic template will automatically be added to your project after you run the command:
+## Navigate the Docs
 
-```bash
-npm init docusaurus@latest my-website classic
+<div className="row">
+  <div className="col col--6">
+
+### 🚀 [Getting Started](/docs/getting-started/introduction)
+New to the project? Start here. Installation, environment setup, and project structure.
+
+  </div>
+  <div className="col col--6">
+
+### ⚙️ [Backend API](/docs/backend/overview)
+Laravel API internals, database schema, and full API endpoint reference.
+
+  </div>
+</div>
+
+<div className="row">
+  <div className="col col--6">
+
+### 🎨 [Frontend](/docs/frontend/overview)
+React application architecture, pages, components, and hooks.
+
+  </div>
+  <div className="col col--6">
+
+### 🚢 [Deployment](/docs/deployment/api-deploy)
+Production deployment guides for both the API and the frontend.
+
+  </div>
+</div>
+
+---
+
+## Architecture Overview
+
+```
+citimaids_/
+├── citimaids-api/        ← Laravel 13 REST API (port 8000)
+├── citimaids-frontend/   ← React 19 SPA (port 5173)
+└── docs-site/            ← This Docusaurus site
 ```
 
-You can type this command into Command Prompt, Powershell, Terminal, or any other integrated terminal of your code editor.
-
-The command also installs all necessary dependencies you need to run Docusaurus.
-
-## Start your site
-
-Run the development server:
-
-```bash
-cd my-website
-npm run start
-```
-
-The `cd` command changes the directory you're working with. In order to work with your newly created Docusaurus site, you'll need to navigate the terminal there.
-
-The `npm run start` command builds your website locally and serves it through a development server, ready for you to view at http://localhost:3000/.
-
-Open `docs/intro.md` (this page) and edit some lines: the site **reloads automatically** and displays your changes.
+The frontend communicates with the API exclusively over HTTP (Axios). Public customers use the customer portal; staff/admin log in at `/admin/login` to access the protected dashboard.

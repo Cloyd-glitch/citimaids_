@@ -5,8 +5,8 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'Citimaids',
-  tagline: 'Best Cleaning Service in UAE',
+  title: 'CitiMaids',
+  tagline: 'Professional Cleaning Services Platform — Abu Dhabi, UAE',
   favicon: 'img/favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -15,21 +15,25 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: 'https://github.com/Cloyd-glitch/citimaids_',
+  url: 'https://Cloyd-glitch.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/',
+  baseUrl: '/citimaids_/',
 
   // GitHub pages deployment config.
-  // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'facebook', // Usually your GitHub org/user name.
-  projectName: 'docusaurus', // Usually your repo name.
+  organizationName: 'Cloyd-glitch',
+  projectName: 'citimaids_',
 
   onBrokenLinks: 'throw',
 
+  markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: 'warn',
+    },
+  },
+
   // Even if you don't use internationalization, you can use this field to set
-  // useful metadata like html lang. For example, if your site is Chinese, you
-  // may want to replace "en" with "zh-Hans".
+  // useful metadata like html lang.
   i18n: {
     defaultLocale: 'en',
     locales: ['en'],
@@ -41,10 +45,8 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+            'https://github.com/Cloyd-glitch/citimaids_/tree/main/docs-site/',
         },
         blog: {
           showReadingTime: true,
@@ -52,11 +54,8 @@ const config: Config = {
             type: ['rss', 'atom'],
             xslt: true,
           },
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
-          // Useful options to enforce blogging best practices
+            'https://github.com/Cloyd-glitch/citimaids_/tree/main/docs-site/',
           onInlineTags: 'warn',
           onInlineAuthors: 'warn',
           onUntruncatedBlogPosts: 'warn',
@@ -69,15 +68,14 @@ const config: Config = {
   ],
 
   themeConfig: {
-    // Replace with your project's social card
-    image: 'img/docusaurus-social-card.jpg',
+    image: 'img/citimaids-social-card.jpg',
     colorMode: {
       respectPrefersColorScheme: true,
     },
     navbar: {
-      title: 'Citimaids',
+      title: 'CitiMaids',
       logo: {
-        alt: 'Citimaids Logo',
+        alt: 'CitiMaids Logo',
         src: 'img/logo.svg',
       },
       items: [
@@ -85,11 +83,11 @@ const config: Config = {
           type: 'docSidebar',
           sidebarId: 'tutorialSidebar',
           position: 'left',
-          label: 'Tutorial',
+          label: 'Docs',
         },
         {to: '/blog', label: 'Blog', position: 'left'},
         {
-          href: 'https://github.com/facebook/docusaurus',
+          href: 'https://github.com/Cloyd-glitch/citimaids_',
           label: 'GitHub',
           position: 'right',
         },
@@ -99,28 +97,36 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
+          title: 'Documentation',
           items: [
             {
-              label: 'Tutorial',
-              to: '/docs/intro',
+              label: 'Getting Started',
+              to: '/docs/getting-started/introduction',
+            },
+            {
+              label: 'Backend API',
+              to: '/docs/backend/overview',
+            },
+            {
+              label: 'Frontend',
+              to: '/docs/frontend/overview',
             },
           ],
         },
         {
-          title: 'Community',
+          title: 'Platform',
           items: [
             {
-              label: 'Stack Overflow',
-              href: 'https://stackoverflow.com/questions/tagged/docusaurus',
+              label: 'CitiMaids Website',
+              href: 'https://citi-maids.com',
             },
             {
-              label: 'Discord',
-              href: 'https://discordapp.com/invite/docusaurus',
+              label: 'API Routes',
+              to: '/docs/backend/routes',
             },
             {
-              label: 'X',
-              href: 'https://x.com/docusaurus',
+              label: 'Deployment',
+              to: '/docs/deployment/api-deploy',
             },
           ],
         },
@@ -133,16 +139,17 @@ const config: Config = {
             },
             {
               label: 'GitHub',
-              href: 'https://github.com/facebook/docusaurus',
+              href: 'https://github.com/Cloyd-glitch/citimaids_',
             },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} CitiMaids. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+      additionalLanguages: ['php', 'bash', 'json'],
     },
   } satisfies Preset.ThemeConfig,
 };
