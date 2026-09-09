@@ -1,4 +1,4 @@
-# CitiMaids 🧹
+# CitiMaids 
 
 > **Professional Cleaning Services Platform — Abu Dhabi, UAE**
 
@@ -6,7 +6,7 @@ A full-stack web platform for CitiMaids, a premium cleaning service company. It 
 
 ---
 
-## ✨ Features
+##  Features
 
 ### Customer Portal
 -  Browse **Cleaning & maintenance services** across different categories
@@ -28,7 +28,7 @@ A full-stack web platform for CitiMaids, a premium cleaning service company. It 
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
 citimaids_/
@@ -57,7 +57,7 @@ The frontend communicates with the API over HTTP (Axios). Authentication uses La
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 
@@ -96,7 +96,7 @@ npm run dev
 # → http://localhost:5173
 ```
 
-## 📚 Documentation
+##  Documentation
 
 Full developer documentation is available in the `docs-site/` Docusaurus site:
 
@@ -118,7 +118,7 @@ npm start
 
 ---
 
-## 📁 Project Structure (Overview)
+##  Project Structure (Overview)
 
 <details>
 <summary>citimaids-api (Laravel)</summary>
@@ -172,7 +172,7 @@ Full API reference → [docs/backend/routes.md](docs-site/docs/backend/routes.md
 
 --- -->
 
-## 🤝 Contributing
+##  Contributing
 
 Contributions are welcome! Please read the [Contributing Guide](docs-site/docs/contributing/guide.md) before submitting a pull request.
 
@@ -183,13 +183,13 @@ Contributions are welcome! Please read the [Contributing Guide](docs-site/docs/c
 
 ---
 
-## 📄 License
+##  License
 
 This project is proprietary software owned by CitiMaids. All rights reserved.
 
 ---
 
-## 📞 Contact
+##  Contact
 
 **CitiMaids — Professional Cleaning Services**
 - 📍 Aljazeera Tower, Room 45, Hamdan St, Abu Dhabi, UAE
