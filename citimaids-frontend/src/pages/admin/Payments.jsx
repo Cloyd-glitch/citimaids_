@@ -156,6 +156,7 @@ export default function Payments({ defaultTab = 'payments' }) {
     const [actionLoadingId, setActionLoadingId] = useState(null);
     const [actionMessage, setActionMessage] = useState(null);
     const [refreshHovered, setRefreshHovered] = useState(false);
+    const [receiptModalData, setReceiptModalData] = useState(null);
 
     // Fetch Payments
     useEffect(() => {
@@ -1914,8 +1915,8 @@ export default function Payments({ defaultTab = 'payments' }) {
                 </div>
             )}
 
-            {/* Receipt modal removed — receipt actions no longer exist in Transaction Ledger */}
-            {false && (
+            {/* Receipt Modal */}
+            {receiptModalData && (
                 <div style={{
                     position: 'fixed',
                     top: 0,
