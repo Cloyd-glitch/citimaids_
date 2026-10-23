@@ -222,6 +222,10 @@ export default function Footer() {
             <span className="text-slate-400">Terms of Service</span>
             <span>•</span>
             <span className="text-slate-400">Privacy Policy</span>
+            <span>•</span>
+            <Link to="/admin/login" className="text-slate-400 hover:text-white transition-colors">
+              Staff Portal
+            </Link>
           </div>
         </div>
       </div>

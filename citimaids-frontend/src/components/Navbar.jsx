@@ -80,6 +80,16 @@ export default function Navbar() {
         {/* Desktop CTA */}
         <div className="hidden lg:flex items-center gap-4">
           <Link
+            to="/admin/login"
+            className="text-xs font-semibold text-white/75 hover:text-white px-3 py-2 rounded-xl hover:bg-white/10 transition-all flex items-center gap-1.5"
+            title="Staff Admin Portal"
+          >
+            <svg className="w-3.5 h-3.5 text-sky-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span>Staff Portal</span>
+          </Link>
+          <Link
             to="/book"
             className="btn-3d-nav group"
           >
@@ -128,6 +138,15 @@ export default function Navbar() {
               className="btn-3d-primary w-full text-center py-3"
             >
               <span>Book Now</span>
+            </Link>
+            <Link
+              to="/admin/login"
+              className="w-full py-2.5 text-center text-xs text-white/70 font-semibold hover:text-white flex items-center justify-center gap-1.5 transition-colors hover:bg-white/5 rounded-xl"
+            >
+              <svg className="w-3.5 h-3.5 text-sky-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span>Staff Portal</span>
             </Link>
           </div>
         </div>
