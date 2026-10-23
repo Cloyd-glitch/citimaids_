@@ -81,11 +81,19 @@ export default function Navbar() {
         <div className="hidden lg:flex items-center gap-4">
           <Link
             to="/admin/login"
-            className="text-xs font-semibold text-white/75 hover:text-white px-3 py-2 rounded-xl hover:bg-white/10 transition-all flex items-center gap-1.5"
-            title="Staff Admin Portal"
+            className="flex items-center gap-2 text-sm font-semibold text-white/85 hover:text-white transition-colors py-1 group"
+            title="Staff Portal"
           >
-            <svg className="w-3.5 h-3.5 text-sky-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            <svg
+              className="w-4 h-4 text-white/80 group-hover:text-white transition-colors"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <rect x="5" y="11" width="14" height="10" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M8 11V7a4 4 0 018 0v4" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M12 15v2" strokeLinecap="round" />
             </svg>
             <span>Staff Portal</span>
           </Link>
@@ -141,10 +149,18 @@ export default function Navbar() {
             </Link>
             <Link
               to="/admin/login"
-              className="w-full py-2.5 text-center text-xs text-white/70 font-semibold hover:text-white flex items-center justify-center gap-1.5 transition-colors hover:bg-white/5 rounded-xl"
+              className="w-full py-2.5 text-center text-xs text-white/80 font-semibold hover:text-white flex items-center justify-center gap-2 transition-colors hover:bg-white/5 rounded-xl group"
             >
-              <svg className="w-3.5 h-3.5 text-sky-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              <svg
+                className="w-4 h-4 text-white/80 group-hover:text-white transition-colors"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <rect x="5" y="11" width="14" height="10" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M8 11V7a4 4 0 018 0v4" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M12 15v2" strokeLinecap="round" />
               </svg>
               <span>Staff Portal</span>
             </Link>
