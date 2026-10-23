@@ -89,6 +89,17 @@ export default function BookingPage() {
 
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [step, setStep] = useState(0);
+  // Set of service IDs whose description panel is expanded (independent of selection)
+  const [expandedIds, setExpandedIds] = useState(new Set());
+
+  const toggleExpand = (id, e) => {
+    e.stopPropagation();
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
 
   const categoryCounts = useMemo(() => {
     const counts = { all: services.length, residential: 0, commercial: 0, specialized: 0, maintenance: 0 };
@@ -471,85 +482,118 @@ export default function BookingPage() {
                   </button>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   {filteredServices.map((s) => {
                     const isSelected = data.serviceId === s.id;
+                    const isExpanded = expandedIds.has(s.id);
                     const catKey = (s.category || 'residential').toLowerCase();
                     const catTag = SERVICE_CATEGORY_TAGS[catKey] || SERVICE_CATEGORY_TAGS.residential;
+                    const hasDesc = !!(s.description);
 
                     return (
                       <div
                         key={s.id}
-                        onClick={() => set('serviceId', s.id)}
                         style={{
-                          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                          padding: '16px 18px', borderRadius: 16,
+                          borderRadius: 14,
                           border: isSelected ? '2px solid #0A2342' : '1.5px solid #e2e8f0',
-                          background: isSelected ? '#fbfdff' : '#fff',
-                          cursor: 'pointer', transition: 'all 0.2s',
-                          boxShadow: isSelected ? '0 6px 20px rgba(10,35,66,0.08)' : '0 1px 3px rgba(0,0,0,0.02)',
+                          background: isSelected ? '#f8faff' : '#fff',
+                          transition: 'border-color 0.2s, background 0.2s, box-shadow 0.2s',
+                          boxShadow: isSelected ? '0 4px 18px rgba(10,35,66,0.09)' : '0 1px 3px rgba(0,0,0,0.02)',
+                          overflow: 'hidden',
+                          cursor: 'pointer',
                         }}
+                        onClick={() => set('serviceId', s.id)}
                         onMouseEnter={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.borderColor = '#94a3b8';
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(10,35,66,0.06)';
-                          }
+                          if (!isSelected) e.currentTarget.style.borderColor = '#94a3b8';
                         }}
                         onMouseLeave={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.borderColor = '#e2e8f0';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.02)';
-                          }
+                          if (!isSelected) e.currentTarget.style.borderColor = '#e2e8f0';
                         }}
                       >
-                        <div>
-                          {/* Top Row: Category Tag & Selection Indicator */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                            <span style={{
-                              fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 6,
-                              background: catTag.bg, color: catTag.color, border: `1px solid ${catTag.border}`,
-                              textTransform: 'uppercase', letterSpacing: 0.6,
-                            }}>
-                              {catTag.label}
-                            </span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <div style={{
-                                width: 20, height: 20, borderRadius: '50%',
-                                border: isSelected ? '6px solid #0A2342' : '2px solid #cbd5e1',
-                                background: '#fff', transition: 'all 0.15s',
-                                boxSizing: 'border-box',
-                              }} />
-                              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2.2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d={isSelected ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
-                              </svg>
-                            </div>
-                          </div>
-
-                          {/* Service Title */}
-                          <div style={{ fontWeight: 800, fontSize: 15, color: '#0A2342', marginBottom: 6, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                            {s.title}
-                          </div>
-
-                          {/* Description */}
-                          <div style={{
-                            fontSize: 12, color: '#64748b', lineHeight: 1.5, marginBottom: 14,
-                            display: '-webkit-box', WebkitLineClamp: isSelected ? 4 : 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
-                          }}>
-                            {s.description || 'Complete professional residential cleaning tailored to your residence.'}
-                          </div>
-                        </div>
-
-                        {/* Footer: Starting Rate */}
+                        {/* Row 1: Category tag (left) + Radio (right) */}
                         <div style={{
                           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                          paddingTop: 12, borderTop: '1px solid #f1f5f9', marginTop: 4,
+                          padding: '14px 14px 0',
+                        }}>
+                          <span style={{
+                            display: 'inline-block',
+                            fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 5,
+                            background: catTag.bg, color: catTag.color, border: `1px solid ${catTag.border}`,
+                            textTransform: 'uppercase', letterSpacing: 0.7,
+                          }}>
+                            {catTag.label}
+                          </span>
+                          <div style={{
+                            width: 17, height: 17, borderRadius: '50%',
+                            border: isSelected ? '5px solid #0A2342' : '2px solid #cbd5e1',
+                            background: '#fff', transition: 'all 0.15s',
+                            boxSizing: 'border-box', flexShrink: 0,
+                          }} />
+                        </div>
+
+                        {/* Row 2: Service name (left) + Chevron arrow (right) */}
+                        <div style={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                          padding: '8px 14px 10px',
+                        }}>
+                          <div style={{
+                            fontWeight: 800, fontSize: 14, color: '#0A2342',
+                            fontFamily: "'Plus Jakarta Sans', sans-serif",
+                            lineHeight: 1.3, flex: 1, minWidth: 0,
+                          }}>
+                            {s.title}
+                          </div>
+                          {hasDesc && (
+                            <button
+                              type="button"
+                              onClick={(e) => toggleExpand(s.id, e)}
+                              style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                padding: '4px', marginLeft: 8,
+                                background: 'transparent', border: 'none', cursor: 'pointer',
+                                flexShrink: 0,
+                              }}
+                              aria-label={isExpanded ? 'Collapse description' : 'Expand description'}
+                            >
+                              <div style={{
+                                transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                transition: 'transform 0.28s cubic-bezier(0.4,0,0.2,1)',
+                                display: 'flex', alignItems: 'center',
+                              }}>
+                                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2.2">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </div>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Expandable description — smooth max-height slide */}
+                        {hasDesc && (
+                          <div style={{
+                            maxHeight: isExpanded ? '200px' : '0px',
+                            overflow: 'hidden',
+                            transition: 'max-height 0.32s cubic-bezier(0.4,0,0.2,1)',
+                          }}>
+                            <div style={{
+                              padding: '8px 14px 12px',
+                              fontSize: 11.5, color: '#64748b', lineHeight: 1.6,
+                              borderTop: '1px solid #f1f5f9',
+                            }}>
+                              {s.description}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Row 3: Starting Rate (left) + Price (right) */}
+                        <div style={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                          padding: '9px 14px', borderTop: '1px solid #f1f5f9',
                         }}>
                           <span style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.8 }}>
                             STARTING RATE
                           </span>
-                          <span style={{ fontSize: 13, fontWeight: 800, color: '#2563eb' }}>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: '#2563eb' }}>
                             {s.startingPrice}
                           </span>
                         </div>
