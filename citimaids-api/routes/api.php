@@ -73,8 +73,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/bookings/{id}/payment', [PaymentController::class, 'createForBooking']);
     Route::patch('/payments/{id}/status', [PaymentController::class, 'updateStatus']);
     Route::post('/payments/{id}/refund', [PaymentController::class, 'refund']);
+    Route::delete('/payments/{id}', [PaymentController::class, 'destroy']);
 
     // Transactions
     Route::get('/transactions', [TransactionController::class, 'index']);
+    Route::get('/transactions/{id}', [TransactionController::class, 'show']);
+    Route::get('/transactions/{id}/receipt', [TransactionController::class, 'receipt']);
+    Route::post('/transactions/{id}/retry', [TransactionController::class, 'retry']);
+    Route::delete('/transactions/{id}', [TransactionController::class, 'destroy']);
+    Route::post('/transactions/{id}/dismiss', [TransactionController::class, 'dismiss']);
     Route::get('/payments/{id}/transactions', [TransactionController::class, 'byPayment']);
 });

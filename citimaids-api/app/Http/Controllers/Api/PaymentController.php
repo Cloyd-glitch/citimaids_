@@ -37,11 +37,15 @@ class PaymentController extends Controller
             $query->whereDate('created_at', '<=', $request->to);
         }
         if ($request->filled('search')) {
-            $s = $request->search;
+            $s = trim($request->search);
             $query->where(function ($q) use ($s) {
                 $q->where('reference_number', 'like', "%{$s}%")
                   ->orWhere('external_reference', 'like', "%{$s}%")
-                  ->orWhereHas('client', fn($cq) => $cq->where('name', 'like', "%{$s}%"));
+                  ->orWhere('amount', 'like', "%{$s}%")
+                  ->orWhere('status', 'like', "%{$s}%")
+                  ->orWhere('payment_method', 'like', "%{$s}%")
+                  ->orWhereHas('client', fn($cq) => $cq->where('name', 'like', "%{$s}%")->orWhere('email', 'like', "%{$s}%")->orWhere('phone', 'like', "%{$s}%"))
+                  ->orWhereHas('booking', fn($bq) => $bq->where('id', 'like', "%{$s}%"));
             });
         }
 
@@ -215,6 +219,20 @@ class PaymentController extends Controller
         return response()->json([
             'message' => "AED {$refundAmount} refunded successfully",
             'payment' => $payment->fresh(['transactions', 'booking']),
+        ]);
+    }
+
+    /**
+     * Delete / Dismiss a payment (especially failed or cancelled).
+     */
+    public function destroy(int $id): JsonResponse
+    {
+        $payment = Payment::findOrFail($id);
+        $ref = $payment->reference_number;
+        $payment->delete();
+
+        return response()->json([
+            'message' => "Payment invoice {$ref} dismissed and removed successfully",
         ]);
     }
 }
