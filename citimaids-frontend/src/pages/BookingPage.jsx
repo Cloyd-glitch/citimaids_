@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useServices } from '../hooks/useServices';
 import api from '../api/axios';
 import { formatUAEPhone } from '../utils/formatters';
+import DatePicker, { toYMD, formatFriendlyDate } from '../components/booking/DatePicker';
+import TimePicker, { isSlotPassedToday, DEFAULT_TIME_SLOTS } from '../components/booking/TimePicker';
 
 const STEPS = [
   { key: 'service', label: 'Service', icon: StepServiceIcon },
@@ -179,12 +181,13 @@ export default function BookingPage() {
   };
   const [submitLoading, setSubmitLoading] = useState(false);
   const [contactErrors, setContactErrors] = useState({});
+  const [timeError, setTimeError] = useState(null);
   const [data, setData] = useState({
     serviceId: null,          // will be set once services load (DB integer id)
     propertyType: 'Apartment',
     rooms: '2',
     bathrooms: '2',
-    date: new Date().toISOString().split('T')[0],
+    date: toYMD(new Date()),
     time: '9:00 AM',
     name: '',
     phone: '',
@@ -269,7 +272,11 @@ export default function BookingPage() {
   // Pure check — no side effects, safe to call in render / disabled prop
   const isStepValid = () => {
     if (step === 0) return !!data.serviceId;
-    if (step === 1) return !!data.date && !!data.time;
+    if (step === 1) {
+      if (!data.date || !data.time) return false;
+      if (isSlotPassedToday(data.date, data.time)) return false;
+      return true;
+    }
     if (step === 2) return !!data.streetAddress && !!data.district && !!data.city;
     if (step === 3) {
       if (!data.name.trim()) return false;
@@ -282,6 +289,21 @@ export default function BookingPage() {
 
   // Validate and show inline errors — only called on explicit Continue click
   const validateAndProceed = () => {
+    if (step === 1) {
+      if (!data.date) {
+        setTimeError('Please choose a service date.');
+        return;
+      }
+      if (!data.time) {
+        setTimeError('Please choose a preferred arrival time.');
+        return;
+      }
+      if (isSlotPassedToday(data.date, data.time)) {
+        setTimeError('The selected time has already passed for today. Please pick an upcoming time slot.');
+        return;
+      }
+      setTimeError(null);
+    }
     if (step === 3) {
       const errs = {};
       if (!data.name.trim()) errs.name = 'Full name is required.';
@@ -750,40 +772,52 @@ export default function BookingPage() {
               <h2 style={{ fontSize: 26, fontWeight: 800, color: '#0A2342', margin: '0 0 4px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 When works for you?
               </h2>
-              <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 28px' }}>
+              <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 24px' }}>
                 Pick a date and a time that fits your rhythm.
               </p>
 
-              <span style={labelStyle}>Choose a Date</span>
-              <input
-                type="date" min={todayStr} value={data.date}
-                onChange={(e) => set('date', e.target.value)}
-                style={inputStyle}
+              {/* Custom Polished Date Picker */}
+              <DatePicker
+                value={data.date}
+                onChange={(newDate) => {
+                  set('date', newDate);
+                  setTimeError(null);
+                }}
+                minDate={toYMD(new Date())}
+                label="Choose a Date"
               />
 
-              <div style={{ marginTop: 24 }}>
-                <span style={labelStyle}>Choose a Time</span>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-                  {timeSlots.map((t) => {
-                    const isActive = data.time === t;
-                    return (
-                      <button
-                        key={t} type="button"
-                        onClick={() => set('time', t)}
-                        style={{
-                          padding: '12px 8px', borderRadius: 12, fontSize: 13, fontWeight: 700,
-                          border: isActive ? '2px solid #0A2342' : '1.5px solid #e2e8f0',
-                          background: isActive ? '#0A2342' : '#fff',
-                          color: isActive ? '#fff' : '#334155',
-                          cursor: 'pointer', transition: 'all 0.15s',
-                        }}
-                      >
-                        {t}
-                      </button>
-                    );
-                  })}
+              {/* Custom Polished Time Picker */}
+              <TimePicker
+                value={data.time}
+                onChange={(newTime) => {
+                  set('time', newTime);
+                  setTimeError(null);
+                }}
+                selectedDate={data.date}
+                slots={DEFAULT_TIME_SLOTS}
+              />
+
+              {timeError && (
+                <div style={{
+                  marginTop: 14,
+                  padding: '10px 14px',
+                  borderRadius: 10,
+                  background: '#fff1f2',
+                  border: '1px solid #fecdd3',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: 12,
+                  color: '#be123c',
+                  fontWeight: 600,
+                }}>
+                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>{timeError}</span>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -945,7 +979,7 @@ export default function BookingPage() {
                       </svg>
                     ),
                     label: 'DATE',
-                    value: formatDate(data.date),
+                    value: formatFriendlyDate(data.date),
                   },
                   {
                     icon: (
@@ -1150,7 +1184,7 @@ export default function BookingPage() {
             {/* Summary details */}
             <div style={{ padding: '16px 20px' }}>
               {[
-                { icon: CalendarSmallIcon, label: 'Date', value: data.date ? new Date(data.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—' },
+                { icon: CalendarSmallIcon, label: 'Date', value: data.date ? formatFriendlyDate(data.date) : '—' },
                 { icon: ClockSmallIcon, label: 'Time', value: data.time || '—' },
                 { icon: PinSmallIcon, label: 'Address', value: data.streetAddress ? `${data.district}, ${data.city}` : '—' },
               ].map((row) => (
