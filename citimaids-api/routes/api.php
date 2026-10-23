@@ -70,6 +70,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Payments
     Route::get('/payments', [PaymentController::class, 'index']);
     Route::get('/payments/{id}', [PaymentController::class, 'show']);
+    Route::put('/payments/{id}', [PaymentController::class, 'update']);
+    Route::patch('/payments/{id}', [PaymentController::class, 'update']);
     Route::post('/bookings/{id}/payment', [PaymentController::class, 'createForBooking']);
     Route::patch('/payments/{id}/status', [PaymentController::class, 'updateStatus']);
     Route::post('/payments/{id}/refund', [PaymentController::class, 'refund']);
@@ -78,6 +80,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Transactions
     Route::get('/transactions', [TransactionController::class, 'index']);
     Route::get('/transactions/{id}', [TransactionController::class, 'show']);
+    Route::put('/transactions/{id}', [TransactionController::class, 'update']);
+    Route::patch('/transactions/{id}', [TransactionController::class, 'update']);
+    Route::patch('/transactions/{id}/status', [TransactionController::class, 'updateStatus']);
     Route::get('/transactions/{id}/receipt', [TransactionController::class, 'receipt']);
     Route::post('/transactions/{id}/retry', [TransactionController::class, 'retry']);
     Route::delete('/transactions/{id}', [TransactionController::class, 'destroy']);

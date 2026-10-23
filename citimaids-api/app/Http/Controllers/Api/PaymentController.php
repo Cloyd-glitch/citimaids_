@@ -235,4 +235,32 @@ class PaymentController extends Controller
             'message' => "Payment invoice {$ref} dismissed and removed successfully",
         ]);
     }
+
+    /**
+     * Update payment details (reference_number, external_reference, notes, description).
+     */
+    public function update(Request $request, int $id): JsonResponse
+    {
+        $payment = Payment::findOrFail($id);
+
+        $request->validate([
+            'reference_number'   => 'nullable|string|max:100',
+            'external_reference' => 'nullable|string|max:100',
+            'notes'              => 'nullable|string|max:2000',
+            'description'        => 'nullable|string|max:1000',
+        ]);
+
+        $payment->update($request->only(['reference_number', 'external_reference', 'notes']));
+
+        if ($request->has('description')) {
+            $payment->transactions()->where('type', 'charge')->latest()->first()?->update([
+                'description' => $request->description,
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Invoice details updated successfully',
+            'payment' => $payment->fresh(['booking.service', 'client', 'transactions']),
+        ]);
+    }
 }

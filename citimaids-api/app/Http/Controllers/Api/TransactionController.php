@@ -141,4 +141,63 @@ class TransactionController extends Controller
 
         return response()->json($transactions);
     }
+
+    /**
+     * Update transaction details (description, notes, reference_number).
+     */
+    public function update(Request $request, int $id): JsonResponse
+    {
+        $transaction = Transaction::findOrFail($id);
+
+        $request->validate([
+            'description'      => 'nullable|string|max:1000',
+            'notes'            => 'nullable|string|max:2000',
+            'reference_number' => 'nullable|string|max:100',
+        ]);
+
+        if ($request->has('description')) {
+            $transaction->update(['description' => $request->description]);
+        }
+
+        if ($transaction->payment) {
+            $paymentUpdates = [];
+            if ($request->has('notes')) $paymentUpdates['notes'] = $request->notes;
+            if ($request->has('reference_number')) $paymentUpdates['reference_number'] = $request->reference_number;
+            if (!empty($paymentUpdates)) {
+                $transaction->payment->update($paymentUpdates);
+            }
+        }
+
+        return response()->json([
+            'message' => 'Transaction details updated successfully',
+            'transaction' => $transaction->fresh(['payment.booking.service', 'payment.client', 'processedBy']),
+        ]);
+    }
+
+    /**
+     * Update transaction status (success, failed, pending).
+     */
+    public function updateStatus(Request $request, int $id): JsonResponse
+    {
+        $transaction = Transaction::findOrFail($id);
+        $request->validate(['status' => 'required|in:pending,success,failed']);
+
+        $transaction->update(['status' => $request->status]);
+
+        if ($transaction->payment) {
+            $paymentStatus = $request->status === 'success' ? 'paid' : ($request->status === 'failed' ? 'failed' : 'pending');
+            $transaction->payment->update([
+                'status'  => $paymentStatus,
+                'paid_at' => $paymentStatus === 'paid' ? now() : $transaction->payment->paid_at,
+            ]);
+            if ($transaction->payment->booking && $paymentStatus === 'paid') {
+                $transaction->payment->booking->update(['payment_status' => 'paid']);
+            }
+        }
+
+        return response()->json([
+            'message' => "Transaction status updated to {$request->status}",
+            'transaction' => $transaction->fresh(['payment.booking.service', 'payment.client', 'processedBy']),
+        ]);
+    }
 }

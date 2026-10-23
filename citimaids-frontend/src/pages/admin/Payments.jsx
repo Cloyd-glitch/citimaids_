@@ -55,11 +55,11 @@ function HighlightText({ text, query }) {
                     <mark
                         key={index}
                         style={{
-                            backgroundColor: '#fef08a',
-                            color: '#854d0e',
+                            backgroundColor: '#e2e8f0',
+                            color: '#1e293b',
                             borderRadius: '3px',
                             padding: '1px 3px',
-                            fontWeight: 700,
+                            fontWeight: 600,
                         }}
                     >
                         {part}
@@ -151,7 +151,10 @@ export default function Payments({ defaultTab = 'payments' }) {
     const [selectedTxPayload, setSelectedTxPayload] = useState(null);
     const [showRefundModal, setShowRefundModal] = useState(false);
     const [refundAmount, setRefundAmount] = useState('');
-    const [refundReason, setRefundReason] = useState('');
+    const [statusMenuTarget, setStatusMenuTarget] = useState(null);
+    const [statusMenuPos, setStatusMenuPos] = useState({ top: 0, right: 0 });
+    const [detailEditItem, setDetailEditItem] = useState(null);
+    const [detailEditLoading, setDetailEditLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
     const [actionLoadingId, setActionLoadingId] = useState(null);
     const [actionMessage, setActionMessage] = useState(null);
@@ -246,6 +249,140 @@ export default function Payments({ defaultTab = 'payments' }) {
             setActionMessage({ type: 'error', text: err.response?.data?.message || 'Status update failed' });
         } finally {
             setActionLoading(false);
+            setTimeout(() => setActionMessage(null), 3500);
+        }
+    };
+
+    const handleEditClick = (item, type = 'payment', e) => {
+        if (e) e.stopPropagation();
+        const status = (item.status || '').toLowerCase();
+        if (status === 'paid' || status === 'success') {
+            handleOpenDetailEdit(item, type);
+        } else {
+            if (statusMenuTarget && statusMenuTarget.item?.id === item.id && statusMenuTarget.type === type) {
+                setStatusMenuTarget(null);
+                return;
+            }
+            const rect = e.currentTarget.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const top = spaceBelow < 150 ? Math.max(10, rect.top - 120) : rect.bottom + 6;
+            const right = Math.max(16, window.innerWidth - rect.right);
+
+            setStatusMenuPos({ top, right });
+            setStatusMenuTarget({ type, item });
+        }
+    };
+
+    // Update transaction status (success, failed, pending)
+    const handleUpdateTransactionStatus = async (txId, newStatus) => {
+        setActionLoading(true);
+        try {
+            const res = await api.patch(`/transactions/${txId}/status`, { status: newStatus });
+            setActionMessage({ type: 'success', text: `Transaction #${txId} status updated to ${newStatus}` });
+            fetchTransactions();
+            fetchPayments();
+            if (selectedTransaction && selectedTransaction.id === txId) {
+                setSelectedTransaction(res.data.transaction);
+            }
+        } catch (err) {
+            setActionMessage({ type: 'error', text: err.response?.data?.message || 'Failed to update transaction status' });
+        } finally {
+            setActionLoading(false);
+            setTimeout(() => setActionMessage(null), 3500);
+        }
+    };
+
+    // Retry a failed payment
+    const handleRetryPayment = async (payment) => {
+        setActionLoading(true);
+        try {
+            const failedTx = payment.transactions?.find(t => t.type === 'charge' && t.status === 'failed');
+            if (failedTx) {
+                const res = await api.post(`/transactions/${failedTx.id}/retry`);
+                setActionMessage({ type: 'success', text: res.data?.message || `Payment ${payment.reference_number} retry initiated` });
+            } else {
+                const res = await api.patch(`/payments/${payment.id}/status`, { status: 'pending' });
+                setActionMessage({ type: 'success', text: `Payment ${payment.reference_number} status reset to pending` });
+            }
+            fetchPayments();
+            fetchTransactions();
+        } catch (err) {
+            setActionMessage({ type: 'error', text: err.response?.data?.message || 'Failed to retry payment' });
+        } finally {
+            setActionLoading(false);
+            setTimeout(() => setActionMessage(null), 3500);
+        }
+    };
+
+    // Open detail editing form for paid/success items
+    const handleOpenDetailEdit = (item, type = 'payment') => {
+        setStatusMenuTarget(null);
+        if (type === 'payment') {
+            const chargeTx = item.transactions?.find(t => t.type === 'charge');
+            setDetailEditItem({
+                type: 'payment',
+                id: item.id,
+                reference_number: item.reference_number || '',
+                external_reference: item.external_reference || '',
+                description: chargeTx?.description || item.booking?.service?.name || '',
+                notes: item.notes || '',
+                amount: item.amount,
+                clientName: item.client?.name || '',
+            });
+        } else {
+            setDetailEditItem({
+                type: 'transaction',
+                id: item.id,
+                reference_number: item.payment?.reference_number || '',
+                external_reference: item.gateway_response?.reference || '',
+                description: item.description || '',
+                notes: item.payment?.notes || '',
+                amount: item.amount,
+                clientName: item.payment?.client?.name || '',
+            });
+        }
+    };
+
+    // Save edited details
+    const handleSaveDetailEdit = async (e) => {
+        e.preventDefault();
+        if (!detailEditItem) return;
+        setDetailEditLoading(true);
+        try {
+            if (detailEditItem.type === 'payment') {
+                const res = await api.put(`/payments/${detailEditItem.id}`, {
+                    reference_number: detailEditItem.reference_number,
+                    external_reference: detailEditItem.external_reference,
+                    description: detailEditItem.description,
+                    notes: detailEditItem.notes,
+                });
+                setActionMessage({ type: 'success', text: 'Invoice details updated successfully' });
+                fetchPayments();
+                fetchTransactions();
+                if (selectedPayment && selectedPayment.id === detailEditItem.id) {
+                    setSelectedPayment(res.data.payment);
+                }
+            } else {
+                const res = await api.put(`/transactions/${detailEditItem.id}`, {
+                    reference_number: detailEditItem.reference_number,
+                    description: detailEditItem.description,
+                    notes: detailEditItem.notes,
+                });
+                setActionMessage({ type: 'success', text: 'Transaction details updated successfully' });
+                fetchTransactions();
+                fetchPayments();
+                if (selectedTransaction && selectedTransaction.id === detailEditItem.id) {
+                    setSelectedTransaction(res.data.transaction);
+                }
+            }
+            setDetailEditItem(null);
+        } catch (err) {
+            setActionMessage({
+                type: 'error',
+                text: err.response?.data?.message || 'Failed to update details',
+            });
+        } finally {
+            setDetailEditLoading(false);
             setTimeout(() => setActionMessage(null), 3500);
         }
     };
@@ -857,11 +994,13 @@ export default function Payments({ defaultTab = 'payments' }) {
                                     ) : prioritizedPayments.length === 0 ? (
                                         <tr>
                                             <td colSpan={5} style={{ padding: '56px 20px', textAlign: 'center' }}>
-                                                <div style={{ fontWeight: 700, color: brand.navy, fontSize: 15, marginBottom: 4 }}>
-                                                    No invoices match your filters
+                                                <div style={{ fontWeight: 700, color: brand.navy, fontSize: 16, marginBottom: 4 }}>
+                                                    {paymentSearch.trim() ? 'No match search' : 'No invoices found'}
                                                 </div>
                                                 <div style={{ color: '#64748b', fontSize: 13 }}>
-                                                    Try clearing your search query or selecting "All Statuses".
+                                                    {paymentSearch.trim()
+                                                        ? `No invoices matched "${paymentSearch}". Try adjusting your query or clearing the search.`
+                                                        : 'Try clearing your search query or selecting "All Statuses".'}
                                                 </div>
                                             </td>
                                         </tr>
@@ -942,24 +1081,32 @@ export default function Payments({ defaultTab = 'payments' }) {
                                                         <PaymentStatusBadge status={p.status} />
                                                     </td>
 
-                                                    {/* Actions */}
+                                                    {/* Actions: ONLY two buttons per row (View and Edit) */}
                                                     <td style={{ padding: '14px 18px', textAlign: 'right' }} onClick={e => e.stopPropagation()}>
-                                                        <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-                                                            <button
+                                                        <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center', justifyContent: 'flex-end' }}>
+                                                            {/* 1. View Button: Opens the read-only detail view */}
+                                                            <ActionBtn
+                                                                title="View Details"
+                                                                isView
                                                                 onClick={() => setSelectedPayment(p)}
-                                                                style={{
-                                                                    padding: '5px 10px',
-                                                                    borderRadius: 8,
-                                                                    border: '1px solid #e2e8f0',
-                                                                    background: '#fff',
-                                                                    color: brand.navy,
-                                                                    fontSize: 12,
-                                                                    fontWeight: 600,
-                                                                    cursor: 'pointer',
-                                                                }}
-                                                            >
-                                                                View
-                                                            </button>
+                                                                icon={
+                                                                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+                                                                    </svg>
+                                                                }
+                                                            />
+
+                                                            {/* 2. Edit Button: Triggers status management or detail edit */}
+                                                            <ActionBtn
+                                                                title="Edit Invoice"
+                                                                onClick={(e) => handleEditClick(p, 'payment', e)}
+                                                                icon={
+                                                                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                                                                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                                                    </svg>
+                                                                }
+                                                            />
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -1233,25 +1380,19 @@ export default function Payments({ defaultTab = 'payments' }) {
                                                     )}
                                                 </td>
 
-                                                {/* Actions Column — single View button only */}
+                                                {/* Actions Column */}
                                                 <td style={{ padding: '14px 18px', textAlign: 'right' }} onClick={e => e.stopPropagation()}>
                                                     <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center', justifyContent: 'flex-end' }}>
-                                                        <button
-                                                            onClick={() => setSelectedTransaction(tx)}
+                                                        <ActionBtn
                                                             title="View Transaction Details"
-                                                            style={{
-                                                                padding: '5px 10px',
-                                                                borderRadius: 8,
-                                                                border: '1px solid #e2e8f0',
-                                                                background: '#fff',
-                                                                color: brand.navy,
-                                                                fontSize: 12,
-                                                                fontWeight: 600,
-                                                                cursor: 'pointer',
-                                                            }}
-                                                        >
-                                                            View
-                                                        </button>
+                                                            isView
+                                                            onClick={() => setSelectedTransaction(tx)}
+                                                            icon={
+                                                                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+                                                                </svg>
+                                                            }
+                                                        />
                                                     </div>
                                                 </td>
                                             </tr>
@@ -1561,6 +1702,238 @@ export default function Payments({ defaultTab = 'payments' }) {
                         </form>
                     </div>
                 </div>
+            )}
+
+            {/* ══════════════════════════════════════════════════════════════
+                FLOATING STATUS ACTION MENU (Triggered by Edit button)
+               ══════════════════════════════════════════════════════════════ */}
+            {statusMenuPayment && (
+                <>
+                    {/* Transparent Click-away Backdrop */}
+                    <div
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setStatusMenuPayment(null);
+                        }}
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            zIndex: 1100,
+                            background: 'transparent',
+                        }}
+                    />
+
+                    {/* Floating Status Action Popover */}
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            position: 'fixed',
+                            top: statusMenuPos.top,
+                            right: statusMenuPos.right,
+                            zIndex: 1150,
+                            minWidth: 180,
+                            background: '#ffffff',
+                            borderRadius: 12,
+                            border: '1px solid #e2e8f0',
+                            boxShadow: '0 10px 25px -4px rgba(10, 35, 66, 0.16), 0 4px 10px -2px rgba(10, 35, 66, 0.08)',
+                            padding: '6px',
+                            animation: 'menuPop 0.15s ease',
+                        }}
+                    >
+                        <div style={{
+                            padding: '6px 10px 8px',
+                            borderBottom: '1px solid #f1f5f9',
+                            marginBottom: 4,
+                        }}>
+                            <div style={{ fontSize: 9.5, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                                Status Action
+                            </div>
+                            <div style={{ fontSize: 11.5, fontWeight: 700, color: brand.navy, marginTop: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                                <span>{statusMenuPayment.reference_number || `INV-${statusMenuPayment.id}`}</span>
+                                <PaymentStatusBadge status={statusMenuPayment.status} />
+                            </div>
+                        </div>
+
+                        {/* Conditional choices based on item status:
+                            - Paid: Show Refund
+                            - Pending: Show Paid and Dismiss
+                            - Failed: Show Retry and Dismiss
+                        */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            {statusMenuPayment.status === 'paid' && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const p = statusMenuPayment;
+                                        setStatusMenuPayment(null);
+                                        setSelectedPayment(p);
+                                        setRefundAmount(p.amount);
+                                        setShowRefundModal(true);
+                                    }}
+                                    style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 8,
+                                        padding: '7px 10px',
+                                        borderRadius: 8,
+                                        border: '1px solid #fde68a',
+                                        background: '#fffbeb',
+                                        color: '#b45309',
+                                        fontSize: 12,
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        textAlign: 'left',
+                                        transition: 'all 0.15s',
+                                    }}
+                                >
+                                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 15v-1a4 4 0 00-4-4H4m0 0l3-3m-3 3l3 3m5 4h5a2 2 0 002-2V7a2 2 0 00-2-2H9a2 2 0 00-2 2v2" />
+                                    </svg>
+                                    <span>Refund</span>
+                                </button>
+                            )}
+
+                            {statusMenuPayment.status === 'pending' && (
+                                <>
+                                    <button
+                                        type="button"
+                                        disabled={actionLoading}
+                                        onClick={async () => {
+                                            const id = statusMenuPayment.id;
+                                            setStatusMenuPayment(null);
+                                            await handleUpdateStatus(id, 'paid');
+                                        }}
+                                        style={{
+                                            width: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8,
+                                            padding: '7px 10px',
+                                            borderRadius: 8,
+                                            border: '1px solid #bbf7d0',
+                                            background: '#f0fdf4',
+                                            color: '#15803d',
+                                            fontSize: 12,
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            transition: 'all 0.15s',
+                                        }}
+                                    >
+                                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        <span>Paid</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        disabled={actionLoading}
+                                        onClick={async () => {
+                                            const id = statusMenuPayment.id;
+                                            setStatusMenuPayment(null);
+                                            await handleDismissPayment(id);
+                                        }}
+                                        style={{
+                                            width: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8,
+                                            padding: '7px 10px',
+                                            borderRadius: 8,
+                                            border: '1px solid #fecaca',
+                                            background: '#fef2f2',
+                                            color: '#dc2626',
+                                            fontSize: 12,
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            transition: 'all 0.15s',
+                                        }}
+                                    >
+                                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6M9 6V4h6v2" />
+                                        </svg>
+                                        <span>Dismiss</span>
+                                    </button>
+                                </>
+                            )}
+
+                            {statusMenuPayment.status === 'failed' && (
+                                <>
+                                    <button
+                                        type="button"
+                                        disabled={actionLoading}
+                                        onClick={async () => {
+                                            const id = statusMenuPayment.id;
+                                            setStatusMenuPayment(null);
+                                            await handleUpdateStatus(id, 'pending');
+                                        }}
+                                        style={{
+                                            width: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8,
+                                            padding: '7px 10px',
+                                            borderRadius: 8,
+                                            border: '1px solid #bfdbfe',
+                                            background: '#eff6ff',
+                                            color: '#1d4ed8',
+                                            fontSize: 12,
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            transition: 'all 0.15s',
+                                        }}
+                                    >
+                                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                        <span>Retry</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        disabled={actionLoading}
+                                        onClick={async () => {
+                                            const id = statusMenuPayment.id;
+                                            setStatusMenuPayment(null);
+                                            await handleDismissPayment(id);
+                                        }}
+                                        style={{
+                                            width: '100%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8,
+                                            padding: '7px 10px',
+                                            borderRadius: 8,
+                                            border: '1px solid #fecaca',
+                                            background: '#fef2f2',
+                                            color: '#dc2626',
+                                            fontSize: 12,
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            transition: 'all 0.15s',
+                                        }}
+                                    >
+                                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6M9 6V4h6v2" />
+                                        </svg>
+                                        <span>Dismiss</span>
+                                    </button>
+                                </>
+                            )}
+
+                            {statusMenuPayment.status === 'refunded' && (
+                                <div style={{ padding: '8px 10px', fontSize: 11.5, color: '#64748b', fontStyle: 'italic', textAlign: 'center' }}>
+                                    Already Refunded
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </>
             )}
 
             {/* ══════════════════════════════════════════════════════════════
@@ -1914,229 +2287,7 @@ export default function Payments({ defaultTab = 'payments' }) {
                 </div>
             )}
 
-            {/* Receipt modal removed — receipt actions no longer exist in Transaction Ledger */}
-            {false && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'rgba(10, 35, 66, 0.65)',
-                    backdropFilter: 'blur(4px)',
-                    zIndex: 1300,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 16,
-                }}>
-                    <div style={{
-                        background: '#fff',
-                        borderRadius: 18,
-                        width: '100%',
-                        maxWidth: 580,
-                        maxHeight: '90vh',
-                        overflowY: 'auto',
-                        boxShadow: '0 25px 60px rgba(0,0,0,0.25)',
-                    }}>
-                        {/* Modal Header */}
-                        <div className="no-print" style={{
-                            padding: '16px 22px',
-                            borderBottom: '1px solid #f1f5f9',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                        }}>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: brand.navy }}>
-                                Official Transaction Receipt
-                            </span>
-                            <button
-                                onClick={() => setReceiptModalData(null)}
-                                style={{
-                                    border: 'none',
-                                    background: '#f1f5f9',
-                                    borderRadius: '50%',
-                                    width: 28,
-                                    height: 28,
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: '#64748b',
-                                }}
-                            >
-                                ✕
-                            </button>
-                        </div>
 
-                        {/* Printable Receipt Card Body */}
-                        <div id="citimaids-receipt-printable" style={{ padding: '28px' }}>
-                            {/* Receipt Header */}
-                            <div style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'flex-start',
-                                borderBottom: `2px solid ${brand.navy}`,
-                                paddingBottom: 16,
-                                marginBottom: 20,
-                            }}>
-                                <div>
-                                    <div style={{ fontSize: 20, fontWeight: 800, color: brand.navy, letterSpacing: 0.5, fontFamily: fonts.heading }}>
-                                        CITIMAIDS
-                                    </div>
-                                    <div style={{ fontSize: 11, color: '#64748b', marginTop: 3 }}>
-                                        CitiMaids Cleaning Services LLC • Dubai, UAE
-                                    </div>
-                                    <div style={{ fontSize: 10.5, color: '#94a3b8' }}>
-                                        TRN: 100482910300003 • support@citimaids.ae
-                                    </div>
-                                </div>
-                                <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: 11, fontWeight: 700, color: brand.royal, textTransform: 'uppercase' }}>
-                                        Payment Receipt
-                                    </div>
-                                    <div style={{ fontSize: 16, fontWeight: 800, color: brand.navy, marginTop: 2 }}>
-                                        RCP-{String(receiptModalData.id).padStart(6, '0')}
-                                    </div>
-                                    <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
-                                        {new Date(receiptModalData.created_at).toLocaleDateString('en-AE', {
-                                            month: 'short',
-                                            day: 'numeric',
-                                            year: 'numeric',
-                                        })}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Details 2-Column Grid */}
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: '1fr 1fr',
-                                gap: 16,
-                                marginBottom: 20,
-                                fontSize: 12.5,
-                            }}>
-                                <div>
-                                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Billed To</div>
-                                    <div style={{ fontWeight: 700, color: brand.navy, marginTop: 2 }}>
-                                        {receiptModalData.payment?.client?.name || 'Customer'}
-                                    </div>
-                                    <div style={{ color: '#64748b', fontSize: 11.5 }}>
-                                        {receiptModalData.payment?.client?.email || receiptModalData.payment?.client?.phone || 'Direct Customer'}
-                                    </div>
-                                </div>
-                                <div>
-                                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Reference & Status</div>
-                                    <div style={{ fontWeight: 600, color: brand.navy, marginTop: 2 }}>
-                                        {receiptModalData.payment?.reference_number || `TX-${receiptModalData.id}`}
-                                    </div>
-                                    <div style={{ marginTop: 4 }}>
-                                        <TxStatusBadge status={receiptModalData.status} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Line Items Table */}
-                            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20 }}>
-                                <thead>
-                                    <tr style={{ background: brand.softBg, borderBottom: '1px solid #e2e8f0' }}>
-                                        <th style={{ padding: '8px 12px', fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', textAlign: 'left' }}>Item Description</th>
-                                        <th style={{ padding: '8px 12px', fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', textAlign: 'right' }}>Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                        <td style={{ padding: '12px', fontSize: 12.5 }}>
-                                            <div style={{ fontWeight: 600, color: brand.navy }}>
-                                                {receiptModalData.payment?.booking?.service?.name || 'Professional Cleaning Service'}
-                                            </div>
-                                            <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
-                                                {receiptModalData.description || `Booking #${receiptModalData.payment?.booking_id || ''}`}
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '12px', textAlign: 'right', fontWeight: 700, color: brand.navy, fontSize: 13 }}>
-                                            AED {parseFloat(receiptModalData.amount).toFixed(2)}
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-
-                            {/* Total Box */}
-                            <div style={{
-                                background: brand.softBg,
-                                borderRadius: 12,
-                                padding: '14px 18px',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                marginBottom: 20,
-                            }}>
-                                <span style={{ fontSize: 13, fontWeight: 700, color: brand.navy }}>Total Amount</span>
-                                <span style={{ fontSize: 20, fontWeight: 800, color: brand.navy, fontFamily: fonts.heading }}>
-                                    AED {parseFloat(receiptModalData.amount).toFixed(2)}
-                                </span>
-                            </div>
-
-                            <div style={{ textAlign: 'center', fontSize: 11, color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: 14 }}>
-                                Thank you for choosing CitiMaids! This is a system-generated official receipt.
-                            </div>
-                        </div>
-
-                        {/* Modal Action Footer */}
-                        <div className="no-print" style={{
-                            padding: '16px 22px',
-                            background: '#f8fafc',
-                            borderTop: '1px solid #f1f5f9',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            gap: 10,
-                        }}>
-                            <button
-                                onClick={() => handleDirectDownloadReceipt(receiptModalData)}
-                                style={{
-                                    ...outlineBtn,
-                                    padding: '8px 14px',
-                                    fontSize: 12,
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: 6,
-                                }}
-                            >
-                                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                </svg>
-                                Download HTML File
-                            </button>
-
-                            <div style={{ display: 'flex', gap: 8 }}>
-                                <button
-                                    onClick={() => window.print()}
-                                    style={{
-                                        ...solidBtn,
-                                        padding: '8px 16px',
-                                        fontSize: 12.5,
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: 6,
-                                    }}
-                                >
-                                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                                    </svg>
-                                    Print / Save PDF
-                                </button>
-                                <button
-                                    onClick={() => setReceiptModalData(null)}
-                                    style={{ ...outlineBtn, padding: '8px 14px', fontSize: 12 }}
-                                >
-                                    Close
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
 
 
         </div>
@@ -2217,5 +2368,70 @@ function TxStatusBadge({ status }) {
         }}>
             {s.label}
         </span>
+    );
+}
+
+/* ── Reusable Action Button (Exact Match to Admin UI Design) ─── */
+function ActionBtn({ icon, onClick, title, danger, isView, variant, disabled }) {
+    const [hovered, setHovered] = useState(false);
+
+    let bgHover = '#f8fafc';
+    let borderHover = '#cbd5e1';
+    let textHover = brand.navy;
+
+    if (danger) {
+        bgHover = '#fef2f2';
+        borderHover = '#fecaca';
+        textHover = '#dc2626';
+    } else if (isView) {
+        bgHover = '#eff6ff';
+        borderHover = '#bfdbfe';
+        textHover = '#2563eb';
+    } else if (variant === 'green') {
+        bgHover = '#f0fdf4';
+        borderHover = '#bbf7d0';
+        textHover = '#16a34a';
+    } else if (variant === 'amber') {
+        bgHover = '#fffbeb';
+        borderHover = '#fde68a';
+        textHover = '#d97706';
+    } else if (variant === 'blue') {
+        bgHover = '#eff6ff';
+        borderHover = '#bfdbfe';
+        textHover = '#2563eb';
+    }
+
+    return (
+        <button
+            type="button"
+            title={title}
+            disabled={disabled}
+            onClick={(e) => {
+                e.stopPropagation();
+                if (onClick) onClick(e);
+            }}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                border: `1.5px solid ${hovered && !disabled ? borderHover : '#e2e8f0'}`,
+                background: hovered && !disabled ? bgHover : '#fff',
+                cursor: disabled ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: hovered && !disabled ? textHover : '#64748b',
+                opacity: disabled ? 0.45 : 1,
+                transition: 'all 0.15s ease',
+                transform: hovered && !disabled ? 'translateY(-1px)' : 'none',
+                boxShadow: hovered && !disabled ? '0 4px 10px rgba(0,0,0,0.06)' : 'none',
+                padding: 0,
+                flexShrink: 0,
+            }}
+        >
+            {icon}
+        </button>
     );
 }
