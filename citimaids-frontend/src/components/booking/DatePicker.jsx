@@ -248,35 +248,24 @@ export default function DatePicker({
           </div>
         </div>
 
-        {/* Right Arrow / Badge indicator */}
+        {/* Right Chevron Arrow */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 6,
+          justifyContent: 'center',
           flexShrink: 0,
           marginLeft: 8,
+          padding: '4px',
         }}>
-          <span style={{
-            fontSize: 11,
-            fontWeight: 800,
-            color: '#2563eb',
-            background: '#dbeafe',
-            padding: '3px 8px',
-            borderRadius: 6,
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-          }}>
-            {isOpen ? 'Close' : 'Change'}
-          </span>
           <svg
-            width="14"
-            height="14"
+            width="15"
+            height="15"
             fill="none"
             viewBox="0 0 24 24"
-            stroke="#64748b"
-            strokeWidth="2.2"
+            stroke={isOpen ? '#0A2342' : '#94a3b8'}
+            strokeWidth="2.4"
             style={{
-              transition: 'transform 0.2s ease',
+              transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.2s',
               transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
             }}
           >

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 
 /**
  * Standard quick shortcuts for CitiMaids booking
@@ -13,6 +13,12 @@ export const DEFAULT_TIME_SLOTS = [
 ];
 
 /**
+ * Operating hours: 7:00 AM (420 min) to 8:30 PM (1230 min)
+ */
+export const OPERATING_HOURS_START = 7 * 60;       // 7:00 AM
+export const OPERATING_HOURS_END = 20 * 60 + 30;   // 8:30 PM
+
+/**
  * Parse time string (e.g. "9:00 AM", "10:30 PM") into minutes from midnight
  */
 export function parseTimeToMinutes(timeStr) {
@@ -23,10 +29,22 @@ export function parseTimeToMinutes(timeStr) {
   const minutes = parseInt(match[2], 10);
   const period = match[3].toUpperCase();
 
+  if (hours < 1 || hours > 12) return null;
+  if (minutes < 0 || minutes > 59) return null;
+
   if (period === 'PM' && hours < 12) hours += 12;
   if (period === 'AM' && hours === 12) hours = 0;
 
   return hours * 60 + minutes;
+}
+
+/**
+ * Check if a time string is within CitiMaids operating hours (7:00 AM to 8:30 PM)
+ */
+export function isTimeWithinWorkingHours(timeStr) {
+  const minutes = parseTimeToMinutes(timeStr);
+  if (minutes === null) return false;
+  return minutes >= OPERATING_HOURS_START && minutes <= OPERATING_HOURS_END;
 }
 
 /**
@@ -64,8 +82,8 @@ export default function TimePicker({
   const isCustomTime = value && !slots.includes(value);
   const [showCustomPicker, setShowCustomPicker] = useState(() => isCustomTime);
 
-  // Initialize custom picker values based on current value
-  const initialTimeParts = useMemo(() => {
+  // Parse hour, minute, period from current value
+  const parsedTime = useMemo(() => {
     if (value) {
       const match = value.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
       if (match) {
@@ -76,55 +94,110 @@ export default function TimePicker({
         };
       }
     }
-    return { hour: '10', minute: '00', period: 'AM' };
+    return { hour: '10', minute: '30', period: 'AM' };
   }, [value]);
 
-  const [customHour, setCustomHour] = useState(initialTimeParts.hour);
-  const [customMinute, setCustomMinute] = useState(initialTimeParts.minute);
-  const [customPeriod, setCustomPeriod] = useState(initialTimeParts.period);
+  const [hourInput, setHourInput] = useState(parsedTime.hour);
+  const [minuteInput, setMinuteInput] = useState(parsedTime.minute);
+  const [periodInput, setPeriodInput] = useState(parsedTime.period);
   const [inlineError, setInlineError] = useState(null);
 
-  // Synchronize custom state if value changes externally
+  const minuteInputRef = useRef(null);
+
+  // Sync state if value changes externally
   useEffect(() => {
     if (value) {
       const match = value.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
       if (match) {
-        setCustomHour(match[1]);
-        setCustomMinute(match[2]);
-        setCustomPeriod(match[3].toUpperCase());
+        setHourInput(match[1]);
+        setMinuteInput(match[2]);
+        setPeriodInput(match[3].toUpperCase());
       }
     }
   }, [value]);
 
-  // Revalidate current selection if the selectedDate changes
+  // Revalidate against today's date or working hours
   useEffect(() => {
     if (!value) return;
+    if (!isTimeWithinWorkingHours(value)) {
+      setInlineError('CitiMaids operating hours are 7:00 AM – 8:30 PM. Please enter a time within working hours.');
+      return;
+    }
     if (isSlotPassedToday(selectedDate, value)) {
       setInlineError('Selected time has already passed for today. Please select an upcoming slot.');
-    } else {
-      setInlineError(null);
+      return;
     }
+    setInlineError(null);
   }, [selectedDate, value]);
 
-  const validateAndApplyCustomTime = (h, m, p) => {
-    const formatted = formatTime12(h, m, p);
-    const minutes = parseTimeToMinutes(formatted);
+  /**
+   * Validate user-typed time and update parent only if valid
+   */
+  const validateAndApplyTypedTime = (h, m, p) => {
+    const rawH = String(h).trim();
+    const rawM = String(m).trim();
 
-    // Operating hours: 7:00 AM (420 mins) to 8:30 PM (1230 mins)
-    if (minutes === null || minutes < 7 * 60 || minutes > 20 * 60 + 30) {
-      setInlineError('CitiMaids operating hours are between 7:00 AM and 8:30 PM.');
-      onChange(formatted);
+    if (!rawH || !rawM) {
+      setInlineError('Please enter both hour and minute.');
       return;
     }
 
-    if (isSlotPassedToday(selectedDate, formatted)) {
-      setInlineError('This time has already passed for today. Please pick an upcoming time.');
-      onChange(formatted);
+    const numH = parseInt(rawH, 10);
+    const numM = parseInt(rawM, 10);
+
+    if (isNaN(numH) || numH < 1 || numH > 12) {
+      setInlineError('Hour must be between 1 and 12.');
+      return;
+    }
+
+    if (isNaN(numM) || numM < 0 || numM > 59) {
+      setInlineError('Minute must be between 00 and 59.');
+      return;
+    }
+
+    const formattedTime = formatTime12(numH, numM, p);
+    const minutesFromMidnight = parseTimeToMinutes(formattedTime);
+
+    // Enforce working hours strictly: 7:00 AM to 8:30 PM
+    if (minutesFromMidnight < OPERATING_HOURS_START || minutesFromMidnight > OPERATING_HOURS_END) {
+      setInlineError('CitiMaids operating hours are 7:00 AM – 8:30 PM. We do not accept bookings outside working hours.');
+      return;
+    }
+
+    // Check if time has passed for today
+    if (isSlotPassedToday(selectedDate, formattedTime)) {
+      setInlineError('This time has already passed for today. Please enter an upcoming time.');
       return;
     }
 
     setInlineError(null);
-    onChange(formatted);
+    onChange(formattedTime);
+  };
+
+  const handleHourChange = (e) => {
+    const val = e.target.value.replace(/\D/g, '').slice(0, 2);
+    setHourInput(val);
+    if (val.length === 2 && parseInt(val, 10) >= 1 && parseInt(val, 10) <= 12) {
+      minuteInputRef.current?.focus();
+    }
+    if (val && minuteInput) {
+      validateAndApplyTypedTime(val, minuteInput, periodInput);
+    }
+  };
+
+  const handleMinuteChange = (e) => {
+    const val = e.target.value.replace(/\D/g, '').slice(0, 2);
+    setMinuteInput(val);
+    if (hourInput && val.length === 2) {
+      validateAndApplyTypedTime(hourInput, val, periodInput);
+    }
+  };
+
+  const handlePeriodToggle = (newPeriod) => {
+    setPeriodInput(newPeriod);
+    if (hourInput && minuteInput) {
+      validateAndApplyTypedTime(hourInput, minuteInput, newPeriod);
+    }
   };
 
   const handleSelectQuickSlot = (slot) => {
@@ -136,24 +209,10 @@ export default function TimePicker({
     onChange(slot);
   };
 
-  const handleCustomHourChange = (newHour) => {
-    setCustomHour(newHour);
-    validateAndApplyCustomTime(newHour, customMinute, customPeriod);
-  };
-
-  const handleCustomMinuteChange = (newMinute) => {
-    setCustomMinute(newMinute);
-    validateAndApplyCustomTime(customHour, newMinute, customPeriod);
-  };
-
-  const handleCustomPeriodChange = (newPeriod) => {
-    setCustomPeriod(newPeriod);
-    validateAndApplyCustomTime(customHour, customMinute, newPeriod);
-  };
-
   return (
     <div style={{ marginTop: 24 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+      {/* ── Section Title (Clean, without top Selected text badge) ── */}
+      <div style={{ marginBottom: 10 }}>
         <span style={{
           fontSize: 11,
           fontWeight: 700,
@@ -163,20 +222,6 @@ export default function TimePicker({
         }}>
           Choose a Time
         </span>
-
-        {value && (
-          <span style={{
-            fontSize: 12,
-            fontWeight: 800,
-            color: '#0A2342',
-            background: '#f0f7ff',
-            border: '1px solid #bfdbfe',
-            padding: '2px 8px',
-            borderRadius: 6,
-          }}>
-            Selected: {value}
-          </span>
-        )}
       </div>
 
       {/* ── 3-Column Grid of Quick Selection Buttons ── */}
@@ -247,7 +292,7 @@ export default function TimePicker({
         })}
       </div>
 
-      {/* ── "Choose a different time" Toggle Button ── */}
+      {/* ── "Choose a different time" Drop Button (Matching services accordion style) ── */}
       <div style={{ marginTop: 14 }}>
         <button
           type="button"
@@ -255,205 +300,297 @@ export default function TimePicker({
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 8,
-            padding: '8px 12px',
-            borderRadius: 10,
-            border: isCustomTime ? '1.5px solid #0A2342' : '1px solid #cbd5e1',
-            background: isCustomTime ? '#f0f7ff' : '#ffffff',
+            justifyContent: 'space-between',
+            gap: 10,
+            padding: '9px 14px',
+            borderRadius: 12,
+            border: showCustomPicker || isCustomTime ? '1.5px solid #0A2342' : '1.5px solid #e2e8f0',
+            background: showCustomPicker || isCustomTime ? '#f0f7ff' : '#ffffff',
             color: '#0A2342',
-            fontSize: 12,
+            fontSize: 13,
             fontWeight: 700,
             cursor: 'pointer',
-            transition: 'all 0.2s',
+            transition: 'all 0.2s ease',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
           }}
           aria-expanded={showCustomPicker}
         >
-          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#2563eb" strokeWidth="2.2">
-            <circle cx="12" cy="12" r="10" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
-          </svg>
-          <span>Choose a different time</span>
-          {isCustomTime && (
-            <span style={{
-              background: '#0A2342',
-              color: '#ffffff',
-              fontSize: 10,
-              fontWeight: 800,
-              padding: '1px 6px',
-              borderRadius: 4,
-            }}>
-              Active
-            </span>
-          )}
-          <svg
-            width="12"
-            height="12"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            style={{
-              transition: 'transform 0.2s ease',
-              transform: showCustomPicker ? 'rotate(180deg)' : 'rotate(0deg)',
-            }}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#2563eb" strokeWidth="2.2">
+              <circle cx="12" cy="12" r="10" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
+            </svg>
+            <span>Choose a different time</span>
+          </div>
+
+          {/* Smooth Drop Arrow Chevron */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '2px',
+          }}>
+            <svg
+              width="14"
+              height="14"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke={showCustomPicker ? '#0A2342' : '#94a3b8'}
+              strokeWidth="2.4"
+              style={{
+                transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.2s',
+                transform: showCustomPicker ? 'rotate(180deg)' : 'rotate(0deg)',
+              }}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
         </button>
       </div>
 
-      {/* ── Custom Time Picker Form ── */}
-      {showCustomPicker && (
-        <div style={{
-          marginTop: 12,
-          padding: '16px 18px',
-          background: '#ffffff',
-          borderRadius: 14,
-          border: '1.5px solid #dbeafe',
-          boxShadow: '0 4px 16px rgba(10,35,66,0.05)',
-          animation: 'customTimeFade 0.2s ease',
-        }}>
+      {/* ── Collapsible Custom Time Input Panel (Smooth CSS Grid Animation) ── */}
+      <div style={{
+        display: 'grid',
+        gridTemplateRows: showCustomPicker ? '1fr' : '0fr',
+        transition: 'grid-template-rows 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+      }}>
+        <div style={{ overflow: 'hidden' }}>
           <div style={{
-            fontSize: 12,
-            fontWeight: 800,
-            color: '#0A2342',
-            marginBottom: 10,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            marginTop: 10,
+            padding: '16px 18px',
+            background: '#ffffff',
+            borderRadius: 14,
+            border: '1.5px solid #dbeafe',
+            boxShadow: '0 4px 16px rgba(10,35,66,0.04)',
           }}>
-            <span>Set Preferred Arrival Time</span>
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>Hours: 7:00 AM – 8:30 PM</span>
-          </div>
-
-          {/* Controls: Hour : Minute Period */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            {/* Hour select */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
-                Hour
-              </label>
-              <select
-                value={customHour}
-                onChange={(e) => handleCustomHourChange(e.target.value)}
-                style={{
-                  padding: '9px 12px',
-                  borderRadius: 10,
-                  border: '1.5px solid #cbd5e1',
-                  background: '#f8fafc',
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: '#0A2342',
-                  cursor: 'pointer',
-                  outline: 'none',
-                }}
-                aria-label="Select hour"
-              >
-                {['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'].map((hr) => (
-                  <option key={hr} value={hr}>
-                    {hr}
-                  </option>
-                ))}
-              </select>
+            <div style={{
+              fontSize: 12,
+              fontWeight: 800,
+              color: '#0A2342',
+              marginBottom: 12,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+              <span>Enter Preferred Time</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#64748b' }}>
+                Working Hours: 7:00 AM – 8:30 PM
+              </span>
             </div>
 
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#94a3b8', paddingTop: 18 }}>
-              :
-            </div>
+            {/* Direct Input Controls */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              {/* Hour Input Box */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
+                  Hour
+                </span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={hourInput}
+                  onChange={handleHourChange}
+                  placeholder="09"
+                  maxLength={2}
+                  style={{
+                    width: 58,
+                    height: 44,
+                    textAlign: 'center',
+                    fontSize: 16,
+                    fontWeight: 800,
+                    color: '#0A2342',
+                    background: '#f8fafc',
+                    border: '1.5px solid #cbd5e1',
+                    borderRadius: 10,
+                    outline: 'none',
+                    transition: 'border-color 0.15s, box-shadow 0.15s',
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#0A2342';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(10,35,66,0.08)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#cbd5e1';
+                    e.target.style.boxShadow = 'none';
+                    if (hourInput && minuteInput) {
+                      validateAndApplyTypedTime(hourInput, minuteInput, periodInput);
+                    }
+                  }}
+                  aria-label="Input hour"
+                />
+              </div>
 
-            {/* Minute select */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
-                Minute
-              </label>
-              <select
-                value={customMinute}
-                onChange={(e) => handleCustomMinuteChange(e.target.value)}
-                style={{
-                  padding: '9px 12px',
-                  borderRadius: 10,
-                  border: '1.5px solid #cbd5e1',
-                  background: '#f8fafc',
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: '#0A2342',
-                  cursor: 'pointer',
-                  outline: 'none',
-                }}
-                aria-label="Select minute"
-              >
-                {['00', '15', '30', '45'].map((mn) => (
-                  <option key={mn} value={mn}>
-                    {mn}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* AM / PM Segmented Control */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
-                Period
-              </label>
+              {/* Colon Separator */}
               <div style={{
-                display: 'flex',
-                borderRadius: 10,
-                border: '1.5px solid #cbd5e1',
-                overflow: 'hidden',
-                background: '#f8fafc',
+                fontSize: 22,
+                fontWeight: 900,
+                color: '#64748b',
+                paddingTop: 16,
+                userSelect: 'none',
               }}>
-                {['AM', 'PM'].map((p) => {
-                  const isCurrent = customPeriod === p;
+                :
+              </div>
+
+              {/* Minute Input Box */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
+                  Minute
+                </span>
+                <input
+                  ref={minuteInputRef}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={minuteInput}
+                  onChange={handleMinuteChange}
+                  placeholder="00"
+                  maxLength={2}
+                  style={{
+                    width: 58,
+                    height: 44,
+                    textAlign: 'center',
+                    fontSize: 16,
+                    fontWeight: 800,
+                    color: '#0A2342',
+                    background: '#f8fafc',
+                    border: '1.5px solid #cbd5e1',
+                    borderRadius: 10,
+                    outline: 'none',
+                    transition: 'border-color 0.15s, box-shadow 0.15s',
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#0A2342';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(10,35,66,0.08)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#cbd5e1';
+                    e.target.style.boxShadow = 'none';
+                    if (hourInput && minuteInput) {
+                      validateAndApplyTypedTime(hourInput, minuteInput, periodInput);
+                    }
+                  }}
+                  aria-label="Input minute"
+                />
+              </div>
+
+              {/* AM / PM Toggle Controls */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
+                  Period
+                </span>
+                <div style={{
+                  display: 'flex',
+                  height: 44,
+                  borderRadius: 10,
+                  border: '1.5px solid #cbd5e1',
+                  overflow: 'hidden',
+                  background: '#f8fafc',
+                }}>
+                  {['AM', 'PM'].map((p) => {
+                    const isCurrent = periodInput === p;
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => handlePeriodToggle(p)}
+                        style={{
+                          padding: '0 16px',
+                          border: 'none',
+                          background: isCurrent ? '#0A2342' : 'transparent',
+                          color: isCurrent ? '#ffffff' : '#64748b',
+                          fontWeight: 800,
+                          fontSize: 13,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                        aria-label={`Set period to ${p}`}
+                      >
+                        {p}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Confirm / Apply Button */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 18 }}>
+                <button
+                  type="button"
+                  onClick={() => validateAndApplyTypedTime(hourInput, minuteInput, periodInput)}
+                  style={{
+                    height: 44,
+                    padding: '0 18px',
+                    borderRadius: 10,
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #0A2342, #1E3A8A)',
+                    color: '#ffffff',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(10,35,66,0.15)',
+                    transition: 'opacity 0.15s, transform 0.15s',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.92'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+                >
+                  Apply Time
+                </button>
+              </div>
+            </div>
+
+            {/* Helpful Quick Presets within Working Hours */}
+            <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', marginBottom: 6 }}>
+                Common Working Hour Slots:
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {['8:00 AM', '10:00 AM', '12:00 PM', '2:00 PM', '4:00 PM', '6:00 PM'].map((preset) => {
+                  const isCurrent = value === preset;
+                  const isPassed = isSlotPassedToday(selectedDate, preset);
+
                   return (
                     <button
-                      key={p}
+                      key={preset}
                       type="button"
-                      onClick={() => handleCustomPeriodChange(p)}
-                      style={{
-                        padding: '9px 14px',
-                        border: 'none',
-                        background: isCurrent ? '#0A2342' : 'transparent',
-                        color: isCurrent ? '#ffffff' : '#475569',
-                        fontWeight: 800,
-                        fontSize: 13,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
+                      disabled={isPassed}
+                      onClick={() => {
+                        const match = preset.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+                        if (match) {
+                          setHourInput(match[1]);
+                          setMinuteInput(match[2]);
+                          setPeriodInput(match[3].toUpperCase());
+                        }
+                        handleSelectQuickSlot(preset);
                       }}
-                      aria-label={`Select ${p}`}
+                      style={{
+                        padding: '4px 9px',
+                        borderRadius: 6,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        border: isCurrent ? '1.5px solid #0A2342' : '1px solid #e2e8f0',
+                        background: isCurrent ? '#0A2342' : isPassed ? '#f8fafc' : '#ffffff',
+                        color: isCurrent ? '#ffffff' : isPassed ? '#cbd5e1' : '#475569',
+                        cursor: isPassed ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.15s',
+                      }}
                     >
-                      {p}
+                      {preset}
                     </button>
                   );
                 })}
               </div>
             </div>
-
-            {/* Apply button */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 18 }}>
-              <button
-                type="button"
-                onClick={() => validateAndApplyCustomTime(customHour, customMinute, customPeriod)}
-                style={{
-                  padding: '9px 16px',
-                  borderRadius: 10,
-                  border: 'none',
-                  background: 'linear-gradient(135deg, #0A2342, #1E3A8A)',
-                  color: '#ffffff',
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(10,35,66,0.15)',
-                  transition: 'opacity 0.15s',
-                }}
-              >
-                Set Time
-              </button>
-            </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* ── Inline Validation Feedback ── */}
+      {/* ── Inline Validation Error Message ── */}
       {inlineError && (
         <div style={{
           marginTop: 12,
@@ -467,7 +604,7 @@ export default function TimePicker({
           fontSize: 12,
           color: '#be123c',
           fontWeight: 600,
-          animation: 'customTimeFade 0.2s ease',
+          animation: 'errorFadeIn 0.2s ease',
         }}>
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -477,7 +614,7 @@ export default function TimePicker({
       )}
 
       <style>{`
-        @keyframes customTimeFade {
+        @keyframes errorFadeIn {
           from { opacity: 0; transform: translateY(-4px); }
           to { opacity: 1; transform: translateY(0); }
         }

@@ -4,7 +4,7 @@ import { useServices } from '../hooks/useServices';
 import api from '../api/axios';
 import { formatUAEPhone } from '../utils/formatters';
 import DatePicker, { toYMD, formatFriendlyDate } from '../components/booking/DatePicker';
-import TimePicker, { isSlotPassedToday, DEFAULT_TIME_SLOTS } from '../components/booking/TimePicker';
+import TimePicker, { isSlotPassedToday, isTimeWithinWorkingHours, DEFAULT_TIME_SLOTS } from '../components/booking/TimePicker';
 
 const STEPS = [
   { key: 'service', label: 'Service', icon: StepServiceIcon },
@@ -274,6 +274,7 @@ export default function BookingPage() {
     if (step === 0) return !!data.serviceId;
     if (step === 1) {
       if (!data.date || !data.time) return false;
+      if (!isTimeWithinWorkingHours(data.time)) return false;
       if (isSlotPassedToday(data.date, data.time)) return false;
       return true;
     }
@@ -296,6 +297,10 @@ export default function BookingPage() {
       }
       if (!data.time) {
         setTimeError('Please choose a preferred arrival time.');
+        return;
+      }
+      if (!isTimeWithinWorkingHours(data.time)) {
+        setTimeError('CitiMaids operating hours are 7:00 AM – 8:30 PM. We do not accept bookings outside working hours.');
         return;
       }
       if (isSlotPassedToday(data.date, data.time)) {
