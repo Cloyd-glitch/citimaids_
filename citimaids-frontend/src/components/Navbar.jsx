@@ -33,11 +33,10 @@ export default function Navbar() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled || !isHome
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled || !isHome
           ? 'bg-[#0A2342]/95 backdrop-blur-xl border-b border-white/10 shadow-2xl py-3.5'
           : 'bg-gradient-to-b from-black/70 via-black/30 to-transparent py-5'
-      }`}
+        }`}
     >
       <div className="max-w-7xl mx-auto px-6 sm:px-8 flex items-center justify-between">
         {/* Brand Logo */}
@@ -63,11 +62,10 @@ export default function Navbar() {
             <Link
               key={l.to}
               to={l.to}
-              className={`text-sm font-semibold tracking-wide transition-all duration-200 relative py-1 ${
-                isActive(l.to)
+              className={`text-sm font-semibold tracking-wide transition-all duration-200 relative py-1 ${isActive(l.to)
                   ? 'text-sky-300 font-bold'
                   : 'text-white/80 hover:text-white'
-              }`}
+                }`}
             >
               {l.label}
               {isActive(l.to) && (
@@ -81,11 +79,11 @@ export default function Navbar() {
         <div className="hidden lg:flex items-center gap-4">
           <Link
             to="/admin/login"
-            className="flex items-center gap-1.5 text-xs font-medium text-white/45 hover:text-white transition-all duration-200 py-1 group"
+            className="flex items-center gap-1.5 text-xs font-medium text-white/60 hover:text-white transition-all duration-200 py-1 group"
             title="Staff Portal"
           >
             <svg
-              className="w-3.5 h-3.5 text-white/40 group-hover:text-white transition-colors"
+              className="w-3.5 h-3.5 text-white/60 group-hover:text-white transition-colors"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -131,11 +129,10 @@ export default function Navbar() {
             <Link
               key={l.to}
               to={l.to}
-              className={`px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
-                isActive(l.to)
+              className={`px-4 py-3 rounded-xl text-sm font-bold transition-colors ${isActive(l.to)
                   ? 'bg-blue-600/30 text-sky-300 border border-blue-500/30'
                   : 'text-white/80 hover:bg-white/10'
-              }`}
+                }`}
             >
               {l.label}
             </Link>
@@ -149,10 +146,10 @@ export default function Navbar() {
             </Link>
             <Link
               to="/admin/login"
-              className="w-full py-2 text-center text-xs text-white/45 font-medium hover:text-white flex items-center justify-center gap-1.5 transition-colors hover:bg-white/5 rounded-xl group"
+              className="w-full py-2 text-center text-xs font-medium text-white/60 hover:text-white flex items-center justify-center gap-1.5 transition-colors hover:bg-white/5 rounded-xl group"
             >
               <svg
-                className="w-3.5 h-3.5 text-white/40 group-hover:text-white transition-colors"
+                className="w-3.5 h-3.5 text-white/60 group-hover:text-white transition-colors"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
