@@ -472,7 +472,8 @@ export default function BookingPage() {
           border: '1px solid #e2e8f0',
           boxShadow: '0 4px 24px rgba(10,35,66,0.04)',
           minWidth: 0,
-          overflow: 'hidden',
+          overflow: 'visible',
+          transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
         }}>
           {/* Step Label */}
           <div style={{ marginBottom: 8 }}>

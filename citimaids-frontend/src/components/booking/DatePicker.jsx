@@ -172,7 +172,15 @@ export default function DatePicker({
   const todayStr = toYMD(new Date());
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
+    <div
+      ref={containerRef}
+      style={{
+        position: 'relative',
+        width: '100%',
+        marginBottom: isOpen ? 310 : 0,
+        transition: 'margin-bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+      }}
+    >
       {label && (
         <label style={{
           display: 'block',
@@ -487,40 +495,6 @@ export default function DatePicker({
                 </button>
               );
             })}
-          </div>
-
-          {/* Footer Information */}
-          <div style={{
-            marginTop: 14,
-            paddingTop: 10,
-            borderTop: '1px solid #f1f5f9',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            fontSize: 11,
-            color: '#64748b',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0A2342' }} />
-              <span>Selected</span>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563eb', marginLeft: 8 }} />
-              <span>Today</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#2563eb',
-                fontWeight: 700,
-                cursor: 'pointer',
-                fontSize: 11,
-                padding: '2px 6px',
-              }}
-            >
-              Done
-            </button>
           </div>
         </div>
       )}
