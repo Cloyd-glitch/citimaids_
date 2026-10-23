@@ -81,11 +81,11 @@ export default function Navbar() {
         <div className="hidden lg:flex items-center gap-4">
           <Link
             to="/admin/login"
-            className="flex items-center gap-2 text-sm font-semibold text-white/85 hover:text-white transition-colors py-1 group"
+            className="flex items-center gap-1.5 text-xs font-medium text-white/45 hover:text-white transition-all duration-200 py-1 group"
             title="Staff Portal"
           >
             <svg
-              className="w-4 h-4 text-white/80 group-hover:text-white transition-colors"
+              className="w-3.5 h-3.5 text-white/40 group-hover:text-white transition-colors"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -149,10 +149,10 @@ export default function Navbar() {
             </Link>
             <Link
               to="/admin/login"
-              className="w-full py-2.5 text-center text-xs text-white/80 font-semibold hover:text-white flex items-center justify-center gap-2 transition-colors hover:bg-white/5 rounded-xl group"
+              className="w-full py-2 text-center text-xs text-white/45 font-medium hover:text-white flex items-center justify-center gap-1.5 transition-colors hover:bg-white/5 rounded-xl group"
             >
               <svg
-                className="w-4 h-4 text-white/80 group-hover:text-white transition-colors"
+                className="w-3.5 h-3.5 text-white/40 group-hover:text-white transition-colors"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
