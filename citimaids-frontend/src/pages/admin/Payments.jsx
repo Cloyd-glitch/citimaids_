@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../api/axios';
 import {
@@ -32,6 +32,91 @@ const TX_TYPES = [
 
 const avatarColors = ['#1E3A8A', '#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2'];
 
+/**
+ * Visual keyword highlighter component.
+ * Case-insensitively wraps matching substrings in an amber highlight mark.
+ */
+function HighlightText({ text, query }) {
+    if (!query || !query.trim() || text === null || text === undefined) {
+        return text ?? null;
+    }
+    const str = String(text);
+    const trimmed = query.trim();
+    const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escaped})`, 'gi');
+    const parts = str.split(regex);
+
+    if (parts.length === 1) return str;
+
+    return (
+        <>
+            {parts.map((part, index) =>
+                part.toLowerCase() === trimmed.toLowerCase() ? (
+                    <mark
+                        key={index}
+                        style={{
+                            backgroundColor: '#fef08a',
+                            color: '#854d0e',
+                            borderRadius: '3px',
+                            padding: '1px 3px',
+                            fontWeight: 700,
+                        }}
+                    >
+                        {part}
+                    </mark>
+                ) : (
+                    part
+                )
+            )}
+        </>
+    );
+}
+
+/**
+ * Relevance scoring helper to prioritize matching items to top.
+ */
+function getMatchScore(item, query, fields) {
+    if (!query || !query.trim() || !item) return 0;
+    const q = query.trim().toLowerCase();
+    let score = 0;
+
+    for (const { getVal, priority } of fields) {
+        const val = getVal(item);
+        if (val === null || val === undefined) continue;
+        const str = String(val).toLowerCase();
+        if (str === q) {
+            score = Math.max(score, priority * 3);
+        } else if (str.startsWith(q)) {
+            score = Math.max(score, priority * 2);
+        } else if (str.includes(q)) {
+            score = Math.max(score, priority);
+        }
+    }
+    return score;
+}
+
+const invoiceSearchFields = [
+    { getVal: p => p.reference_number, priority: 10 },
+    { getVal: p => p.client?.name, priority: 8 },
+    { getVal: p => p.external_reference, priority: 7 },
+    { getVal: p => `Booking #${p.booking_id}`, priority: 6 },
+    { getVal: p => p.booking?.service?.name, priority: 5 },
+    { getVal: p => p.amount, priority: 4 },
+    { getVal: p => p.status, priority: 3 },
+];
+
+const transactionSearchFields = [
+    { getVal: tx => `#${tx.id}`, priority: 10 },
+    { getVal: tx => tx.id, priority: 10 },
+    { getVal: tx => tx.payment?.reference_number, priority: 9 },
+    { getVal: tx => tx.payment?.client?.name, priority: 8 },
+    { getVal: tx => tx.description, priority: 6 },
+    { getVal: tx => tx.amount, priority: 5 },
+    { getVal: tx => tx.status, priority: 4 },
+    { getVal: tx => tx.type, priority: 4 },
+    { getVal: tx => tx.processed_by?.name, priority: 3 },
+];
+
 export default function Payments({ defaultTab = 'payments' }) {
     const navigate = useNavigate();
     const location = useLocation();
@@ -48,22 +133,27 @@ export default function Payments({ defaultTab = 'payments' }) {
     const [paymentSearch, setPaymentSearch] = useState('');
     const [paymentStatusFilter, setPaymentStatusFilter] = useState('all');
     const [paymentsPage, setPaymentsPage] = useState(1);
+    const [invoiceSortOrder, setInvoiceSortOrder] = useState('desc');
 
     // ── Transactions State ──
     const [transactions, setTransactions] = useState([]);
     const [transactionsMeta, setTransactionsMeta] = useState({});
     const [transactionsLoading, setTransactionsLoading] = useState(true);
+    const [txSearch, setTxSearch] = useState('');
     const [txTypeFilter, setTxTypeFilter] = useState('all');
     const [txStatusFilter, setTxStatusFilter] = useState('all');
     const [transactionsPage, setTransactionsPage] = useState(1);
+    const [txSortOrder, setTxSortOrder] = useState('desc');
 
     // ── Modals & Actions ──
     const [selectedPayment, setSelectedPayment] = useState(null);
+    const [selectedTransaction, setSelectedTransaction] = useState(null);
     const [selectedTxPayload, setSelectedTxPayload] = useState(null);
     const [showRefundModal, setShowRefundModal] = useState(false);
     const [refundAmount, setRefundAmount] = useState('');
     const [refundReason, setRefundReason] = useState('');
     const [actionLoading, setActionLoading] = useState(false);
+    const [actionLoadingId, setActionLoadingId] = useState(null);
     const [actionMessage, setActionMessage] = useState(null);
     const [refreshHovered, setRefreshHovered] = useState(false);
 
@@ -79,7 +169,7 @@ export default function Payments({ defaultTab = 'payments' }) {
         if (activeTab === 'transactions') {
             fetchTransactions();
         }
-    }, [activeTab, transactionsPage, txTypeFilter, txStatusFilter]);
+    }, [activeTab, transactionsPage, txTypeFilter, txStatusFilter, txSearch]);
 
     const fetchPayments = async () => {
         setPaymentsLoading(true);
@@ -104,6 +194,7 @@ export default function Payments({ defaultTab = 'payments' }) {
             const params = { page: transactionsPage, per_page: 15 };
             if (txTypeFilter !== 'all') params.type = txTypeFilter;
             if (txStatusFilter !== 'all') params.status = txStatusFilter;
+            if (txSearch.trim()) params.search = txSearch.trim();
 
             const res = await api.get('/transactions', { params });
             setTransactions(res.data.data || []);
@@ -114,6 +205,33 @@ export default function Payments({ defaultTab = 'payments' }) {
             setTransactionsLoading(false);
         }
     };
+
+    // ── Prioritize Matching Items & Sort by Timestamp ──
+    const prioritizedPayments = useMemo(() => {
+        return [...payments].sort((a, b) => {
+            const scoreA = getMatchScore(a, paymentSearch, invoiceSearchFields);
+            const scoreB = getMatchScore(b, paymentSearch, invoiceSearchFields);
+            if (scoreB !== scoreA) {
+                return scoreB - scoreA; // Matching items moved to top
+            }
+            const timeA = new Date(a.created_at || 0).getTime();
+            const timeB = new Date(b.created_at || 0).getTime();
+            return invoiceSortOrder === 'asc' ? timeA - timeB : timeB - timeA;
+        });
+    }, [payments, paymentSearch, invoiceSortOrder]);
+
+    const prioritizedTransactions = useMemo(() => {
+        return [...transactions].sort((a, b) => {
+            const scoreA = getMatchScore(a, txSearch, transactionSearchFields);
+            const scoreB = getMatchScore(b, txSearch, transactionSearchFields);
+            if (scoreB !== scoreA) {
+                return scoreB - scoreA; // Matching items moved to top
+            }
+            const timeA = new Date(a.created_at || 0).getTime();
+            const timeB = new Date(b.created_at || 0).getTime();
+            return txSortOrder === 'asc' ? timeA - timeB : timeB - timeA;
+        });
+    }, [transactions, txSearch, txSortOrder]);
 
     const handleUpdateStatus = async (paymentId, newStatus) => {
         setActionLoading(true);
@@ -130,6 +248,185 @@ export default function Payments({ defaultTab = 'payments' }) {
             setActionLoading(false);
             setTimeout(() => setActionMessage(null), 3500);
         }
+    };
+
+    // Retry a failed transaction
+    const handleRetryTransaction = async (txId) => {
+        setActionLoadingId(txId);
+        try {
+            const res = await api.post(`/transactions/${txId}/retry`);
+            setActionMessage({ type: 'success', text: res.data?.message || `Transaction #${txId} retry initiated` });
+            fetchTransactions();
+            fetchPayments();
+            if (selectedTransaction && selectedTransaction.id === txId) {
+                setSelectedTransaction(res.data.transaction);
+            }
+        } catch (err) {
+            setActionMessage({ type: 'error', text: err.response?.data?.message || 'Failed to retry transaction' });
+        } finally {
+            setActionLoadingId(null);
+            setTimeout(() => setActionMessage(null), 3500);
+        }
+    };
+
+    // Dismiss / Remove a failed transaction
+    const handleDismissTransaction = async (txId) => {
+        if (!window.confirm(`Are you sure you want to dismiss and remove failed transaction #${txId}?`)) {
+            return;
+        }
+        setActionLoadingId(txId);
+        try {
+            const res = await api.delete(`/transactions/${txId}`);
+            setActionMessage({ type: 'success', text: res.data?.message || `Transaction #${txId} dismissed and removed` });
+            fetchTransactions();
+            fetchPayments();
+            if (selectedTransaction && selectedTransaction.id === txId) {
+                setSelectedTransaction(null);
+            }
+        } catch (err) {
+            setActionMessage({ type: 'error', text: err.response?.data?.message || 'Failed to dismiss transaction' });
+        } finally {
+            setActionLoadingId(null);
+            setTimeout(() => setActionMessage(null), 3500);
+        }
+    };
+
+    // Dismiss a failed payment invoice
+    const handleDismissPayment = async (paymentId) => {
+        if (!window.confirm('Are you sure you want to dismiss and remove this failed invoice?')) {
+            return;
+        }
+        setActionLoading(true);
+        try {
+            const res = await api.delete(`/payments/${paymentId}`);
+            setActionMessage({ type: 'success', text: res.data?.message || 'Failed invoice dismissed and removed' });
+            fetchPayments();
+            fetchTransactions();
+            if (selectedPayment && selectedPayment.id === paymentId) {
+                setSelectedPayment(null);
+            }
+        } catch (err) {
+            setActionMessage({ type: 'error', text: err.response?.data?.message || 'Failed to dismiss payment' });
+        } finally {
+            setActionLoading(false);
+            setTimeout(() => setActionMessage(null), 3500);
+        }
+    };
+
+    // Direct Receipt HTML File Download
+    const handleDirectDownloadReceipt = (tx) => {
+        const receiptNum = `RCP-${String(tx.id).padStart(6, '0')}`;
+        const clientName = tx.payment?.client?.name || 'Valued Customer';
+        const clientPhone = tx.payment?.client?.phone || 'N/A';
+        const clientEmail = tx.payment?.client?.email || 'N/A';
+        const serviceName = tx.payment?.booking?.service?.name || 'Professional Cleaning Service';
+        const paymentRef = tx.payment?.reference_number || `TX-${tx.id}`;
+        const amountNum = parseFloat(tx.amount || 0).toFixed(2);
+        const dateStr = new Date(tx.created_at).toLocaleString('en-AE', {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+        });
+
+        const receiptHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CitiMaids Receipt ${receiptNum}</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; margin: 0; padding: 40px; color: #0A2342; }
+        .receipt-card { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 16px; padding: 36px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0A2342; padding-bottom: 20px; margin-bottom: 24px; }
+        .logo-title { font-size: 22px; font-weight: 800; color: #0A2342; letter-spacing: 0.5px; }
+        .subtitle { font-size: 11px; color: #64748b; margin-top: 4px; }
+        .receipt-title { font-size: 13px; font-weight: 700; color: #2563eb; text-transform: uppercase; text-align: right; }
+        .receipt-num { font-size: 18px; font-weight: 800; color: #0A2342; text-align: right; margin-top: 2px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; font-size: 13px; }
+        .label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px; }
+        .table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+        .table th { background: #f8fafc; padding: 10px 14px; text-align: left; font-size: 11px; text-transform: uppercase; color: #64748b; border-bottom: 1px solid #e2e8f0; }
+        .table td { padding: 14px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+        .total-box { background: #f8fafc; border-radius: 12px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .total-label { font-size: 14px; font-weight: 700; color: #0A2342; }
+        .total-val { font-size: 22px; font-weight: 800; color: #0A2342; }
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .badge-success { background: #d1fae5; color: #059669; }
+        .badge-failed { background: #fee2e2; color: #dc2626; }
+        .badge-pending { background: #fef3c7; color: #d97706; }
+        .footer { text-align: center; font-size: 11.5px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="receipt-card">
+        <div class="header">
+            <div>
+                <div class="logo-title">CITIMAIDS</div>
+                <div class="subtitle">CitiMaids Cleaning Services LLC • Dubai, UAE</div>
+                <div class="subtitle">TRN: 100482910300003 • support@citimaids.ae</div>
+            </div>
+            <div>
+                <div class="receipt-title">Official Receipt</div>
+                <div class="receipt-num">${receiptNum}</div>
+                <div class="subtitle" style="text-align: right; margin-top: 4px;">${dateStr}</div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div>
+                <div class="label">Billed To</div>
+                <div style="font-weight: 700;">${clientName}</div>
+                <div style="color: #64748b; font-size: 12px;">${clientEmail}</div>
+                <div style="color: #64748b; font-size: 12px;">${clientPhone}</div>
+            </div>
+            <div>
+                <div class="label">Payment Details</div>
+                <div><strong>Ref:</strong> ${paymentRef}</div>
+                <div><strong>Type:</strong> ${tx.type ? tx.type.toUpperCase() : 'CHARGE'}</div>
+                <div style="margin-top: 4px;">
+                    <span class="badge ${tx.status === 'success' ? 'badge-success' : tx.status === 'failed' ? 'badge-failed' : 'badge-pending'}">${tx.status || 'PENDING'}</span>
+                </div>
+            </div>
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th style="text-align: right;">Amount (AED)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <div style="font-weight: 600;">${serviceName}</div>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 2px;">${tx.description || 'Service booking payment'}</div>
+                    </td>
+                    <td style="text-align: right; font-weight: 700;">AED ${amountNum}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="total-box">
+            <span class="total-label">Total Amount</span>
+            <span class="total-val">AED ${amountNum}</span>
+        </div>
+
+        <div class="footer">
+            Thank you for choosing CitiMaids! For any inquiries, please contact support@citimaids.ae<br/>
+            Computer-generated receipt. No signature required.
+        </div>
+    </div>
+</body>
+</html>`;
+
+        const blob = new Blob([receiptHtml], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `CitiMaids_${receiptNum}.html`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     };
 
     const handleRefundSubmit = async (e) => {
@@ -498,7 +795,7 @@ export default function Payments({ defaultTab = 'payments' }) {
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                             <select
                                 value={paymentStatusFilter}
                                 onChange={(e) => { setPaymentStatusFilter(e.target.value); setPaymentsPage(1); }}
@@ -507,6 +804,14 @@ export default function Payments({ defaultTab = 'payments' }) {
                                 {PAYMENT_STATUSES.map(s => (
                                     <option key={s.value} value={s.value}>{s.label}</option>
                                 ))}
+                            </select>
+                            <select
+                                value={invoiceSortOrder}
+                                onChange={(e) => setInvoiceSortOrder(e.target.value)}
+                                style={{ ...selectStyle, width: 'auto', padding: '9px 14px', fontSize: 13 }}
+                            >
+                                <option value="desc">Newest First</option>
+                                <option value="asc">Oldest First</option>
                             </select>
                         </div>
                     </div>
@@ -549,7 +854,7 @@ export default function Payments({ defaultTab = 'payments' }) {
                                                 Loading invoices...
                                             </td>
                                         </tr>
-                                    ) : payments.length === 0 ? (
+                                    ) : prioritizedPayments.length === 0 ? (
                                         <tr>
                                             <td colSpan={5} style={{ padding: '56px 20px', textAlign: 'center' }}>
                                                 <div style={{ fontWeight: 700, color: brand.navy, fontSize: 15, marginBottom: 4 }}>
@@ -561,7 +866,7 @@ export default function Payments({ defaultTab = 'payments' }) {
                                             </td>
                                         </tr>
                                     ) : (
-                                        payments.map((p, idx) => {
+                                        prioritizedPayments.map((p, idx) => {
                                             const clientName = p.client?.name || 'Customer';
                                             const initials = clientName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
                                             const color = avatarColors[idx % avatarColors.length];
@@ -583,11 +888,13 @@ export default function Payments({ defaultTab = 'payments' }) {
                                                     {/* Reference & Date */}
                                                     <td style={{ padding: '14px 18px' }}>
                                                         <div style={{ fontWeight: 700, color: brand.navy, fontSize: 13.5 }}>
-                                                            {p.reference_number}
+                                                            <HighlightText text={p.reference_number} query={paymentSearch} />
                                                         </div>
                                                         <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
                                                             {new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                            {p.external_reference && ` • ${p.external_reference}`}
+                                                            {p.external_reference && (
+                                                                <> • <HighlightText text={p.external_reference} query={paymentSearch} /></>
+                                                            )}
                                                         </div>
                                                     </td>
 
@@ -611,11 +918,13 @@ export default function Payments({ defaultTab = 'payments' }) {
                                                             </div>
                                                             <div style={{ minWidth: 0, overflow: 'hidden' }}>
                                                                 <div style={{ fontWeight: 600, color: brand.navy, fontSize: 13, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                                                                    {clientName}
+                                                                    <HighlightText text={clientName} query={paymentSearch} />
                                                                 </div>
                                                                 <div style={{ fontSize: 11.5, color: brand.royal, fontWeight: 600 }}>
-                                                                    Booking #{p.booking_id}
-                                                                    {p.booking?.service?.name ? ` • ${p.booking.service.name}` : ''}
+                                                                    Booking #<HighlightText text={p.booking_id} query={paymentSearch} />
+                                                                    {p.booking?.service?.name && (
+                                                                        <> • <HighlightText text={p.booking.service.name} query={paymentSearch} /></>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -624,7 +933,7 @@ export default function Payments({ defaultTab = 'payments' }) {
                                                     {/* Amount */}
                                                     <td style={{ padding: '14px 18px' }}>
                                                         <div style={{ fontWeight: 800, color: brand.navy, fontSize: 14, fontFamily: fonts.heading }}>
-                                                            AED {parseFloat(p.amount).toFixed(2)}
+                                                            AED <HighlightText text={parseFloat(p.amount).toFixed(2)} query={paymentSearch} />
                                                         </div>
                                                     </td>
 
@@ -703,28 +1012,69 @@ export default function Payments({ defaultTab = 'payments' }) {
                ══════════════════════════════════════════════════════════════ */}
             {activeTab === 'transactions' && (
                 <div>
-                    {/* Filters */}
-                    <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-                        <select
-                            value={txTypeFilter}
-                            onChange={(e) => { setTxTypeFilter(e.target.value); setTransactionsPage(1); }}
-                            style={{ ...selectStyle, width: 'auto', padding: '9px 14px', fontSize: 13 }}
-                        >
-                            {TX_TYPES.map(t => (
-                                <option key={t.value} value={t.value}>{t.label}</option>
-                            ))}
-                        </select>
+                    {/* Search & Filters Alongside */}
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: 12,
+                        flexWrap: 'wrap',
+                        marginBottom: 16,
+                    }}>
+                        <div style={{ display: 'flex', gap: 10, flex: 1, minWidth: 280, maxWidth: 460 }}>
+                            <div style={{ ...searchBar, width: '100%', maxWidth: '100%' }}>
+                                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2">
+                                    <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+                                </svg>
+                                <input
+                                    type="text"
+                                    placeholder="Search by Tx ID, payment ref, client, or description..."
+                                    value={txSearch}
+                                    onChange={(e) => { setTxSearch(e.target.value); setTransactionsPage(1); }}
+                                    style={searchInput}
+                                />
+                                {txSearch && (
+                                    <button
+                                        onClick={() => { setTxSearch(''); setTransactionsPage(1); }}
+                                        style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8', padding: 4 }}
+                                    >
+                                        ✕
+                                    </button>
+                                )}
+                            </div>
+                        </div>
 
-                        <select
-                            value={txStatusFilter}
-                            onChange={(e) => { setTxStatusFilter(e.target.value); setTransactionsPage(1); }}
-                            style={{ ...selectStyle, width: 'auto', padding: '9px 14px', fontSize: 13 }}
-                        >
-                            <option value="all">All Statuses</option>
-                            <option value="success">Success</option>
-                            <option value="pending">Pending</option>
-                            <option value="failed">Failed</option>
-                        </select>
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                            <select
+                                value={txTypeFilter}
+                                onChange={(e) => { setTxTypeFilter(e.target.value); setTransactionsPage(1); }}
+                                style={{ ...selectStyle, width: 'auto', padding: '9px 14px', fontSize: 13 }}
+                            >
+                                {TX_TYPES.map(t => (
+                                    <option key={t.value} value={t.value}>{t.label}</option>
+                                ))}
+                            </select>
+
+                            <select
+                                value={txStatusFilter}
+                                onChange={(e) => { setTxStatusFilter(e.target.value); setTransactionsPage(1); }}
+                                style={{ ...selectStyle, width: 'auto', padding: '9px 14px', fontSize: 13 }}
+                            >
+                                <option value="all">All Statuses</option>
+                                <option value="success">Success</option>
+                                <option value="pending">Pending</option>
+                                <option value="failed">Failed</option>
+                            </select>
+
+                            <select
+                                value={txSortOrder}
+                                onChange={(e) => setTxSortOrder(e.target.value)}
+                                style={{ ...selectStyle, width: 'auto', padding: '9px 14px', fontSize: 13 }}
+                            >
+                                <option value="desc">Newest First</option>
+                                <option value="asc">Oldest First</option>
+                            </select>
+                        </div>
                     </div>
 
                     {/* Table Card Container */}
@@ -732,7 +1082,7 @@ export default function Payments({ defaultTab = 'payments' }) {
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{
                                 width: '100%',
-                                minWidth: 960,
+                                minWidth: 1020,
                                 borderCollapse: 'collapse',
                                 textAlign: 'left',
                             }}>
@@ -741,69 +1091,78 @@ export default function Payments({ defaultTab = 'payments' }) {
                                         background: brand.softBg,
                                         borderBottom: `1px solid ${brand.border}`,
                                     }}>
-                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '8%' }}>
+                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '7%' }}>
                                             Tx ID
                                         </th>
-                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '18%' }}>
+                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '16%' }}>
                                             Payment Ref
                                         </th>
-                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '12%' }}>
+                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '9%' }}>
                                             Type
                                         </th>
-                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '13%' }}>
+                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '12%' }}>
                                             Amount
                                         </th>
-                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '11%' }}>
+                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '9%' }}>
                                             Status
                                         </th>
-                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '22%' }}>
+                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '17%' }}>
                                             Description & Processed By
                                         </th>
-                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '16%' }}>
+                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '12%' }}>
                                             Timestamp
+                                        </th>
+                                        <th style={{ padding: '12px 18px', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.6, width: '18%', textAlign: 'right' }}>
+                                            Actions
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {transactionsLoading ? (
                                         <tr>
-                                            <td colSpan={7} style={{ padding: '48px 20px', textAlign: 'center', color: '#64748b', fontSize: 14 }}>
+                                            <td colSpan={8} style={{ padding: '48px 20px', textAlign: 'center', color: '#64748b', fontSize: 14 }}>
                                                 Loading transaction ledger...
                                             </td>
                                         </tr>
-                                    ) : transactions.length === 0 ? (
+                                    ) : prioritizedTransactions.length === 0 ? (
                                         <tr>
-                                            <td colSpan={7} style={{ padding: '56px 20px', textAlign: 'center' }}>
+                                            <td colSpan={8} style={{ padding: '56px 20px', textAlign: 'center' }}>
                                                 <div style={{ fontWeight: 700, color: brand.navy, fontSize: 15, marginBottom: 4 }}>
-                                                    No transactions recorded yet
+                                                    No transactions match your search or filters
                                                 </div>
                                                 <div style={{ color: '#64748b', fontSize: 13 }}>
-                                                    Transactions log automatically when payments or refunds are executed.
+                                                    Try modifying your keyword query or resetting status and type filters.
                                                 </div>
                                             </td>
                                         </tr>
                                     ) : (
-                                        transactions.map((tx) => (
+                                        prioritizedTransactions.map((tx) => (
                                             <tr
                                                 key={tx.id}
+                                                onClick={() => setSelectedTransaction(tx)}
                                                 style={{
                                                     borderBottom: '1px solid #f1f5f9',
                                                     fontSize: 13,
+                                                    cursor: 'pointer',
+                                                    background: selectedTransaction?.id === tx.id ? '#f8fafc' : '#fff',
+                                                    transition: 'background 0.12s ease',
                                                 }}
+                                                onMouseEnter={(e) => { if (selectedTransaction?.id !== tx.id) e.currentTarget.style.background = '#fcfdfe'; }}
+                                                onMouseLeave={(e) => { if (selectedTransaction?.id !== tx.id) e.currentTarget.style.background = '#fff'; }}
                                             >
                                                 {/* ID */}
                                                 <td style={{ padding: '14px 18px', fontWeight: 700, color: '#64748b' }}>
-                                                    #{tx.id}
+                                                    #<HighlightText text={tx.id} query={txSearch} />
                                                 </td>
 
                                                 {/* Payment Ref */}
                                                 <td style={{ padding: '14px 18px' }}>
                                                     <div style={{ fontWeight: 700, color: brand.navy, fontSize: 13 }}>
-                                                        {tx.payment?.reference_number || `Payment #${tx.payment_id}`}
+                                                        <HighlightText text={tx.payment?.reference_number || `Payment #${tx.payment_id}`} query={txSearch} />
                                                     </div>
                                                     {tx.payment?.client?.name && (
                                                         <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 1 }}>
-                                                            {tx.payment.client.name}
+                                                            <HighlightText text={tx.payment.client.name} query={txSearch} />
                                                         </div>
                                                     )}
                                                 </td>
@@ -820,7 +1179,7 @@ export default function Payments({ defaultTab = 'payments' }) {
                                                         fontFamily: fonts.heading,
                                                         color: tx.type === 'refund' ? '#dc2626' : '#059669',
                                                     }}>
-                                                        {tx.type === 'refund' ? '-' : '+'}AED {parseFloat(tx.amount).toFixed(2)}
+                                                        {tx.type === 'refund' ? '-' : '+'}AED <HighlightText text={parseFloat(tx.amount).toFixed(2)} query={txSearch} />
                                                     </span>
                                                 </td>
 
@@ -832,11 +1191,11 @@ export default function Payments({ defaultTab = 'payments' }) {
                                                 {/* Description */}
                                                 <td style={{ padding: '14px 18px' }}>
                                                     <div style={{ color: '#334155', fontWeight: 500, fontSize: 12.5 }}>
-                                                        {tx.description || 'System processed'}
+                                                        <HighlightText text={tx.description || 'System processed'} query={txSearch} />
                                                     </div>
                                                     {tx.processed_by?.name && (
                                                         <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>
-                                                            by {tx.processed_by.name}
+                                                            by <HighlightText text={tx.processed_by.name} query={txSearch} />
                                                         </div>
                                                     )}
                                                 </td>
@@ -853,7 +1212,10 @@ export default function Payments({ defaultTab = 'payments' }) {
                                                     </div>
                                                     {tx.gateway_response && (
                                                         <button
-                                                            onClick={() => setSelectedTxPayload(tx.gateway_response)}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedTxPayload(tx.gateway_response);
+                                                            }}
                                                             style={{
                                                                 background: 'none',
                                                                 border: 'none',
@@ -869,6 +1231,28 @@ export default function Payments({ defaultTab = 'payments' }) {
                                                             View Gateway Response ↗
                                                         </button>
                                                     )}
+                                                </td>
+
+                                                {/* Actions Column — single View button only */}
+                                                <td style={{ padding: '14px 18px', textAlign: 'right' }} onClick={e => e.stopPropagation()}>
+                                                    <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center', justifyContent: 'flex-end' }}>
+                                                        <button
+                                                            onClick={() => setSelectedTransaction(tx)}
+                                                            title="View Transaction Details"
+                                                            style={{
+                                                                padding: '5px 10px',
+                                                                borderRadius: 8,
+                                                                border: '1px solid #e2e8f0',
+                                                                background: '#fff',
+                                                                color: brand.navy,
+                                                                fontSize: 12,
+                                                                fontWeight: 600,
+                                                                cursor: 'pointer',
+                                                            }}
+                                                        >
+                                                            View
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
@@ -1066,6 +1450,25 @@ export default function Payments({ defaultTab = 'payments' }) {
                                             ↩ Process Refund
                                         </button>
                                     )}
+
+                                    {selectedPayment.status === 'failed' && (
+                                        <>
+                                            <button
+                                                disabled={actionLoading}
+                                                onClick={() => handleDismissPayment(selectedPayment.id)}
+                                                style={{ ...outlineBtn, color: '#dc2626', borderColor: '#fecaca', background: '#fef2f2', padding: '8px 16px', fontSize: 12.5 }}
+                                            >
+                                                ✕ Dismiss
+                                            </button>
+                                            <button
+                                                disabled={actionLoading}
+                                                onClick={() => handleUpdateStatus(selectedPayment.id, 'pending')}
+                                                style={{ ...solidBtn, background: '#2563eb', padding: '8px 16px', fontSize: 12.5 }}
+                                            >
+                                                ↻ Retry Invoice
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -1228,6 +1631,514 @@ export default function Payments({ defaultTab = 'payments' }) {
                     </div>
                 </div>
             )}
+
+            {/* ══════════════════════════════════════════════════════════════
+                MODAL: TRANSACTION DETAILS (ITEM VIEW)
+               ══════════════════════════════════════════════════════════════ */}
+            {selectedTransaction && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(10, 35, 66, 0.55)',
+                    backdropFilter: 'blur(4px)',
+                    zIndex: 1000,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 16,
+                }}>
+                    <div style={{
+                        background: '#fff',
+                        borderRadius: 18,
+                        width: '100%',
+                        maxWidth: 620,
+                        maxHeight: '88vh',
+                        overflowY: 'auto',
+                        boxShadow: '0 20px 50px rgba(10,35,66,0.25)',
+                    }}>
+                        {/* Modal Header */}
+                        <div style={{
+                            padding: '20px 24px',
+                            borderBottom: '1px solid #f1f5f9',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                        }}>
+                            <div>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                                    Transaction Record Details
+                                </div>
+                                <h2 style={{ fontSize: 18, fontWeight: 800, color: brand.navy, margin: '2px 0 0', fontFamily: fonts.heading }}>
+                                    Transaction #{selectedTransaction.id}
+                                </h2>
+                            </div>
+                            <button
+                                onClick={() => setSelectedTransaction(null)}
+                                style={{
+                                    border: 'none',
+                                    background: '#f1f5f9',
+                                    borderRadius: '50%',
+                                    width: 30,
+                                    height: 30,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#64748b',
+                                    fontSize: 14,
+                                }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div style={{ padding: '24px' }}>
+                            {/* Failed Alert Banner */}
+                            {selectedTransaction.status === 'failed' && (
+                                <div style={{
+                                    background: '#fef2f2',
+                                    border: '1px solid #fecaca',
+                                    borderRadius: 12,
+                                    padding: '12px 16px',
+                                    marginBottom: 18,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 12,
+                                }}>
+                                    <div style={{
+                                        width: 28,
+                                        height: 28,
+                                        borderRadius: '50%',
+                                        background: '#fee2e2',
+                                        color: '#dc2626',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontWeight: 800,
+                                        fontSize: 14,
+                                        flexShrink: 0,
+                                    }}>
+                                        !
+                                    </div>
+                                    <div style={{ flex: 1, fontSize: 12.5, color: '#991b1b' }}>
+                                        <strong>Payment Failed:</strong> This transaction could not be processed. You can dismiss this item from the ledger or retry the transaction.
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Summary Grid */}
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(2, 1fr)',
+                                gap: 16,
+                                background: brand.softBg,
+                                padding: '16px 20px',
+                                borderRadius: 14,
+                                marginBottom: 20,
+                            }}>
+                                <div>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Amount</div>
+                                    <div style={{
+                                        fontSize: 20,
+                                        fontWeight: 800,
+                                        color: selectedTransaction.type === 'refund' ? '#dc2626' : brand.navy,
+                                        fontFamily: fonts.heading,
+                                        marginTop: 2,
+                                    }}>
+                                        {selectedTransaction.type === 'refund' ? '-' : '+'}AED {parseFloat(selectedTransaction.amount).toFixed(2)}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Status & Type</div>
+                                    <div style={{ marginTop: 4, display: 'flex', gap: 6, alignItems: 'center' }}>
+                                        <TxStatusBadge status={selectedTransaction.status} />
+                                        <TxTypeBadge type={selectedTransaction.type} />
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Payment Reference</div>
+                                    <div style={{ fontSize: 13.5, fontWeight: 700, color: brand.navy, marginTop: 2 }}>
+                                        {selectedTransaction.payment?.reference_number || `Payment #${selectedTransaction.payment_id}`}
+                                    </div>
+                                    {selectedTransaction.payment?.external_reference && (
+                                        <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                                            Gateway ID: {selectedTransaction.payment.external_reference}
+                                        </div>
+                                    )}
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Timestamp</div>
+                                    <div style={{ fontSize: 13, fontWeight: 600, color: '#334155', marginTop: 2 }}>
+                                        {new Date(selectedTransaction.created_at).toLocaleString('en-AE', {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        })}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Customer</div>
+                                    <div style={{ fontSize: 13.5, fontWeight: 700, color: brand.navy, marginTop: 2 }}>
+                                        {selectedTransaction.payment?.client?.name || 'Customer'}
+                                    </div>
+                                    <div style={{ fontSize: 11.5, color: '#64748b' }}>
+                                        {selectedTransaction.payment?.client?.email || selectedTransaction.payment?.client?.phone || 'No direct contact'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Service / Booking</div>
+                                    <div style={{ fontSize: 13.5, fontWeight: 700, color: brand.royal, marginTop: 2 }}>
+                                        Booking #{selectedTransaction.payment?.booking_id || 'N/A'}
+                                    </div>
+                                    <div style={{ fontSize: 11.5, color: '#64748b' }}>
+                                        {selectedTransaction.payment?.booking?.service?.name || 'Cleaning Service'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Description & Processing Info */}
+                            <div style={{ marginBottom: 20 }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 6 }}>
+                                    Audit Description
+                                </div>
+                                <div style={{
+                                    background: '#fff',
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: 10,
+                                    padding: '12px 14px',
+                                    fontSize: 13,
+                                    color: '#334155',
+                                }}>
+                                    {selectedTransaction.description || 'System processed transaction ledger entry'}
+                                    {selectedTransaction.processed_by?.name && (
+                                        <div style={{ fontSize: 11.5, color: '#64748b', marginTop: 4 }}>
+                                            Logged by: <strong>{selectedTransaction.processed_by.name}</strong>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Gateway Response payload preview if available */}
+                            {selectedTransaction.gateway_response && (
+                                <div style={{ marginBottom: 20 }}>
+                                    <button
+                                        onClick={() => setSelectedTxPayload(selectedTransaction.gateway_response)}
+                                        style={{
+                                            ...outlineBtn,
+                                            padding: '7px 14px',
+                                            fontSize: 12,
+                                            color: brand.royal,
+                                            borderColor: '#bfdbfe',
+                                            background: '#eff6ff',
+                                        }}
+                                    >
+                                        Inspect Gateway Response JSON ↗
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Management Actions */}
+                            <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16 }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 10 }}>
+                                    Actions
+                                </div>
+                                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                                    {/* DISMISS ACTION BUTTON FOR FAILED TRANSACTION */}
+                                    {selectedTransaction.status === 'failed' && (
+                                        <>
+                                            <button
+                                                disabled={actionLoadingId === selectedTransaction.id}
+                                                onClick={() => handleDismissTransaction(selectedTransaction.id)}
+                                                style={{
+                                                    ...outlineBtn,
+                                                    color: '#dc2626',
+                                                    borderColor: '#fecaca',
+                                                    background: '#fef2f2',
+                                                    padding: '9px 18px',
+                                                    fontSize: 13,
+                                                    fontWeight: 700,
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: 6,
+                                                }}
+                                            >
+                                                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                                Dismiss
+                                            </button>
+                                            <button
+                                                disabled={actionLoadingId === selectedTransaction.id}
+                                                onClick={() => handleRetryTransaction(selectedTransaction.id)}
+                                                style={{
+                                                    ...solidBtn,
+                                                    background: '#2563eb',
+                                                    padding: '9px 18px',
+                                                    fontSize: 13,
+                                                    fontWeight: 700,
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: 6,
+                                                }}
+                                            >
+                                                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
+                                                Retry Transaction
+                                            </button>
+                                        </>
+                                    )}
+
+
+                                    <button
+                                        onClick={() => setSelectedTransaction(null)}
+                                        style={{
+                                            ...outlineBtn,
+                                            padding: '9px 16px',
+                                            fontSize: 13,
+                                            marginLeft: 'auto',
+                                        }}
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Receipt modal removed — receipt actions no longer exist in Transaction Ledger */}
+            {false && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(10, 35, 66, 0.65)',
+                    backdropFilter: 'blur(4px)',
+                    zIndex: 1300,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 16,
+                }}>
+                    <div style={{
+                        background: '#fff',
+                        borderRadius: 18,
+                        width: '100%',
+                        maxWidth: 580,
+                        maxHeight: '90vh',
+                        overflowY: 'auto',
+                        boxShadow: '0 25px 60px rgba(0,0,0,0.25)',
+                    }}>
+                        {/* Modal Header */}
+                        <div className="no-print" style={{
+                            padding: '16px 22px',
+                            borderBottom: '1px solid #f1f5f9',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                        }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: brand.navy }}>
+                                Official Transaction Receipt
+                            </span>
+                            <button
+                                onClick={() => setReceiptModalData(null)}
+                                style={{
+                                    border: 'none',
+                                    background: '#f1f5f9',
+                                    borderRadius: '50%',
+                                    width: 28,
+                                    height: 28,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#64748b',
+                                }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Printable Receipt Card Body */}
+                        <div id="citimaids-receipt-printable" style={{ padding: '28px' }}>
+                            {/* Receipt Header */}
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'flex-start',
+                                borderBottom: `2px solid ${brand.navy}`,
+                                paddingBottom: 16,
+                                marginBottom: 20,
+                            }}>
+                                <div>
+                                    <div style={{ fontSize: 20, fontWeight: 800, color: brand.navy, letterSpacing: 0.5, fontFamily: fonts.heading }}>
+                                        CITIMAIDS
+                                    </div>
+                                    <div style={{ fontSize: 11, color: '#64748b', marginTop: 3 }}>
+                                        CitiMaids Cleaning Services LLC • Dubai, UAE
+                                    </div>
+                                    <div style={{ fontSize: 10.5, color: '#94a3b8' }}>
+                                        TRN: 100482910300003 • support@citimaids.ae
+                                    </div>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: brand.royal, textTransform: 'uppercase' }}>
+                                        Payment Receipt
+                                    </div>
+                                    <div style={{ fontSize: 16, fontWeight: 800, color: brand.navy, marginTop: 2 }}>
+                                        RCP-{String(receiptModalData.id).padStart(6, '0')}
+                                    </div>
+                                    <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                                        {new Date(receiptModalData.created_at).toLocaleDateString('en-AE', {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            year: 'numeric',
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Details 2-Column Grid */}
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr',
+                                gap: 16,
+                                marginBottom: 20,
+                                fontSize: 12.5,
+                            }}>
+                                <div>
+                                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Billed To</div>
+                                    <div style={{ fontWeight: 700, color: brand.navy, marginTop: 2 }}>
+                                        {receiptModalData.payment?.client?.name || 'Customer'}
+                                    </div>
+                                    <div style={{ color: '#64748b', fontSize: 11.5 }}>
+                                        {receiptModalData.payment?.client?.email || receiptModalData.payment?.client?.phone || 'Direct Customer'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Reference & Status</div>
+                                    <div style={{ fontWeight: 600, color: brand.navy, marginTop: 2 }}>
+                                        {receiptModalData.payment?.reference_number || `TX-${receiptModalData.id}`}
+                                    </div>
+                                    <div style={{ marginTop: 4 }}>
+                                        <TxStatusBadge status={receiptModalData.status} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Line Items Table */}
+                            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20 }}>
+                                <thead>
+                                    <tr style={{ background: brand.softBg, borderBottom: '1px solid #e2e8f0' }}>
+                                        <th style={{ padding: '8px 12px', fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', textAlign: 'left' }}>Item Description</th>
+                                        <th style={{ padding: '8px 12px', fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', textAlign: 'right' }}>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                        <td style={{ padding: '12px', fontSize: 12.5 }}>
+                                            <div style={{ fontWeight: 600, color: brand.navy }}>
+                                                {receiptModalData.payment?.booking?.service?.name || 'Professional Cleaning Service'}
+                                            </div>
+                                            <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                                                {receiptModalData.description || `Booking #${receiptModalData.payment?.booking_id || ''}`}
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '12px', textAlign: 'right', fontWeight: 700, color: brand.navy, fontSize: 13 }}>
+                                            AED {parseFloat(receiptModalData.amount).toFixed(2)}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            {/* Total Box */}
+                            <div style={{
+                                background: brand.softBg,
+                                borderRadius: 12,
+                                padding: '14px 18px',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: 20,
+                            }}>
+                                <span style={{ fontSize: 13, fontWeight: 700, color: brand.navy }}>Total Amount</span>
+                                <span style={{ fontSize: 20, fontWeight: 800, color: brand.navy, fontFamily: fonts.heading }}>
+                                    AED {parseFloat(receiptModalData.amount).toFixed(2)}
+                                </span>
+                            </div>
+
+                            <div style={{ textAlign: 'center', fontSize: 11, color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: 14 }}>
+                                Thank you for choosing CitiMaids! This is a system-generated official receipt.
+                            </div>
+                        </div>
+
+                        {/* Modal Action Footer */}
+                        <div className="no-print" style={{
+                            padding: '16px 22px',
+                            background: '#f8fafc',
+                            borderTop: '1px solid #f1f5f9',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: 10,
+                        }}>
+                            <button
+                                onClick={() => handleDirectDownloadReceipt(receiptModalData)}
+                                style={{
+                                    ...outlineBtn,
+                                    padding: '8px 14px',
+                                    fontSize: 12,
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                }}
+                            >
+                                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Download HTML File
+                            </button>
+
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <button
+                                    onClick={() => window.print()}
+                                    style={{
+                                        ...solidBtn,
+                                        padding: '8px 16px',
+                                        fontSize: 12.5,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                    }}
+                                >
+                                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                    </svg>
+                                    Print / Save PDF
+                                </button>
+                                <button
+                                    onClick={() => setReceiptModalData(null)}
+                                    style={{ ...outlineBtn, padding: '8px 14px', fontSize: 12 }}
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
         </div>
     );
 }
