@@ -198,6 +198,15 @@ export default function HomePage() {
   const businessName = settings?.business_name || 'CitiMaids';
   const description = settings?.description || "From luxury villas and private apartments to corporate offices across Abu Dhabi, CitiMaids delivers hospital-grade sanitization and spotless finishing tailored to your schedule.";
 
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [reviewForm, setReviewForm] = useState({
+    stars: 5,
+    name: '',
+    location: '',
+    text: '',
+  });
+
   return (
     <div>
       {/* ── 1. Hero Section with Video Background ── */}
@@ -676,7 +685,7 @@ export default function HomePage() {
                 </div>
                 <div>
                   <h3 className="font-extrabold text-slate-900 text-xl">Leave a Client Review</h3>
-                  <p className="text-slate-500 text-xs">Share your experience with CitiMaids Cleaning Services</p>
+                  <p className="text-slate-500 text-xs">Share your experience with {businessName}</p>
                 </div>
               </div>
 
