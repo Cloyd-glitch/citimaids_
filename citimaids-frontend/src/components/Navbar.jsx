@@ -80,6 +80,24 @@ export default function Navbar() {
         {/* Desktop CTA */}
         <div className="hidden lg:flex items-center gap-4">
           <Link
+            to="/admin/login"
+            className="flex items-center gap-2 text-sm font-semibold text-white/85 hover:text-white transition-colors py-1 group"
+            title="Staff Portal"
+          >
+            <svg
+              className="w-4 h-4 text-white/80 group-hover:text-white transition-colors"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <rect x="5" y="11" width="14" height="10" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M8 11V7a4 4 0 018 0v4" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M12 15v2" strokeLinecap="round" />
+            </svg>
+            <span>Staff Portal</span>
+          </Link>
+          <Link
             to="/book"
             className="btn-3d-nav group"
           >
@@ -128,6 +146,23 @@ export default function Navbar() {
               className="btn-3d-primary w-full text-center py-3"
             >
               <span>Book Now</span>
+            </Link>
+            <Link
+              to="/admin/login"
+              className="w-full py-2.5 text-center text-xs text-white/80 font-semibold hover:text-white flex items-center justify-center gap-2 transition-colors hover:bg-white/5 rounded-xl group"
+            >
+              <svg
+                className="w-4 h-4 text-white/80 group-hover:text-white transition-colors"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <rect x="5" y="11" width="14" height="10" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M8 11V7a4 4 0 018 0v4" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M12 15v2" strokeLinecap="round" />
+              </svg>
+              <span>Staff Portal</span>
             </Link>
           </div>
         </div>

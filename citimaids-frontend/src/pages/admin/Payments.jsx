@@ -159,6 +159,7 @@ export default function Payments({ defaultTab = 'payments' }) {
     const [actionLoadingId, setActionLoadingId] = useState(null);
     const [actionMessage, setActionMessage] = useState(null);
     const [refreshHovered, setRefreshHovered] = useState(false);
+    const [receiptModalData, setReceiptModalData] = useState(null);
 
     // Fetch Payments
     useEffect(() => {
@@ -680,8 +681,8 @@ export default function Payments({ defaultTab = 'payments' }) {
                                 transform: (activeTab === 'payments' ? paymentsLoading : transactionsLoading)
                                     ? 'rotate(360deg)'
                                     : refreshHovered
-                                    ? 'rotate(180deg)'
-                                    : 'rotate(0deg)',
+                                        ? 'rotate(180deg)'
+                                        : 'rotate(0deg)',
                                 animation: (activeTab === 'payments' ? paymentsLoading : transactionsLoading)
                                     ? 'spin 0.8s linear infinite'
                                     : 'none',
@@ -2287,7 +2288,229 @@ export default function Payments({ defaultTab = 'payments' }) {
                 </div>
             )}
 
+            {/* Receipt modal removed — receipt actions no longer exist in Transaction Ledger */}
+            {false && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(10, 35, 66, 0.65)',
+                    backdropFilter: 'blur(4px)',
+                    zIndex: 1300,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 16,
+                }}>
+                    <div style={{
+                        background: '#fff',
+                        borderRadius: 18,
+                        width: '100%',
+                        maxWidth: 580,
+                        maxHeight: '90vh',
+                        overflowY: 'auto',
+                        boxShadow: '0 25px 60px rgba(0,0,0,0.25)',
+                    }}>
+                        {/* Modal Header */}
+                        <div className="no-print" style={{
+                            padding: '16px 22px',
+                            borderBottom: '1px solid #f1f5f9',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                        }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: brand.navy }}>
+                                Official Transaction Receipt
+                            </span>
+                            <button
+                                onClick={() => setReceiptModalData(null)}
+                                style={{
+                                    border: 'none',
+                                    background: '#f1f5f9',
+                                    borderRadius: '50%',
+                                    width: 28,
+                                    height: 28,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#64748b',
+                                }}
+                            >
+                                ✕
+                            </button>
+                        </div>
 
+                        {/* Printable Receipt Card Body */}
+                        <div id="citimaids-receipt-printable" style={{ padding: '28px' }}>
+                            {/* Receipt Header */}
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'flex-start',
+                                borderBottom: `2px solid ${brand.navy}`,
+                                paddingBottom: 16,
+                                marginBottom: 20,
+                            }}>
+                                <div>
+                                    <div style={{ fontSize: 20, fontWeight: 800, color: brand.navy, letterSpacing: 0.5, fontFamily: fonts.heading }}>
+                                        CITIMAIDS
+                                    </div>
+                                    <div style={{ fontSize: 11, color: '#64748b', marginTop: 3 }}>
+                                        CitiMaids Cleaning Services LLC • Dubai, UAE
+                                    </div>
+                                    <div style={{ fontSize: 10.5, color: '#94a3b8' }}>
+                                        TRN: 100482910300003 • support@citimaids.ae
+                                    </div>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: brand.royal, textTransform: 'uppercase' }}>
+                                        Payment Receipt
+                                    </div>
+                                    <div style={{ fontSize: 16, fontWeight: 800, color: brand.navy, marginTop: 2 }}>
+                                        RCP-{String(receiptModalData.id).padStart(6, '0')}
+                                    </div>
+                                    <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                                        {new Date(receiptModalData.created_at).toLocaleDateString('en-AE', {
+                                            month: 'short',
+                                            day: 'numeric',
+                                            year: 'numeric',
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Details 2-Column Grid */}
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr',
+                                gap: 16,
+                                marginBottom: 20,
+                                fontSize: 12.5,
+                            }}>
+                                <div>
+                                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Billed To</div>
+                                    <div style={{ fontWeight: 700, color: brand.navy, marginTop: 2 }}>
+                                        {receiptModalData.payment?.client?.name || 'Customer'}
+                                    </div>
+                                    <div style={{ color: '#64748b', fontSize: 11.5 }}>
+                                        {receiptModalData.payment?.client?.email || receiptModalData.payment?.client?.phone || 'Direct Customer'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Reference & Status</div>
+                                    <div style={{ fontWeight: 600, color: brand.navy, marginTop: 2 }}>
+                                        {receiptModalData.payment?.reference_number || `TX-${receiptModalData.id}`}
+                                    </div>
+                                    <div style={{ marginTop: 4 }}>
+                                        <TxStatusBadge status={receiptModalData.status} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Line Items Table */}
+                            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20 }}>
+                                <thead>
+                                    <tr style={{ background: brand.softBg, borderBottom: '1px solid #e2e8f0' }}>
+                                        <th style={{ padding: '8px 12px', fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', textAlign: 'left' }}>Item Description</th>
+                                        <th style={{ padding: '8px 12px', fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', textAlign: 'right' }}>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                        <td style={{ padding: '12px', fontSize: 12.5 }}>
+                                            <div style={{ fontWeight: 600, color: brand.navy }}>
+                                                {receiptModalData.payment?.booking?.service?.name || 'Professional Cleaning Service'}
+                                            </div>
+                                            <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                                                {receiptModalData.description || `Booking #${receiptModalData.payment?.booking_id || ''}`}
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '12px', textAlign: 'right', fontWeight: 700, color: brand.navy, fontSize: 13 }}>
+                                            AED {parseFloat(receiptModalData.amount).toFixed(2)}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            {/* Total Box */}
+                            <div style={{
+                                background: brand.softBg,
+                                borderRadius: 12,
+                                padding: '14px 18px',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: 20,
+                            }}>
+                                <span style={{ fontSize: 13, fontWeight: 700, color: brand.navy }}>Total Amount</span>
+                                <span style={{ fontSize: 20, fontWeight: 800, color: brand.navy, fontFamily: fonts.heading }}>
+                                    AED {parseFloat(receiptModalData.amount).toFixed(2)}
+                                </span>
+                            </div>
+
+                            <div style={{ textAlign: 'center', fontSize: 11, color: '#94a3b8', borderTop: '1px solid #f1f5f9', paddingTop: 14 }}>
+                                Thank you for choosing CitiMaids! This is a system-generated official receipt.
+                            </div>
+                        </div>
+
+                        {/* Modal Action Footer */}
+                        <div className="no-print" style={{
+                            padding: '16px 22px',
+                            background: '#f8fafc',
+                            borderTop: '1px solid #f1f5f9',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            gap: 10,
+                        }}>
+                            <button
+                                onClick={() => handleDirectDownloadReceipt(receiptModalData)}
+                                style={{
+                                    ...outlineBtn,
+                                    padding: '8px 14px',
+                                    fontSize: 12,
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                }}
+                            >
+                                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Download HTML File
+                            </button>
+
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <button
+                                    onClick={() => window.print()}
+                                    style={{
+                                        ...solidBtn,
+                                        padding: '8px 16px',
+                                        fontSize: 12.5,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                    }}
+                                >
+                                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                    </svg>
+                                    Print / Save PDF
+                                </button>
+                                <button
+                                    onClick={() => setReceiptModalData(null)}
+                                    style={{ ...outlineBtn, padding: '8px 14px', fontSize: 12 }}
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
 
         </div>
