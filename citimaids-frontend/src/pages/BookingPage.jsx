@@ -1,8 +1,10 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useServices } from '../hooks/useServices';
 import api from '../api/axios';
 import { formatUAEPhone } from '../utils/formatters';
+import DatePicker, { toYMD, formatFriendlyDate } from '../components/booking/DatePicker';
+import TimePicker, { isSlotPassedToday, isTimeWithinWorkingHours, DEFAULT_TIME_SLOTS } from '../components/booking/TimePicker';
 
 const STEPS = [
   { key: 'service', label: 'Service', icon: StepServiceIcon },
@@ -71,12 +73,28 @@ export const uaeDistricts = {
   ],
 };
 
-const SERVICE_CATEGORY_TAGS = {
-  residential: { label: 'RESIDENTIAL', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
-  commercial:  { label: 'COMMERCIAL',  color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
-  specialized: { label: 'SPECIALIZED', color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
-  maintenance: { label: 'MAINTENANCE', color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
-};
+const CATEGORY_TABS = [
+  { key: 'all', label: 'All Services' },
+  { key: 'residential', label: 'Residential' },
+  { key: 'commercial', label: 'Commercial' },
+  { key: 'specialized', label: 'Specialized & Deep Care' },
+  { key: 'maintenance', label: 'Outdoor Maintenance' },
+];
+
+function getCategoryBadge(category) {
+  switch (category) {
+    case 'residential':
+      return { label: 'Residential', bg: '#ecfdf5', color: '#047857' };
+    case 'commercial':
+      return { label: 'Commercial', bg: '#eff6ff', color: '#1d4ed8' };
+    case 'specialized':
+      return { label: 'Specialized', bg: '#fffbeb', color: '#b45309' };
+    case 'maintenance':
+      return { label: 'Maintenance', bg: '#ecfeff', color: '#0e7490' };
+    default:
+      return { label: 'Service', bg: '#f1f5f9', color: '#475569' };
+  }
+}
 
 export default function BookingPage() {
   const navigate = useNavigate();
@@ -87,45 +105,90 @@ export default function BookingPage() {
 
   const { services, loading: servicesLoading } = useServices();
 
-  const [selectedCategory, setSelectedCategory] = useState('all');
   const [step, setStep] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [expandedServiceId, setExpandedServiceId] = useState(null);
 
-  const categoryCounts = useMemo(() => {
-    const counts = { all: services.length, residential: 0, commercial: 0, specialized: 0, maintenance: 0 };
-    services.forEach((s) => {
-      const cat = (s.category || 'residential').toLowerCase();
-      if (counts[cat] !== undefined) counts[cat]++;
-      else counts.residential++;
-    });
-    return counts;
-  }, [services]);
+  // Horizontal scroll & drag controls for category pills
+  const categoryContainerRef = useRef(null);
+  const dragInfo = useRef({ isDown: false, startX: 0, scrollLeft: 0, hasMoved: false });
+  const [isDragging, setIsDragging] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
-  const categories = useMemo(() => {
-    const list = [
-      { key: 'all', label: 'All Services', count: categoryCounts.all },
-      { key: 'residential', label: 'Residential', count: categoryCounts.residential },
-      { key: 'commercial', label: 'Commercial', count: categoryCounts.commercial },
-      { key: 'specialized', label: 'Specialized & Deep Care', count: categoryCounts.specialized },
-    ];
-    if (categoryCounts.maintenance > 0) {
-      list.push({ key: 'maintenance', label: 'Outdoor & Maintenance', count: categoryCounts.maintenance });
+  const updateCategoryScrollState = () => {
+    const el = categoryContainerRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 6);
+  };
+
+  useEffect(() => {
+    updateCategoryScrollState();
+    const el = categoryContainerRef.current;
+    if (!el) return;
+
+    // Convert mouse wheel directly to smooth horizontal scroll
+    const onWheel = (e) => {
+      if (el.scrollWidth > el.clientWidth) {
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+          e.preventDefault();
+          el.scrollLeft += e.deltaY * 0.9;
+          updateCategoryScrollState();
+        }
+      }
+    };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    el.addEventListener('scroll', updateCategoryScrollState, { passive: true });
+    window.addEventListener('resize', updateCategoryScrollState);
+
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('scroll', updateCategoryScrollState);
+      window.removeEventListener('resize', updateCategoryScrollState);
+    };
+  }, [step, services]);
+
+  const handleCategoryMouseDown = (e) => {
+    if (!categoryContainerRef.current) return;
+    dragInfo.current = {
+      isDown: true,
+      startX: e.pageX - categoryContainerRef.current.offsetLeft,
+      scrollLeft: categoryContainerRef.current.scrollLeft,
+      hasMoved: false,
+    };
+  };
+
+  const handleCategoryMouseMove = (e) => {
+    if (!dragInfo.current.isDown || !categoryContainerRef.current) return;
+    const x = e.pageX - categoryContainerRef.current.offsetLeft;
+    const walk = (x - dragInfo.current.startX) * 1.3;
+    if (Math.abs(walk) > 4) {
+      dragInfo.current.hasMoved = true;
+      setIsDragging(true);
     }
-    return list;
-  }, [categoryCounts]);
+    categoryContainerRef.current.scrollLeft = dragInfo.current.scrollLeft - walk;
+    updateCategoryScrollState();
+  };
 
-  const filteredServices = useMemo(() => {
-    if (selectedCategory === 'all') return services;
-    return services.filter((s) => (s.category || 'residential').toLowerCase() === selectedCategory);
-  }, [services, selectedCategory]);
+  const handleCategoryMouseUpOrLeave = () => {
+    dragInfo.current.isDown = false;
+    setTimeout(() => {
+      dragInfo.current.hasMoved = false;
+      setIsDragging(false);
+    }, 60);
+  };
   const [submitLoading, setSubmitLoading] = useState(false);
   const [contactErrors, setContactErrors] = useState({});
+  const [timeError, setTimeError] = useState(null);
   const [data, setData] = useState({
     serviceId: null,          // will be set once services load (DB integer id)
     propertyType: 'Apartment',
     rooms: '2',
     bathrooms: '2',
-    date: new Date().toISOString().split('T')[0],
-    time: '9:00 AM',
+    date: toYMD(new Date()),
+    time: '',
     name: '',
     phone: '',
     email: '',
@@ -139,10 +202,7 @@ export default function BookingPage() {
   // Once services load, pick the preselected one (or first active)
   useEffect(() => {
     if (services.length === 0) return;
-
-    // Check if the current serviceId is valid in the loaded active services
-    const currentValid = data.serviceId !== null && services.some((s) => s.id === data.serviceId || String(s.id) === String(data.serviceId));
-    if (currentValid) return; // already set to a valid active service
+    if (data.serviceId !== null) return; // already set
 
     let picked = services[0];
 
@@ -156,10 +216,24 @@ export default function BookingPage() {
       }
     }
 
-    if (picked) {
-      setData((prev) => ({ ...prev, serviceId: picked.id }));
-    }
-  }, [services, preselectedServiceId]); // eslint-disable-line react-hooks/exhaustive-deps
+    setData((prev) => ({ ...prev, serviceId: picked.id }));
+    // Auto-expand the initially selected card
+    setExpandedServiceId(picked.id);
+  }, [services]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const categoryCounts = useMemo(() => {
+    const counts = { all: services.length, residential: 0, commercial: 0, specialized: 0, maintenance: 0 };
+    services.forEach((s) => {
+      if (counts[s.category] !== undefined) counts[s.category]++;
+      else counts[s.category] = 1;
+    });
+    return counts;
+  }, [services]);
+
+  const filteredServices = useMemo(() => {
+    if (selectedCategory === 'all') return services;
+    return services.filter((s) => s.category === selectedCategory);
+  }, [services, selectedCategory]);
 
   const set = (field, value) => setData((prev) => ({ ...prev, [field]: value }));
 
@@ -198,7 +272,12 @@ export default function BookingPage() {
   // Pure check — no side effects, safe to call in render / disabled prop
   const isStepValid = () => {
     if (step === 0) return !!data.serviceId;
-    if (step === 1) return !!data.date && !!data.time;
+    if (step === 1) {
+      if (!data.date || !data.time) return false;
+      if (!isTimeWithinWorkingHours(data.time)) return false;
+      if (isSlotPassedToday(data.date, data.time)) return false;
+      return true;
+    }
     if (step === 2) return !!data.streetAddress && !!data.district && !!data.city;
     if (step === 3) {
       if (!data.name.trim()) return false;
@@ -211,6 +290,25 @@ export default function BookingPage() {
 
   // Validate and show inline errors — only called on explicit Continue click
   const validateAndProceed = () => {
+    if (step === 1) {
+      if (!data.date) {
+        setTimeError('Please choose a service date.');
+        return;
+      }
+      if (!data.time) {
+        setTimeError('Please choose a preferred arrival time.');
+        return;
+      }
+      if (!isTimeWithinWorkingHours(data.time)) {
+        setTimeError('CitiMaids operating hours are 7:00 AM – 8:30 PM. We do not accept bookings outside working hours.');
+        return;
+      }
+      if (isSlotPassedToday(data.date, data.time)) {
+        setTimeError('The selected time has already passed for today. Please pick an upcoming time slot.');
+        return;
+      }
+      setTimeError(null);
+    }
     if (step === 3) {
       const errs = {};
       if (!data.name.trim()) errs.name = 'Full name is required.';
@@ -374,180 +472,293 @@ export default function BookingPage() {
           border: '1px solid #e2e8f0',
           boxShadow: '0 4px 24px rgba(10,35,66,0.04)',
           minWidth: 0,
-          overflow: 'hidden',
+          overflow: 'visible',
+          transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
         }}>
           {/* Step Label */}
-          <div style={{ marginBottom: 6 }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: '#2563eb', textTransform: 'uppercase', letterSpacing: 1.2 }}>
-              STEP 1
+          <div style={{ marginBottom: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: 1.2 }}>
+              Step {step + 1}
             </span>
           </div>
 
           {/* ── STEP 0: Choose Service ── */}
           {step === 0 && (
             <div>
-              <h2 style={{ fontSize: 28, fontWeight: 800, color: '#0A2342', margin: '0 0 6px', fontFamily: "'Plus Jakarta Sans', sans-serif", letterSpacing: '-0.3px' }}>
+              <h2 style={{ fontSize: 26, fontWeight: 800, color: '#0A2342', margin: '0 0 4px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 Select Your Service
               </h2>
-              <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 20px', lineHeight: 1.5 }}>
+              <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 20px' }}>
                 Choose from our certified residential, commercial, and outdoor maintenance services across Abu Dhabi.
               </p>
 
-              {/* Category Filter Pills */}
-              {!servicesLoading && services.length > 0 && (
-                <div style={{ display: 'flex', gap: 8, marginBottom: 22, flexWrap: 'wrap' }}>
-                  {categories.map((cat) => {
-                    const isActive = selectedCategory === cat.key;
+              {/* Category Filter Pills (Horizontal scrollable with wheel, drag, and arrow buttons) */}
+              <div style={{ position: 'relative', marginBottom: 20 }}>
+                {/* Left scroll arrow button */}
+                {canScrollLeft && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      categoryContainerRef.current?.scrollBy({ left: -220, behavior: 'smooth' });
+                    }}
+                    style={{
+                      position: 'absolute',
+                      left: -8,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      zIndex: 10,
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      background: '#ffffff',
+                      border: '1.5px solid #cbd5e1',
+                      boxShadow: '0 3px 10px rgba(0,0,0,0.12)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      color: '#0A2342',
+                      transition: 'all 0.15s ease',
+                    }}
+                    aria-label="Scroll left"
+                    title="Scroll left"
+                  >
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                )}
+
+                {/* Category Pills Track */}
+                <div
+                  ref={categoryContainerRef}
+                  onMouseDown={handleCategoryMouseDown}
+                  onMouseMove={handleCategoryMouseMove}
+                  onMouseUp={handleCategoryMouseUpOrLeave}
+                  onMouseLeave={handleCategoryMouseUpOrLeave}
+                  className="no-scrollbar"
+                  style={{
+                    display: 'flex',
+                    gap: 8,
+                    overflowX: 'auto',
+                    paddingBottom: 4,
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none',
+                    cursor: isDragging ? 'grabbing' : 'grab',
+                    userSelect: 'none',
+                    WebkitOverflowScrolling: 'touch',
+                    scrollBehavior: 'smooth',
+                  }}
+                >
+                  {CATEGORY_TABS.map((tab) => {
+                    const isActive = selectedCategory === tab.key;
+                    const count = categoryCounts[tab.key] || 0;
                     return (
                       <button
-                        key={cat.key}
+                        key={tab.key}
                         type="button"
-                        onClick={() => setSelectedCategory(cat.key)}
+                        onClick={() => {
+                          if (dragInfo.current.hasMoved) return;
+                          setSelectedCategory(tab.key);
+                        }}
                         style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 8,
-                          padding: '7px 14px', borderRadius: 9999,
-                          fontSize: 12, fontWeight: 700,
-                          border: isActive ? 'none' : '1.5px solid #e2e8f0',
-                          background: isActive ? '#0A2342' : '#fff',
-                          color: isActive ? '#fff' : '#475569',
-                          cursor: 'pointer', transition: 'all 0.15s',
-                          boxShadow: isActive ? '0 4px 14px rgba(10,35,66,0.18)' : 'none',
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isActive) {
-                            e.currentTarget.style.background = '#f8fafc';
-                            e.currentTarget.style.borderColor = '#cbd5e1';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isActive) {
-                            e.currentTarget.style.background = '#fff';
-                            e.currentTarget.style.borderColor = '#e2e8f0';
-                          }
+                          padding: '8px 16px',
+                          borderRadius: 20,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          whiteSpace: 'nowrap',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 7,
+                          cursor: isDragging ? 'grabbing' : 'pointer',
+                          transition: 'all 0.2s',
+                          border: isActive ? '1.5px solid #0A2342' : '1.5px solid #e2e8f0',
+                          background: isActive ? '#0A2342' : '#f8fafc',
+                          color: isActive ? '#ffffff' : '#475569',
+                          boxShadow: isActive ? '0 4px 12px rgba(10,35,66,0.15)' : 'none',
+                          flexShrink: 0,
                         }}
                       >
-                        <span>{cat.label}</span>
+                        <span>{tab.label}</span>
                         <span style={{
-                          fontSize: 11, fontWeight: 800, padding: '1px 7px', borderRadius: 9999,
-                          background: isActive ? 'rgba(255,255,255,0.22)' : '#f1f5f9',
-                          color: isActive ? '#fff' : '#64748b',
+                          fontSize: 10,
+                          fontWeight: 800,
+                          padding: '1px 7px',
+                          borderRadius: 10,
+                          background: isActive ? 'rgba(255,255,255,0.22)' : '#e2e8f0',
+                          color: isActive ? '#ffffff' : '#64748b',
                         }}>
-                          {cat.count}
+                          {count}
                         </span>
                       </button>
                     );
                   })}
                 </div>
-              )}
 
+                {/* Right scroll arrow button */}
+                {canScrollRight && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      categoryContainerRef.current?.scrollBy({ left: 220, behavior: 'smooth' });
+                    }}
+                    style={{
+                      position: 'absolute',
+                      right: -8,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      zIndex: 10,
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      background: '#ffffff',
+                      border: '1.5px solid #cbd5e1',
+                      boxShadow: '0 3px 10px rgba(0,0,0,0.12)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      color: '#0A2342',
+                      transition: 'all 0.15s ease',
+                    }}
+                    aria-label="Scroll right"
+                    title="Scroll right"
+                  >
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              {/* Service Cards */}
               {servicesLoading ? (
                 /* Skeleton loader while services fetch */
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                  {[1, 2, 3, 4].map((n) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {[1, 2, 3, 4, 5, 6].map((n) => (
                     <div key={n} style={{
-                      height: 140, borderRadius: 16, background: '#f1f5f9',
+                      height: 110, borderRadius: 16, background: '#f1f5f9',
                       animation: 'pulse 1.5s ease-in-out infinite',
                     }} />
                   ))}
                   <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.45} }`}</style>
                 </div>
               ) : filteredServices.length === 0 ? (
-                <div style={{
-                  padding: '36px 20px', borderRadius: 16,
-                  background: '#f8fafc', border: '1.5px dashed #cbd5e1',
-                  textAlign: 'center',
-                }}>
-                  <p style={{ color: '#0A2342', fontWeight: 700, fontSize: 15, margin: '0 0 6px' }}>No services in this category</p>
-                  <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 14px' }}>Try selecting another category or view all services.</p>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedCategory('all')}
-                    style={{
-                      padding: '8px 16px', borderRadius: 10, border: 'none',
-                      background: '#0A2342', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer'
-                    }}
-                  >
-                    View All Services
-                  </button>
+                <div style={{ textAlign: 'center', padding: '36px 16px', background: '#f8fafc', borderRadius: 16, border: '1px dashed #cbd5e1' }}>
+                  <p style={{ color: '#64748b', fontSize: 13, margin: 0 }}>No services currently available in this category.</p>
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {filteredServices.map((s) => {
                     const isSelected = data.serviceId === s.id;
-                    const catKey = (s.category || 'residential').toLowerCase();
-                    const catTag = SERVICE_CATEGORY_TAGS[catKey] || SERVICE_CATEGORY_TAGS.residential;
+                    const isExpanded = expandedServiceId === s.id;
+                    const catBadge = getCategoryBadge(s.category);
+
+                    const handleCardClick = () => {
+                      // Select this service
+                      set('serviceId', s.id);
+                      // Toggle expand: if already expanded+selected, collapse; otherwise expand
+                      setExpandedServiceId(isExpanded ? null : s.id);
+                    };
 
                     return (
                       <div
                         key={s.id}
-                        onClick={() => set('serviceId', s.id)}
+                        onClick={handleCardClick}
                         style={{
-                          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                          padding: '16px 18px', borderRadius: 16,
+                          position: 'relative',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          padding: '14px 16px',
+                          borderRadius: 16,
                           border: isSelected ? '2px solid #0A2342' : '1.5px solid #e2e8f0',
-                          background: isSelected ? '#fbfdff' : '#fff',
-                          cursor: 'pointer', transition: 'all 0.2s',
-                          boxShadow: isSelected ? '0 6px 20px rgba(10,35,66,0.08)' : '0 1px 3px rgba(0,0,0,0.02)',
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.borderColor = '#94a3b8';
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(10,35,66,0.06)';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isSelected) {
-                            e.currentTarget.style.borderColor = '#e2e8f0';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.02)';
-                          }
+                          background: isSelected ? '#f0f7ff' : '#ffffff',
+                          boxShadow: isSelected
+                            ? '0 6px 20px rgba(10,35,66,0.10)'
+                            : '0 1px 3px rgba(0,0,0,0.02)',
+                          cursor: 'pointer',
+                          transition: 'border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease',
                         }}
                       >
-                        <div>
-                          {/* Top Row: Category Tag & Selection Indicator */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                        {/* ── Always-visible header row ── */}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                          {/* Left: badge + title */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
                             <span style={{
-                              fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 6,
-                              background: catTag.bg, color: catTag.color, border: `1px solid ${catTag.border}`,
-                              textTransform: 'uppercase', letterSpacing: 0.6,
+                              fontSize: 10,
+                              fontWeight: 800,
+                              textTransform: 'uppercase',
+                              letterSpacing: 0.5,
+                              padding: '2px 7px',
+                              borderRadius: 5,
+                              background: catBadge.bg,
+                              color: catBadge.color,
+                              display: 'inline-block',
+                              marginBottom: 6,
                             }}>
-                              {catTag.label}
+                              {catBadge.label}
                             </span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <div style={{
-                                width: 20, height: 20, borderRadius: '50%',
-                                border: isSelected ? '6px solid #0A2342' : '2px solid #cbd5e1',
-                                background: '#fff', transition: 'all 0.15s',
-                                boxSizing: 'border-box',
-                              }} />
-                              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" strokeWidth="2.2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d={isSelected ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
-                              </svg>
+                            <div style={{
+                              fontWeight: 800,
+                              fontSize: 14,
+                              color: '#0A2342',
+                              lineHeight: 1.3,
+                            }}>
+                              {s.title}
                             </div>
                           </div>
 
-                          {/* Service Title */}
-                          <div style={{ fontWeight: 800, fontSize: 15, color: '#0A2342', marginBottom: 6, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                            {s.title}
-                          </div>
-
-                          {/* Description */}
-                          <div style={{
-                            fontSize: 12, color: '#64748b', lineHeight: 1.5, marginBottom: 14,
-                            display: '-webkit-box', WebkitLineClamp: isSelected ? 4 : 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
-                          }}>
-                            {s.description || 'Complete professional residential cleaning tailored to your residence.'}
+                          {/* Right: radio + chevron */}
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                            <div style={{
+                              width: 18, height: 18, borderRadius: '50%',
+                              border: isSelected ? '5px solid #0A2342' : '2px solid #cbd5e1',
+                              background: '#fff',
+                              transition: 'border 0.2s',
+                            }} />
+                            {/* Chevron */}
+                            <svg
+                              width="14" height="14" viewBox="0 0 24 24" fill="none"
+                              stroke={isExpanded ? '#0A2342' : '#94a3b8'} strokeWidth="2.5"
+                              style={{
+                                transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1), stroke 0.2s',
+                                transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                              }}
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
                           </div>
                         </div>
 
-                        {/* Footer: Starting Rate */}
+                        {/* ── Collapsible description (CSS grid animation) ── */}
                         <div style={{
-                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                          paddingTop: 12, borderTop: '1px solid #f1f5f9', marginTop: 4,
+                          display: 'grid',
+                          gridTemplateRows: isExpanded ? '1fr' : '0fr',
+                          transition: 'grid-template-rows 0.35s cubic-bezier(0.16,1,0.3,1)',
                         }}>
-                          <span style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                            STARTING RATE
+                          <div style={{ overflow: 'hidden' }}>
+                            <div style={{
+                              fontSize: 12,
+                              color: '#64748b',
+                              lineHeight: 1.5,
+                              paddingTop: 10,
+                            }}>
+                              {s.description}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* ── Rate footer ── */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          paddingTop: 10,
+                          marginTop: 8,
+                          borderTop: isSelected ? '1px solid rgba(10,35,66,0.08)' : '1px solid #f1f5f9',
+                        }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
+                            Starting Rate
                           </span>
                           <span style={{ fontSize: 13, fontWeight: 800, color: '#2563eb' }}>
                             {s.startingPrice}
@@ -567,40 +778,52 @@ export default function BookingPage() {
               <h2 style={{ fontSize: 26, fontWeight: 800, color: '#0A2342', margin: '0 0 4px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
                 When works for you?
               </h2>
-              <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 28px' }}>
+              <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 24px' }}>
                 Pick a date and a time that fits your rhythm.
               </p>
 
-              <span style={labelStyle}>Choose a Date</span>
-              <input
-                type="date" min={todayStr} value={data.date}
-                onChange={(e) => set('date', e.target.value)}
-                style={inputStyle}
+              {/* Custom Polished Date Picker */}
+              <DatePicker
+                value={data.date}
+                onChange={(newDate) => {
+                  set('date', newDate);
+                  setTimeError(null);
+                }}
+                minDate={toYMD(new Date())}
+                label="Choose a Date"
               />
 
-              <div style={{ marginTop: 24 }}>
-                <span style={labelStyle}>Choose a Time</span>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-                  {timeSlots.map((t) => {
-                    const isActive = data.time === t;
-                    return (
-                      <button
-                        key={t} type="button"
-                        onClick={() => set('time', t)}
-                        style={{
-                          padding: '12px 8px', borderRadius: 12, fontSize: 13, fontWeight: 700,
-                          border: isActive ? '2px solid #0A2342' : '1.5px solid #e2e8f0',
-                          background: isActive ? '#0A2342' : '#fff',
-                          color: isActive ? '#fff' : '#334155',
-                          cursor: 'pointer', transition: 'all 0.15s',
-                        }}
-                      >
-                        {t}
-                      </button>
-                    );
-                  })}
+              {/* Custom Polished Time Picker */}
+              <TimePicker
+                value={data.time}
+                onChange={(newTime) => {
+                  set('time', newTime);
+                  setTimeError(null);
+                }}
+                selectedDate={data.date}
+                slots={DEFAULT_TIME_SLOTS}
+              />
+
+              {timeError && (
+                <div style={{
+                  marginTop: 14,
+                  padding: '10px 14px',
+                  borderRadius: 10,
+                  background: '#fff1f2',
+                  border: '1px solid #fecdd3',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: 12,
+                  color: '#be123c',
+                  fontWeight: 600,
+                }}>
+                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>{timeError}</span>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -762,7 +985,7 @@ export default function BookingPage() {
                       </svg>
                     ),
                     label: 'DATE',
-                    value: formatDate(data.date),
+                    value: formatFriendlyDate(data.date),
                   },
                   {
                     icon: (
@@ -967,7 +1190,7 @@ export default function BookingPage() {
             {/* Summary details */}
             <div style={{ padding: '16px 20px' }}>
               {[
-                { icon: CalendarSmallIcon, label: 'Date', value: data.date ? new Date(data.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—' },
+                { icon: CalendarSmallIcon, label: 'Date', value: data.date ? formatFriendlyDate(data.date) : '—' },
                 { icon: ClockSmallIcon, label: 'Time', value: data.time || '—' },
                 { icon: PinSmallIcon, label: 'Address', value: data.streetAddress ? `${data.district}, ${data.city}` : '—' },
               ].map((row) => (
@@ -1016,6 +1239,9 @@ export default function BookingPage() {
       </div>
 
       <style>{`
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
         .booking-grid {
           grid-template-columns: 1fr 340px;
         }
