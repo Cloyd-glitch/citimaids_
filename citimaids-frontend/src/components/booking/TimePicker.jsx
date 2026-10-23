@@ -101,6 +101,7 @@ export default function TimePicker({
   const [minuteInput, setMinuteInput] = useState(parsedTime.minute);
   const [periodInput, setPeriodInput] = useState(parsedTime.period);
   const [inlineError, setInlineError] = useState(null);
+  const [justApplied, setJustApplied] = useState(false);
 
   const minuteInputRef = useRef(null);
 
@@ -171,33 +172,38 @@ export default function TimePicker({
     }
 
     setInlineError(null);
+    setJustApplied(true);
     onChange(formattedTime);
+    setTimeout(() => {
+      setJustApplied(false);
+    }, 2500);
   };
 
   const handleHourChange = (e) => {
     const val = e.target.value.replace(/\D/g, '').slice(0, 2);
     setHourInput(val);
+    setInlineError(null);
+    setJustApplied(false);
     if (val.length === 2 && parseInt(val, 10) >= 1 && parseInt(val, 10) <= 12) {
       minuteInputRef.current?.focus();
-    }
-    if (val && minuteInput) {
-      validateAndApplyTypedTime(val, minuteInput, periodInput);
     }
   };
 
   const handleMinuteChange = (e) => {
     const val = e.target.value.replace(/\D/g, '').slice(0, 2);
     setMinuteInput(val);
-    if (hourInput && val.length === 2) {
-      validateAndApplyTypedTime(hourInput, val, periodInput);
-    }
+    setInlineError(null);
+    setJustApplied(false);
   };
 
   const handlePeriodToggle = (newPeriod) => {
     setPeriodInput(newPeriod);
-    if (hourInput && minuteInput) {
-      validateAndApplyTypedTime(hourInput, minuteInput, newPeriod);
-    }
+    setInlineError(null);
+    setJustApplied(false);
+  };
+
+  const handleApplyTime = () => {
+    validateAndApplyTypedTime(hourInput, minuteInput, periodInput);
   };
 
   const handleSelectQuickSlot = (slot) => {
@@ -206,6 +212,7 @@ export default function TimePicker({
       return;
     }
     setInlineError(null);
+    setJustApplied(false);
     onChange(slot);
   };
 
@@ -391,6 +398,12 @@ export default function TimePicker({
                   pattern="[0-9]*"
                   value={hourInput}
                   onChange={handleHourChange}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleApplyTime();
+                    }
+                  }}
                   placeholder="09"
                   maxLength={2}
                   style={{
@@ -414,9 +427,6 @@ export default function TimePicker({
                   onBlur={(e) => {
                     e.target.style.borderColor = '#cbd5e1';
                     e.target.style.boxShadow = 'none';
-                    if (hourInput && minuteInput) {
-                      validateAndApplyTypedTime(hourInput, minuteInput, periodInput);
-                    }
                   }}
                   aria-label="Input hour"
                 />
@@ -445,6 +455,12 @@ export default function TimePicker({
                   pattern="[0-9]*"
                   value={minuteInput}
                   onChange={handleMinuteChange}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleApplyTime();
+                    }
+                  }}
                   placeholder="00"
                   maxLength={2}
                   style={{
@@ -468,9 +484,6 @@ export default function TimePicker({
                   onBlur={(e) => {
                     e.target.style.borderColor = '#cbd5e1';
                     e.target.style.boxShadow = 'none';
-                    if (hourInput && minuteInput) {
-                      validateAndApplyTypedTime(hourInput, minuteInput, periodInput);
-                    }
                   }}
                   aria-label="Input minute"
                 />
@@ -522,27 +535,80 @@ export default function TimePicker({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 18 }}>
                 <button
                   type="button"
-                  onClick={() => validateAndApplyTypedTime(hourInput, minuteInput, periodInput)}
+                  onClick={handleApplyTime}
                   style={{
                     height: 44,
                     padding: '0 18px',
                     borderRadius: 10,
                     border: 'none',
-                    background: 'linear-gradient(135deg, #0A2342, #1E3A8A)',
+                    background: justApplied
+                      ? '#059669'
+                      : 'linear-gradient(135deg, #0A2342, #1E3A8A)',
                     color: '#ffffff',
                     fontSize: 13,
                     fontWeight: 700,
                     cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(10,35,66,0.15)',
-                    transition: 'opacity 0.15s, transform 0.15s',
+                    boxShadow: justApplied
+                      ? '0 2px 8px rgba(5,150,105,0.25)'
+                      : '0 2px 8px rgba(10,35,66,0.15)',
+                    transition: 'all 0.2s ease',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.92'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+                  aria-label="Apply preferred time"
                 >
-                  Apply Time
+                  {justApplied ? (
+                    <>
+                      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Applied ✓</span>
+                    </>
+                  ) : (
+                    <span>Apply Time</span>
+                  )}
                 </button>
               </div>
             </div>
+
+            {/* Helper guidance: prompts user to tap Apply Time to reflect */}
+            {hourInput && minuteInput && !justApplied && (
+              <div style={{
+                marginTop: 10,
+                fontSize: 11,
+                color: '#2563eb',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+              }}>
+                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2" style={{ flexShrink: 0 }}>
+                  <circle cx="12" cy="12" r="10" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3" />
+                </svg>
+                <span>Tap "Apply Time" to reflect this preferred time in your order summary.</span>
+              </div>
+            )}
+
+            {justApplied && (
+              <div style={{
+                marginTop: 10,
+                fontSize: 11,
+                color: '#059669',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+              }}>
+                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Preferred time applied and reflected in your order summary!</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
