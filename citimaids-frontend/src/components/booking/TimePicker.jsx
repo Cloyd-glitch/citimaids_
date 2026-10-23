@@ -4,12 +4,12 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
  * Standard quick shortcuts for CitiMaids booking
  */
 export const DEFAULT_TIME_SLOTS = [
-  '7:00 AM',
-  '9:00 AM',
-  '11:00 AM',
-  '1:00 PM',
-  '3:00 PM',
-  '5:00 PM',
+  '8:00 AM',
+  '10:00 AM',
+  '12:00 PM',
+  '2:00 PM',
+  '4:00 PM',
+  '6:00 PM',
 ];
 
 /**
@@ -541,49 +541,6 @@ export default function TimePicker({
                 >
                   Apply Time
                 </button>
-              </div>
-            </div>
-
-            {/* Helpful Quick Presets within Working Hours */}
-            <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', marginBottom: 6 }}>
-                Common Working Hour Slots:
-              </div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {['8:00 AM', '10:00 AM', '12:00 PM', '2:00 PM', '4:00 PM', '6:00 PM'].map((preset) => {
-                  const isCurrent = value === preset;
-                  const isPassed = isSlotPassedToday(selectedDate, preset);
-
-                  return (
-                    <button
-                      key={preset}
-                      type="button"
-                      disabled={isPassed}
-                      onClick={() => {
-                        const match = preset.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-                        if (match) {
-                          setHourInput(match[1]);
-                          setMinuteInput(match[2]);
-                          setPeriodInput(match[3].toUpperCase());
-                        }
-                        handleSelectQuickSlot(preset);
-                      }}
-                      style={{
-                        padding: '4px 9px',
-                        borderRadius: 6,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        border: isCurrent ? '1.5px solid #0A2342' : '1px solid #e2e8f0',
-                        background: isCurrent ? '#0A2342' : isPassed ? '#f8fafc' : '#ffffff',
-                        color: isCurrent ? '#ffffff' : isPassed ? '#cbd5e1' : '#475569',
-                        cursor: isPassed ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.15s',
-                      }}
-                    >
-                      {preset}
-                    </button>
-                  );
-                })}
               </div>
             </div>
           </div>

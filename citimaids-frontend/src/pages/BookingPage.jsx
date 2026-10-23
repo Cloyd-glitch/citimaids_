@@ -188,7 +188,7 @@ export default function BookingPage() {
     rooms: '2',
     bathrooms: '2',
     date: toYMD(new Date()),
-    time: '9:00 AM',
+    time: '10:00 AM',
     name: '',
     phone: '',
     email: '',
