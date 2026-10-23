@@ -70,23 +70,16 @@ export default function DatePicker({
     }
   }, [value]);
 
-  // Close calendar popover on outside click or Escape key
+  // Close calendar popover only on Escape key (or explicit toggle / selection)
   useEffect(() => {
-    const handleOutsideClick = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setIsOpen(false);
-      }
-    };
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') setIsOpen(false);
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleOutsideClick);
       document.addEventListener('keydown', handleKeyDown);
     }
     return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen]);
@@ -177,8 +170,8 @@ export default function DatePicker({
       style={{
         position: 'relative',
         width: '100%',
-        marginBottom: isOpen ? 310 : 0,
-        transition: 'margin-bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+        marginBottom: isOpen ? 65 : 0,
+        transition: 'margin-bottom 0.32s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
     >
       {label && (
@@ -251,7 +244,7 @@ export default function DatePicker({
               {formatFriendlyDate(value)}
             </div>
             <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>
-              {value === todayStr ? 'Today (Fast-track dispatch available)' : 'Scheduled cleaning date'}
+              Scheduled cleaning date
             </div>
           </div>
         </div>
@@ -291,7 +284,7 @@ export default function DatePicker({
             position: 'absolute',
             top: 'calc(100% + 8px)',
             left: 0,
-            zIndex: 60,
+            zIndex: 35,
             width: '100%',
             maxWidth: 380,
             background: '#ffffff',
@@ -348,48 +341,28 @@ export default function DatePicker({
               </span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <button
-                type="button"
-                onClick={handleJumpToToday}
-                style={{
-                  padding: '4px 8px',
-                  borderRadius: 6,
-                  border: '1px solid #e2e8f0',
-                  background: '#f8fafc',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: '#2563eb',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                }}
-                title="Jump to today"
-              >
-                Today
-              </button>
-              <button
-                type="button"
-                onClick={handleNextMonth}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 9,
-                  border: '1px solid #e2e8f0',
-                  background: '#fff',
-                  color: '#0A2342',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.15s',
-                }}
-                aria-label="Next month"
-              >
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleNextMonth}
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 9,
+                border: '1.5px solid #e2e8f0',
+                background: '#fff',
+                color: '#0A2342',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.15s',
+              }}
+              aria-label="Next month"
+            >
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
 
           {/* Weekday Labels Grid */}
