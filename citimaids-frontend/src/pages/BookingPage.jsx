@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useServices } from '../hooks/useServices';
 import api from '../api/axios';
@@ -106,6 +106,77 @@ export default function BookingPage() {
   const [step, setStep] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [expandedServiceId, setExpandedServiceId] = useState(null);
+
+  // Horizontal scroll & drag controls for category pills
+  const categoryContainerRef = useRef(null);
+  const dragInfo = useRef({ isDown: false, startX: 0, scrollLeft: 0, hasMoved: false });
+  const [isDragging, setIsDragging] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateCategoryScrollState = () => {
+    const el = categoryContainerRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 6);
+  };
+
+  useEffect(() => {
+    updateCategoryScrollState();
+    const el = categoryContainerRef.current;
+    if (!el) return;
+
+    // Convert mouse wheel directly to smooth horizontal scroll
+    const onWheel = (e) => {
+      if (el.scrollWidth > el.clientWidth) {
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+          e.preventDefault();
+          el.scrollLeft += e.deltaY * 0.9;
+          updateCategoryScrollState();
+        }
+      }
+    };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    el.addEventListener('scroll', updateCategoryScrollState, { passive: true });
+    window.addEventListener('resize', updateCategoryScrollState);
+
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('scroll', updateCategoryScrollState);
+      window.removeEventListener('resize', updateCategoryScrollState);
+    };
+  }, [step, services]);
+
+  const handleCategoryMouseDown = (e) => {
+    if (!categoryContainerRef.current) return;
+    dragInfo.current = {
+      isDown: true,
+      startX: e.pageX - categoryContainerRef.current.offsetLeft,
+      scrollLeft: categoryContainerRef.current.scrollLeft,
+      hasMoved: false,
+    };
+  };
+
+  const handleCategoryMouseMove = (e) => {
+    if (!dragInfo.current.isDown || !categoryContainerRef.current) return;
+    const x = e.pageX - categoryContainerRef.current.offsetLeft;
+    const walk = (x - dragInfo.current.startX) * 1.3;
+    if (Math.abs(walk) > 4) {
+      dragInfo.current.hasMoved = true;
+      setIsDragging(true);
+    }
+    categoryContainerRef.current.scrollLeft = dragInfo.current.scrollLeft - walk;
+    updateCategoryScrollState();
+  };
+
+  const handleCategoryMouseUpOrLeave = () => {
+    dragInfo.current.isDown = false;
+    setTimeout(() => {
+      dragInfo.current.hasMoved = false;
+      setIsDragging(false);
+    }, 60);
+  };
   const [submitLoading, setSubmitLoading] = useState(false);
   const [contactErrors, setContactErrors] = useState({});
   const [data, setData] = useState({
@@ -393,55 +464,143 @@ export default function BookingPage() {
                 Choose from our certified residential, commercial, and outdoor maintenance services across Abu Dhabi.
               </p>
 
-              {/* Category Filter Pills */}
-              <div style={{
-                display: 'flex',
-                gap: 8,
-                overflowX: 'auto',
-                paddingBottom: 8,
-                marginBottom: 20,
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none',
-              }}>
-                {CATEGORY_TABS.map((tab) => {
-                  const isActive = selectedCategory === tab.key;
-                  const count = categoryCounts[tab.key] || 0;
-                  return (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      onClick={() => setSelectedCategory(tab.key)}
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: 20,
-                        fontSize: 12,
-                        fontWeight: 700,
-                        whiteSpace: 'nowrap',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 7,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        border: isActive ? '1.5px solid #0A2342' : '1.5px solid #e2e8f0',
-                        background: isActive ? '#0A2342' : '#f8fafc',
-                        color: isActive ? '#ffffff' : '#475569',
-                        boxShadow: isActive ? '0 4px 12px rgba(10,35,66,0.15)' : 'none',
-                      }}
-                    >
-                      <span>{tab.label}</span>
-                      <span style={{
-                        fontSize: 10,
-                        fontWeight: 800,
-                        padding: '1px 7px',
-                        borderRadius: 10,
-                        background: isActive ? 'rgba(255,255,255,0.22)' : '#e2e8f0',
-                        color: isActive ? '#ffffff' : '#64748b',
-                      }}>
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
+              {/* Category Filter Pills (Horizontal scrollable with wheel, drag, and arrow buttons) */}
+              <div style={{ position: 'relative', marginBottom: 20 }}>
+                {/* Left scroll arrow button */}
+                {canScrollLeft && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      categoryContainerRef.current?.scrollBy({ left: -220, behavior: 'smooth' });
+                    }}
+                    style={{
+                      position: 'absolute',
+                      left: -8,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      zIndex: 10,
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      background: '#ffffff',
+                      border: '1.5px solid #cbd5e1',
+                      boxShadow: '0 3px 10px rgba(0,0,0,0.12)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      color: '#0A2342',
+                      transition: 'all 0.15s ease',
+                    }}
+                    aria-label="Scroll left"
+                    title="Scroll left"
+                  >
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                )}
+
+                {/* Category Pills Track */}
+                <div
+                  ref={categoryContainerRef}
+                  onMouseDown={handleCategoryMouseDown}
+                  onMouseMove={handleCategoryMouseMove}
+                  onMouseUp={handleCategoryMouseUpOrLeave}
+                  onMouseLeave={handleCategoryMouseUpOrLeave}
+                  className="no-scrollbar"
+                  style={{
+                    display: 'flex',
+                    gap: 8,
+                    overflowX: 'auto',
+                    paddingBottom: 4,
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none',
+                    cursor: isDragging ? 'grabbing' : 'grab',
+                    userSelect: 'none',
+                    WebkitOverflowScrolling: 'touch',
+                    scrollBehavior: 'smooth',
+                  }}
+                >
+                  {CATEGORY_TABS.map((tab) => {
+                    const isActive = selectedCategory === tab.key;
+                    const count = categoryCounts[tab.key] || 0;
+                    return (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        onClick={() => {
+                          if (dragInfo.current.hasMoved) return;
+                          setSelectedCategory(tab.key);
+                        }}
+                        style={{
+                          padding: '8px 16px',
+                          borderRadius: 20,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          whiteSpace: 'nowrap',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 7,
+                          cursor: isDragging ? 'grabbing' : 'pointer',
+                          transition: 'all 0.2s',
+                          border: isActive ? '1.5px solid #0A2342' : '1.5px solid #e2e8f0',
+                          background: isActive ? '#0A2342' : '#f8fafc',
+                          color: isActive ? '#ffffff' : '#475569',
+                          boxShadow: isActive ? '0 4px 12px rgba(10,35,66,0.15)' : 'none',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <span>{tab.label}</span>
+                        <span style={{
+                          fontSize: 10,
+                          fontWeight: 800,
+                          padding: '1px 7px',
+                          borderRadius: 10,
+                          background: isActive ? 'rgba(255,255,255,0.22)' : '#e2e8f0',
+                          color: isActive ? '#ffffff' : '#64748b',
+                        }}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Right scroll arrow button */}
+                {canScrollRight && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      categoryContainerRef.current?.scrollBy({ left: 220, behavior: 'smooth' });
+                    }}
+                    style={{
+                      position: 'absolute',
+                      right: -8,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      zIndex: 10,
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      background: '#ffffff',
+                      border: '1.5px solid #cbd5e1',
+                      boxShadow: '0 3px 10px rgba(0,0,0,0.12)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      color: '#0A2342',
+                      transition: 'all 0.15s ease',
+                    }}
+                    aria-label="Scroll right"
+                    title="Scroll right"
+                  >
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                )}
               </div>
 
               {/* Service Cards */}
@@ -1040,6 +1199,9 @@ export default function BookingPage() {
       </div>
 
       <style>{`
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
         .booking-grid {
           grid-template-columns: 1fr 340px;
         }
