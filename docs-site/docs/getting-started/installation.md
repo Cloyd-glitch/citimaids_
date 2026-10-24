@@ -137,7 +137,7 @@ After seeding, log in at `http://localhost:5173/admin/login` with:
 | Field | Value |
 |---|---|
 | Email | `admin@citimaids.com` |
-| Password | `password` |
+| Password | `Citimaids@admin!$123` |
 
 :::caution
 Change the default admin password immediately in any staging or production environment.
