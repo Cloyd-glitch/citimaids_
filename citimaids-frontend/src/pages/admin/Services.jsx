@@ -129,20 +129,29 @@ export default function Services() {
         e.preventDefault();
         setFormLoading(true);
         try {
+            // Convert empty string to null so Laravel's nullable|numeric rule passes
+            const payload = {
+                ...form,
+                base_price: form.base_price === '' ? null : form.base_price,
+            };
             if (formModal === 'add') {
-                await api.post('/services', form);
+                await api.post('/services', payload);
                 showToast('Service created successfully.', 'success');
             } else {
-                await api.put(`/services/${formModal.id}`, form);
+                await api.put(`/services/${formModal.id}`, payload);
                 showToast('Service updated successfully.', 'success');
             }
             setFormModal(null);
             fetchServices();
         } catch (err) {
             console.error('Save service error:', err?.response?.status, err?.response?.data);
-            const msg = err?.response?.data?.message || err?.response?.data?.errors
-                ? 'Validation error: ' + Object.values(err.response.data.errors || {}).flat().join(', ')
-                : 'Failed to save service.';
+            const errData = err?.response?.data;
+            let msg = 'Failed to save service.';
+            if (errData?.errors) {
+                msg = 'Validation error: ' + Object.values(errData.errors).flat().join(', ');
+            } else if (errData?.message) {
+                msg = errData.message;
+            }
             showToast(msg, 'error');
         } finally {
             setFormLoading(false);
